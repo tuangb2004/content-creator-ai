@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "iconoir-react": "^7.11.0",
+    "phosphor-react": "^1.4.1"
+  }
+}

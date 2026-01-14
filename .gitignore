@@ -1,0 +1,45 @@
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+.firebaserc
+firebase-export-*.json
+
+# Functions
+functions/lib/
+functions/node_modules/
+functions/.env
+functions/.env.local
+
+# Frontend
+frontend/dist/
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+
+# Root
+node_modules/
+package-lock.json
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+firestore-debug.log
+
