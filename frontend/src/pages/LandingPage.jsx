@@ -80,6 +80,8 @@ function LandingPage() {
     if (view.type === 'home') {
       homeScrollRef.current = window.scrollY || 0;
       shouldRestoreScrollRef.current = true;
+      // Pre-set flag that we'll need to restore later
+      sessionStorage.setItem('will_restore_scroll', 'true');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
@@ -182,26 +184,33 @@ function LandingPage() {
       const root = document.documentElement;
       const prevRootBehavior = root.style.scrollBehavior;
 
-      // Disable smooth scroll and animations for instant restoration
+      // IMMEDIATELY set flags BEFORE any rendering
+      sessionStorage.setItem('is_back_navigation', 'true');
+      sessionStorage.setItem('restoring_scroll', 'true');
+      document.body.classList.add('restoring-scroll');
+
+      // Disable smooth scroll for instant restoration
       root.style.scrollBehavior = 'auto';
       document.body.style.scrollBehavior = 'auto';
-      document.body.classList.add('restoring-scroll');
       
-      // Use requestAnimationFrame to ensure DOM is ready
+      // Immediate scroll without waiting
+      root.scrollTop = savedScroll;
+      window.scrollTo(0, savedScroll);
+      
+      // Use requestAnimationFrame for cleanup
       requestAnimationFrame(() => {
-        root.scrollTop = savedScroll;
-        window.scrollTo(0, savedScroll);
-        
-        // Mark that we're restoring scroll (skip all animations)
-        sessionStorage.setItem('restoring_scroll', 'true');
-        
-        // Restore smooth scroll and remove class after a short delay
+        // Keep flags for a bit longer to ensure all components see them
         setTimeout(() => {
           root.style.scrollBehavior = prevRootBehavior;
           document.body.style.scrollBehavior = prevRootBehavior;
           document.body.classList.remove('restoring-scroll');
           sessionStorage.removeItem('restoring_scroll');
-        }, 150);
+          sessionStorage.removeItem('will_restore_scroll');
+          // Keep is_back_navigation for 1 second for any delayed renders
+          setTimeout(() => {
+            sessionStorage.removeItem('is_back_navigation');
+          }, 1000);
+        }, 200);
       });
 
       shouldRestoreScrollRef.current = false;

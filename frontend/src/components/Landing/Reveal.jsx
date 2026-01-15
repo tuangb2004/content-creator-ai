@@ -40,23 +40,34 @@ export const Reveal = ({ children, className = "", delay = 0, width = 'full' }) 
     if (typeof window === 'undefined') return undefined;
     ensureHistoryListener();
     
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isPopNavigation = Date.now() - lastPopTimestamp < 3000; // Increased from 1500ms to 3000ms
+    // Check for back navigation FIRST - highest priority
     const isBackNav = sessionStorage.getItem('is_back_navigation') === 'true';
+    const isRestoring = sessionStorage.getItem('restoring_scroll') === 'true';
     const wasPageVisited = sessionStorage.getItem('page_visited') === 'true';
+    
+    // If back navigation or restoring, IMMEDIATELY show all elements without any delay
+    if (isBackNav || isRestoring || (wasPageVisited && Date.now() - lastPopTimestamp < 5000)) {
+      if (ref.current) {
+        ref.current.dataset.revealed = 'true';
+      }
+      setIsVisible(true);
+      setSkipAnimation(true);
+      return;
+    }
+    
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isPopNavigation = Date.now() - lastPopTimestamp < 5000; // Increased to 5 seconds
     const alreadyRevealed = ref.current?.dataset?.revealed === 'true';
     const rect = ref.current?.getBoundingClientRect();
     const inViewport = rect
-      ? rect.top < window.innerHeight + 200 && rect.bottom > -200 // Increased viewport detection area
+      ? rect.top < window.innerHeight + 300 && rect.bottom > -300 // Even larger detection area
       : false;
 
     // Skip animation if any of these conditions are met
     const shouldSkipAnimation = alreadyRevealed || 
                                  inViewport || 
                                  prefersReducedMotion || 
-                                 isPopNavigation || 
-                                 isBackNav ||
-                                 (wasPageVisited && pageVisited);
+                                 isPopNavigation;
 
     if (shouldSkipAnimation) {
       if (ref.current) {
@@ -64,25 +75,26 @@ export const Reveal = ({ children, className = "", delay = 0, width = 'full' }) 
       }
       setIsVisible(true);
       setSkipAnimation(true);
-      
-      // Clear back navigation flag after using it
-      if (isBackNav) {
-        setTimeout(() => {
-          sessionStorage.removeItem('is_back_navigation');
-        }, 100);
-      }
       return;
     }
 
     const observer = new IntersectionObserver(([entry]) => {
+      // Double-check we're not in back navigation before animating
+      const stillBackNav = sessionStorage.getItem('is_back_navigation') === 'true';
+      const stillRestoring = sessionStorage.getItem('restoring_scroll') === 'true';
+      
       if (entry.isIntersecting) {
+        if (stillBackNav || stillRestoring) {
+          // Skip animation even during observation
+          setSkipAnimation(true);
+        }
         setIsVisible(true);
         if (ref.current) {
           ref.current.dataset.revealed = 'true';
         }
         if (ref.current) observer.unobserve(ref.current);
       }
-    }, { threshold: 0.1, rootMargin: '0px 0px 12% 0px' });
+    }, { threshold: 0.05, rootMargin: '0px 0px 15% 0px' }); // More aggressive threshold
 
     if (ref.current) observer.observe(ref.current);
     

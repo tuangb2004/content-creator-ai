@@ -516,12 +516,27 @@ body,
               color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Instant reveal when restoring scroll (no animation) */
-body.restoring-scroll * {
+/* Instant reveal when restoring scroll (no animation) - AGGRESSIVE */
+body.restoring-scroll,
+body.restoring-scroll *,
+body.restoring-scroll *::before,
+body.restoring-scroll *::after {
+  animation: none !important;
+  animation-duration: 0s !important;
+  transition: none !important;
+  transition-duration: 0s !important;
+  opacity: 1 !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* Force all Reveal components to show immediately when restoring */
+body.restoring-scroll [class*="transition"],
+body.restoring-scroll [class*="animate"] {
   animation: none !important;
   transition: none !important;
   opacity: 1 !important;
-  transform: none !important;
+  transform: translateY(0) scale(1) !important;
 }
 
 /* Smooth page transitions */
