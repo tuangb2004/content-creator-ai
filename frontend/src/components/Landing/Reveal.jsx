@@ -2,13 +2,25 @@ import { useEffect, useRef, useState } from 'react';
 
 let historyListenerBound = false;
 let lastPopTimestamp = 0;
+let pageVisited = false;
 
 const ensureHistoryListener = () => {
   if (historyListenerBound || typeof window === 'undefined') return;
   historyListenerBound = true;
+  
+  // Check if page was visited before in this session
+  if (sessionStorage.getItem('page_visited')) {
+    pageVisited = true;
+  }
+  
   window.addEventListener('popstate', () => {
     lastPopTimestamp = Date.now();
+    // Mark that we're doing back navigation
+    sessionStorage.setItem('is_back_navigation', 'true');
   });
+  
+  // Mark page as visited
+  sessionStorage.setItem('page_visited', 'true');
 };
 
 /**
@@ -27,20 +39,38 @@ export const Reveal = ({ children, className = "", delay = 0, width = 'full' }) 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     ensureHistoryListener();
+    
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isPopNavigation = Date.now() - lastPopTimestamp < 1500;
+    const isPopNavigation = Date.now() - lastPopTimestamp < 3000; // Increased from 1500ms to 3000ms
+    const isBackNav = sessionStorage.getItem('is_back_navigation') === 'true';
+    const wasPageVisited = sessionStorage.getItem('page_visited') === 'true';
     const alreadyRevealed = ref.current?.dataset?.revealed === 'true';
     const rect = ref.current?.getBoundingClientRect();
     const inViewport = rect
-      ? rect.top < window.innerHeight && rect.bottom > 0
+      ? rect.top < window.innerHeight + 200 && rect.bottom > -200 // Increased viewport detection area
       : false;
 
-    if (alreadyRevealed || inViewport || prefersReducedMotion || isPopNavigation) {
+    // Skip animation if any of these conditions are met
+    const shouldSkipAnimation = alreadyRevealed || 
+                                 inViewport || 
+                                 prefersReducedMotion || 
+                                 isPopNavigation || 
+                                 isBackNav ||
+                                 (wasPageVisited && pageVisited);
+
+    if (shouldSkipAnimation) {
       if (ref.current) {
         ref.current.dataset.revealed = 'true';
       }
       setIsVisible(true);
       setSkipAnimation(true);
+      
+      // Clear back navigation flag after using it
+      if (isBackNav) {
+        setTimeout(() => {
+          sessionStorage.removeItem('is_back_navigation');
+        }, 100);
+      }
       return;
     }
 

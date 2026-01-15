@@ -516,4 +516,31 @@ body,
               color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Instant reveal when restoring scroll (no animation) */
+body.restoring-scroll * {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Smooth page transitions */
+.page-transition-enter {
+  opacity: 0;
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
 /* ========== END ENHANCED ANIMATIONS ========== */

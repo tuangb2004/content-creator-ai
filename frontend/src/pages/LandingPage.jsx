@@ -182,11 +182,28 @@ function LandingPage() {
       const root = document.documentElement;
       const prevRootBehavior = root.style.scrollBehavior;
 
+      // Disable smooth scroll and animations for instant restoration
       root.style.scrollBehavior = 'auto';
-      root.scrollTop = savedScroll;
-      window.scrollTo(0, savedScroll);
+      document.body.style.scrollBehavior = 'auto';
+      document.body.classList.add('restoring-scroll');
+      
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        root.scrollTop = savedScroll;
+        window.scrollTo(0, savedScroll);
+        
+        // Mark that we're restoring scroll (skip all animations)
+        sessionStorage.setItem('restoring_scroll', 'true');
+        
+        // Restore smooth scroll and remove class after a short delay
+        setTimeout(() => {
+          root.style.scrollBehavior = prevRootBehavior;
+          document.body.style.scrollBehavior = prevRootBehavior;
+          document.body.classList.remove('restoring-scroll');
+          sessionStorage.removeItem('restoring_scroll');
+        }, 150);
+      });
 
-      root.style.scrollBehavior = prevRootBehavior;
       shouldRestoreScrollRef.current = false;
     }
   }, [view.type]);
