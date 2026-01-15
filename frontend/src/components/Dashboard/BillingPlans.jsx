@@ -4,6 +4,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { createPaymentLink, ErrorTypes, isErrorType } from '../../services/firebaseFunctions';
 import toast from '../../utils/toast';
+import PaymentModal from './PaymentModal';
 
 const CheckIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
@@ -17,6 +18,7 @@ const BillingPlans = () => {
   const { userData, refreshUserData } = useAuth();
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [loading, setLoading] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   // Map plan names to amounts (VND)
   const PLAN_PRICES = {
@@ -26,9 +28,29 @@ const BillingPlans = () => {
   };
 
   const currentPlan = userData?.plan || 'free';
-  const cardDetails = {
+  const [cardDetails, setCardDetails] = useState({
     last4: userData?.cardLast4 || '4242',
     expiry: userData?.cardExpiry || '12/28'
+  });
+
+  // Update card details when userData changes
+  useEffect(() => {
+    if (userData?.cardLast4 || userData?.cardExpiry) {
+      setCardDetails({
+        last4: userData.cardLast4 || '4242',
+        expiry: userData.cardExpiry || '12/28'
+      });
+    }
+  }, [userData]);
+
+  const handlePaymentUpdate = (details) => {
+    const last4 = details.cardNumber ? details.cardNumber.replace(/\s/g, '').slice(-4) : cardDetails.last4;
+    setCardDetails({
+      last4: last4 || '4242',
+      expiry: details.expiry || cardDetails.expiry
+    });
+    toast.success(t?.billing?.paymentMethodUpdated || 'Payment method updated.');
+    // TODO: Call API to save payment method to backend
   };
 
   const handleUpgrade = async (planKey, planName) => {
@@ -361,6 +383,13 @@ const BillingPlans = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal 
+        isOpen={isPaymentModalOpen} 
+        onClose={() => setIsPaymentModalOpen(false)} 
+        onSave={handlePaymentUpdate}
+      />
     </div>
   );
 };
