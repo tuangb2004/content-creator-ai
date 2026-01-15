@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getProjects, deleteProject as deleteProjectFunction } from '../services/firebaseFunctions';
-import toast from 'react-hot-toast';
+import toast from '../utils/toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Trash2, Search, Filter } from 'lucide-react';
 import Sidebar from '../components/Shared/Sidebar';
@@ -13,11 +13,7 @@ function ProjectsPage() {
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const result = await getProjects();
       // Convert Firestore timestamp to Date and map id field
@@ -34,7 +30,11 @@ function ProjectsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const deleteProject = async (id) => {
     if (!confirm(t('projects.deleteConfirm'))) return;

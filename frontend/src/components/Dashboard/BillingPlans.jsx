@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { createPaymentLink, ErrorTypes, isErrorType } from '../../services/firebaseFunctions';
-import toast from 'react-hot-toast';
+import toast from '../../utils/toast';
 
 const CheckIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
@@ -13,7 +13,7 @@ const CheckIcon = () => (
 
 const BillingPlans = () => {
   const { theme } = useTheme();
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const { userData, refreshUserData } = useAuth();
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [loading, setLoading] = useState(false);
@@ -26,8 +26,10 @@ const BillingPlans = () => {
   };
 
   const currentPlan = userData?.plan || 'free';
-  const currentCredits = userData?.credits || 0;
-  const maxCredits = currentPlan === 'free' ? 10 : currentPlan === 'pro' ? 2000 : 10000;
+  const cardDetails = {
+    last4: userData?.cardLast4 || '4242',
+    expiry: userData?.cardExpiry || '12/28'
+  };
 
   const handleUpgrade = async (planKey, planName) => {
     const amount = PLAN_PRICES[planKey];
@@ -81,13 +83,14 @@ const BillingPlans = () => {
       toast.error(t?.billing?.paymentCancelled || 'Payment cancelled.');
       window.history.replaceState({}, '', '/dashboard');
     }
-  }, [refreshUserData]);
+  }, [refreshUserData, t]);
 
   const plans = [
     {
       id: 'starter',
       name: t?.billing?.starter?.name || 'Starter',
       desc: t?.billing?.starter?.desc || 'Essential tools for hobbyists.',
+      credits: t?.billing?.starter?.credits || '10',
       priceMonthly: 0,
       priceYearly: 0,
       features: [
@@ -103,6 +106,7 @@ const BillingPlans = () => {
       id: 'pro',
       name: t?.billing?.pro?.name || 'Pro Studio',
       desc: t?.billing?.pro?.desc || 'For professional creators.',
+      credits: t?.billing?.pro?.credits || '2,000',
       priceMonthly: 29,
       priceYearly: 24,
       features: [
@@ -119,6 +123,7 @@ const BillingPlans = () => {
       id: 'agency',
       name: t?.billing?.agency?.name || 'Agency',
       desc: t?.billing?.agency?.desc || 'Scale your content operations.',
+      credits: t?.billing?.agency?.credits || '10,000',
       priceMonthly: 99,
       priceYearly: 79,
       features: [
@@ -134,8 +139,7 @@ const BillingPlans = () => {
   ];
 
   return (
-    <div className={`max-w-6xl mx-auto space-y-16 pb-24 relative`}>
-
+    <div className="max-w-6xl mx-auto space-y-16 pb-24 relative">
       <div className="text-center max-w-2xl mx-auto">
         <h2 className={`text-4xl font-serif mb-4 transition-colors duration-300 ${
           theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
@@ -143,8 +147,7 @@ const BillingPlans = () => {
         <p className={`font-light text-lg transition-colors duration-300 ${
           theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
         }`}>{t?.billing?.subtitle || 'Choose the perfect plan for your creative workflow.'} <br/> {t?.billing?.subtitle2 || 'Upgrade or downgrade at any time.'}</p>
-        
-        {/* Toggle Switch */}
+
         <div className="flex justify-center items-center mt-8 gap-4">
           <span className={`text-xs uppercase tracking-widest font-bold transition-colors ${
             billingCycle === 'monthly' 
@@ -167,12 +170,11 @@ const BillingPlans = () => {
                 ? (theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]') 
                 : 'text-[#A8A29E]'
             }`}>{t?.billing?.yearly || 'Yearly'}</span>
-            <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full">{t?.billing?.save20 || 'Save 20%'}</span>
+            <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full">{t?.billing?.save20 || 'Save 20%'}</span>
           </div>
         </div>
       </div>
 
-      {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
         {plans.map((plan) => (
           <div 
@@ -189,9 +191,9 @@ const BillingPlans = () => {
           >
             {plan.highlight && (
               <div className={`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm ${
-                theme === 'dark' ? 'bg-[#F5F2EB] text-[#2C2A26]' : 'bg-[#F5F2EB] text-[#2C2A26]'
+                theme === 'dark' ? 'bg-amber-500 text-white' : 'bg-amber-500 text-white'
               }`}>
-                {t?.billing?.mostPopular || 'Most Popular'}
+                {t?.billing?.bestValue || 'Best Value'}
               </div>
             )}
 
@@ -213,21 +215,17 @@ const BillingPlans = () => {
                     : (theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]')
                 }`}>/ month</span>
               </div>
-              {billingCycle === 'yearly' && plan.priceMonthly > 0 && (
-                <p className={`text-xs mt-2 ${
-                  plan.highlight 
-                    ? 'text-[#A8A29E]' 
-                    : (theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]')
-                }`}>
-                  {t?.billing?.billedYearly || 'Billed'} ${plan.priceYearly * 12} {t?.billing?.perYear || '/year'}
-                </p>
-              )}
+              <div className={`mt-2 py-1 px-3 inline-block rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                plan.highlight ? 'bg-white/10' : (theme === 'dark' ? 'bg-black/20' : 'bg-[#F9F8F6]')
+              }`}>
+                {plan.credits} Monthly Credits
+              </div>
             </div>
 
             <ul className="space-y-4 mb-8 flex-1">
               {plan.features.map((feat, idx) => (
                 <li key={idx} className="flex items-center gap-3 text-sm font-light">
-                  <div className={plan.highlight ? 'text-[#F5F2EB]' : (theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]')}>
+                  <div className={plan.highlight ? 'text-amber-400' : 'text-emerald-500'}>
                     <CheckIcon />
                   </div>
                   {feat}
@@ -258,18 +256,78 @@ const BillingPlans = () => {
         ))}
       </div>
 
-      {/* Billing History Section */}
-      <div className="grid grid-cols-1 gap-8">
-        {/* History Table */}
-        <div className={`border rounded-sm overflow-hidden transition-colors duration-300 ${
+      <div className={`border p-8 rounded-sm transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-[#F9F8F6] border-[#D6D1C7]'
+      }`}>
+        <h3 className={`font-serif text-xl mb-8 transition-colors duration-300 ${
+          theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+        }`}>{t?.billing?.consumptionTitle || 'Consumption Logic (Transparent Billing)'}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Text Utility</span>
+            <p className={`text-sm font-bold ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>1 Cr / 500 chars</p>
+            <p className={`text-xs ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>Applies to Social, Outreach, and Polisher. Based on total input + output length.</p>
+          </div>
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600">Editorial Pro</span>
+            <p className={`text-sm font-bold ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>1 Cr / 250 chars</p>
+            <p className={`text-xs ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>Deep reasoning for long-form SEO articles. High intelligence mode.</p>
+          </div>
+          <div className={`space-y-2 border-dashed pl-8 ${theme === 'dark' ? 'border-[#433E38]' : 'border-[#D6D1C7]'} border-l`}>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-purple-600">Visual Studio</span>
+            <p className={`text-sm font-bold ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>6 Cr / generation</p>
+            <p className={`text-xs ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>Standard high-quality creative imagery for ads and banners.</p>
+          </div>
+          <div className="space-y-2 bg-[#2C2A26] text-white p-6 -m-6 rounded-sm shadow-xl">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">Nano Banana Pro</span>
+            <p className="text-lg font-bold">10 Cr / generation</p>
+            <p className="text-xs opacity-80 font-light">Gemini Pro image. Hyper-intelligence with complex prompt adherence.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className={`border p-8 rounded-sm transition-colors duration-300 ${
+          theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
+        }`}>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className={`font-serif text-lg ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>Payment Method</h3>
+            <button 
+              className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                theme === 'dark' ? 'text-[#A8A29E] hover:text-[#F5F2EB]' : 'text-[#A8A29E] hover:text-[#2C2A26]'
+              }`}
+            >
+              Edit
+            </button>
+          </div>
+          <div className={`flex items-center gap-4 p-4 border rounded-sm transition-colors duration-300 ${
+            theme === 'dark' ? 'bg-[#1C1B19] border-[#433E38]' : 'bg-[#F9F8F6] border-[#F5F2EB]'
+          }`}>
+            <div className={`w-10 h-7 rounded-sm flex items-center justify-center ${
+              theme === 'dark' ? 'bg-[#F5F2EB]' : 'bg-[#2C2A26]'
+            }`}>
+              <div className={`w-6 h-4 border rounded-[1px] relative opacity-50 ${
+                theme === 'dark' ? 'border-[#2C2A26]' : 'border-white'
+              }`}>
+                <div className={`absolute top-1 left-0 w-full h-[1px] ${
+                  theme === 'dark' ? 'bg-[#2C2A26]' : 'bg-white'
+                }`}></div>
+              </div>
+            </div>
+            <div>
+              <p className={`text-sm font-bold ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>•••• {cardDetails.last4}</p>
+              <p className={`text-xs ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>Exp {cardDetails.expiry}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className={`lg:col-span-2 border rounded-sm overflow-hidden transition-colors duration-300 ${
           theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
         }`}>
           <div className={`p-6 border-b transition-colors duration-300 ${
             theme === 'dark' ? 'border-[#433E38]' : 'border-[#F5F2EB]'
           }`}>
-            <h3 className={`font-serif text-lg transition-colors duration-300 ${
-              theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-            }`}>{t?.billing?.billingHistory || 'Billing History'}</h3>
+            <h3 className={`font-serif text-lg ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>{t?.billing?.billingHistory || 'Billing History'}</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -278,7 +336,7 @@ const BillingPlans = () => {
               }`}>
                 <tr>
                   <th className="p-4 font-bold">{t?.billing?.date || 'Date'}</th>
-                  <th className="p-4 font-bold">{t?.billing?.description || 'Description'}</th>
+                  <th className="p-4 font-bold">{t?.billing?.description || 'Plan'}</th>
                   <th className="p-4 font-bold">{t?.billing?.amount || 'Amount'}</th>
                   <th className="p-4 font-bold text-right">{t?.billing?.invoice || 'Invoice'}</th>
                 </tr>
@@ -286,18 +344,12 @@ const BillingPlans = () => {
               <tbody className={`divide-y transition-colors duration-300 ${
                 theme === 'dark' ? 'divide-[#433E38]' : 'divide-[#F5F2EB]'
               }`}>
-                <tr className={`transition-colors hover:bg-opacity-30 ${
-                  theme === 'dark' ? 'hover:bg-[#433E38]' : 'hover:bg-[#F9F9F9]'
-                }`}>
-                  <td className={`p-4 text-sm transition-colors duration-300 ${
-                    theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-                  }`}>--</td>
-                  <td className={`p-4 text-sm font-medium transition-colors duration-300 ${
-                    theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                  }`}>{t?.billing?.noBillingHistory || 'No billing history yet'}</td>
-                  <td className={`p-4 text-sm transition-colors duration-300 ${
-                    theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-                  }`}>--</td>
+                <tr className={`transition-colors ${theme === 'dark' ? 'hover:bg-[#433E38]/30' : 'hover:bg-[#F9F9F9]'}`}>
+                  <td className={`p-4 text-sm ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>--</td>
+                  <td className={`p-4 text-sm font-medium ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>
+                    {t?.billing?.noBillingHistory || 'No billing history yet'}
+                  </td>
+                  <td className={`p-4 text-sm ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>--</td>
                   <td className="p-4 text-right">
                     <button className={`text-xs font-medium transition-colors duration-300 hover:underline ${
                       theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'

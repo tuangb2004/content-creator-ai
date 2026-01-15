@@ -18,6 +18,9 @@ export interface GenerateContentRequest {
   contentType?: ContentType; // 'text' or 'image'
   provider?: TextProvider | ImageProvider; // 'groq', 'gemini', 'pollination'
   systemInstruction?: string; // Custom system instruction from tool definition (takes priority over template)
+  toolId?: string;
+  toolName?: string;
+  toolCategory?: string;
 }
 
 export interface GenerateContentResponse {

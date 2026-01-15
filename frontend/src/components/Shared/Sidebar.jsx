@@ -52,14 +52,15 @@ function Sidebar() {
   );
 }
 
-function SidebarItem({ icon: Icon, label, active, to }) {
+function SidebarItem({ icon, label, active, to }) {
+  const IconComponent = icon;
   const content = (
     <div
       className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition ${
         active ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
       }`}
     >
-      <Icon className="w-3.5 h-3.5" />
+      <IconComponent className="w-3.5 h-3.5" />
       {label}
     </div>
   );

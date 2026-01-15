@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   signInWithEmailAndPassword, 
@@ -11,7 +12,7 @@ import {
   sendEmailVerification,
   updateProfile
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
 const AuthContext = createContext(null);
@@ -20,112 +21,88 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null); // Firestore user data (credits, plan, etc.)
   const [loading, setLoading] = useState(true);
-  const lastFetchedUserIdRef = useRef(null);
+  const userDocUnsubRef = useRef(null);
+  const createDocTimeoutRef = useRef(null);
+  const createDocAttemptedRef = useRef(false);
 
   useEffect(() => {
     // Listen for auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (userDocUnsubRef.current) {
+        userDocUnsubRef.current();
+        userDocUnsubRef.current = null;
+      }
+      if (createDocTimeoutRef.current) {
+        clearTimeout(createDocTimeoutRef.current);
+        createDocTimeoutRef.current = null;
+      }
+      createDocAttemptedRef.current = false;
+
       if (firebaseUser) {
         setUser(firebaseUser);
         // Set loading false IMMEDIATELY - don't wait for userData
         setLoading(false);
-        
-        // Fetch user data in background (don't block UI)
-        const shouldFetch = lastFetchedUserIdRef.current !== firebaseUser.uid;
-        
-        if (shouldFetch) {
-          // Fetch in background - don't block
-          (async () => {
-            try {
-              const userDocRef = doc(db, 'users', firebaseUser.uid);
-              const userDocSnap = await getDoc(userDocRef);
-              
-              if (userDocSnap.exists()) {
-                setUserData(userDocSnap.data());
-                lastFetchedUserIdRef.current = firebaseUser.uid;
-              } else {
-                // User document doesn't exist yet (should be created by onUserCreate trigger)
-                // This is normal for newly created users - wait a bit and retry
-                console.log('User document not found yet, will retry in 2 seconds...');
-                setUserData(null);
-                lastFetchedUserIdRef.current = firebaseUser.uid;
-                
-                // Retry after 2 seconds (give Cloud Function time to create document)
-                setTimeout(async () => {
-                  try {
-                    const retryDocSnap = await getDoc(userDocRef);
-                    if (retryDocSnap.exists()) {
-                      setUserData(retryDocSnap.data());
-                      console.log('User document found on retry');
-                    } else {
-                      // If still not found, create user document directly (fallback)
-                      // This is safe because Firestore rules only allow users to create their own document
-                      console.warn('User document still not found after retry. Creating user document directly...');
-                      try {
-                        const userEmail = firebaseUser.email;
-                        if (!userEmail) {
-                          console.error('❌ Cannot create user document: user email is missing');
-                          return;
-                        }
-                        
-                        // Create user document with default values
-                        await setDoc(userDocRef, {
-                          email: userEmail,
-                          plan: 'free',
-                          credits: 10, // Free tier: 10 credits
-                          createdAt: serverTimestamp(),
-                          updatedAt: serverTimestamp()
-                        }, { merge: false }); // merge: false ensures we don't overwrite if it exists
-                        
-                        // Fetch the newly created document
-                        const newDocSnap = await getDoc(userDocRef);
-                        if (newDocSnap.exists()) {
-                          setUserData(newDocSnap.data());
-                          console.log('✅ User document created successfully');
-                        } else {
-                          console.error('❌ Failed to create user document');
-                        }
-                      } catch (createError) {
-                        console.error('❌ Failed to create user document:', createError);
-                        // If creation fails due to permission, it means document might exist now
-                        // Try to fetch one more time
-                        try {
-                          const finalDocSnap = await getDoc(userDocRef);
-                          if (finalDocSnap.exists()) {
-                            setUserData(finalDocSnap.data());
-                            console.log('✅ User document found after creation attempt');
-                          }
-                        } catch (fetchError) {
-                          console.error('❌ Error fetching user document:', fetchError);
-                        }
-                      }
-                    }
-                  } catch (retryError) {
-                    console.warn('Retry failed:', retryError.message);
-                  }
-                }, 2000);
-              }
-            } catch (error) {
-              // Don't log as error if it's just a permission issue or document doesn't exist
-              if (error.code === 'permission-denied' || error.code === 'unavailable') {
-                console.warn('Cannot fetch user data:', error.message);
-              } else {
-              console.error('Error fetching user data:', error);
-              }
-              setUserData(null);
-              lastFetchedUserIdRef.current = firebaseUser.uid;
+
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        userDocUnsubRef.current = onSnapshot(
+          userDocRef,
+          (snapshot) => {
+            if (snapshot.exists()) {
+              setUserData(snapshot.data());
+              return;
             }
-          })();
-        }
+
+            setUserData(null);
+            if (createDocAttemptedRef.current) return;
+            createDocAttemptedRef.current = true;
+
+            createDocTimeoutRef.current = setTimeout(async () => {
+              try {
+                const userEmail = firebaseUser.email;
+                if (!userEmail) {
+                  console.error('❌ Cannot create user document: user email is missing');
+                  return;
+                }
+
+                await setDoc(userDocRef, {
+                  email: userEmail,
+                  plan: 'free',
+                  credits: 10,
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                }, { merge: false });
+              } catch (createError) {
+                console.error('❌ Failed to create user document:', createError);
+              }
+            }, 2000);
+          },
+          (error) => {
+            if (error.code === 'permission-denied' || error.code === 'unavailable') {
+              console.warn('Cannot fetch user data:', error.message);
+            } else {
+              console.error('Error fetching user data:', error);
+            }
+            setUserData(null);
+          }
+        );
       } else {
         setUser(null);
         setUserData(null);
-        lastFetchedUserIdRef.current = null;
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      if (userDocUnsubRef.current) {
+        userDocUnsubRef.current();
+        userDocUnsubRef.current = null;
+      }
+      if (createDocTimeoutRef.current) {
+        clearTimeout(createDocTimeoutRef.current);
+        createDocTimeoutRef.current = null;
+      }
+      unsubscribe();
+    };
   }, []);
 
   /**
@@ -309,11 +286,9 @@ export const AuthProvider = ({ children }) => {
    */
   const resendVerificationEmail = async (emailOrUser = null) => {
     let targetUser = user;
-    let targetEmail = null;
     
     // If email string provided, try to sign in temporarily to send verification
     if (typeof emailOrUser === 'string') {
-      targetEmail = emailOrUser;
       // For unverified users, we can't sign them in
       // So we'll need to handle this differently - maybe through a backend function
       // For now, throw an error
@@ -349,18 +324,13 @@ export const AuthProvider = ({ children }) => {
     if (!user) return;
     
     try {
-      // Clear cache to force fresh fetch
-      lastFetchedUserIdRef.current = null;
-      
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
       
       if (userDocSnap.exists()) {
         setUserData(userDocSnap.data());
-        lastFetchedUserIdRef.current = user.uid;
       } else {
         setUserData(null);
-        lastFetchedUserIdRef.current = user.uid;
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);

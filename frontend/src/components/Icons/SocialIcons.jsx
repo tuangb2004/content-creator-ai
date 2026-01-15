@@ -1,4 +1,4 @@
-import React from 'react';
+/* eslint-disable react-refresh/only-export-components */
 
 // Facebook Icon
 export const FacebookIcon = ({ className = "w-4 h-4", ...props }) => (

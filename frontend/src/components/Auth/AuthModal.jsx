@@ -3,13 +3,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import toast from 'react-hot-toast';
+import toast from '../../utils/toast';
 import { checkPasswordStrength, validateEmail, passwordRequirements } from '../../utils/passwordValidation';
 import VerificationWaitingScreen from './VerificationWaitingScreen';
 
 const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSwitchType }) => {
   const { theme } = useTheme();
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [mode, setMode] = useState('options'); // 'options', 'email', or 'forgot_password'
   const [formData, setFormData] = useState({
     firstName: '',
@@ -29,7 +29,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
   const [verificationEmail, setVerificationEmail] = useState('');
   const [verificationSessionId, setVerificationSessionId] = useState(null);
   const [showWaitingScreen, setShowWaitingScreen] = useState(false);
-  const { login, register, loginWithGoogle, loginWithFacebook, resetPassword, resendVerificationEmail } = useAuth();
+  const { login, register, loginWithGoogle, loginWithFacebook, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   // Reset mode when modal opens/closes or type changes
@@ -107,14 +107,14 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
     setLoading(true);
     try {
       if (provider === 'google') {
-        const result = await loginWithGoogle();
+        await loginWithGoogle();
         // Social login users are automatically verified
         toast.success(t?.auth?.signedInGoogle || 'Signed in with Google successfully!');
         if (onLogin) onLogin();
         onClose();
         navigate('/dashboard');
       } else if (provider === 'facebook') {
-        const result = await loginWithFacebook();
+        await loginWithFacebook();
         // Social login users are automatically verified
         toast.success(t?.auth?.signedInFacebook || 'Signed in with Facebook successfully!');
         if (onLogin) onLogin();

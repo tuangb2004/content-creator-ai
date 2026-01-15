@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import AuthModal from '../components/Auth/AuthModal';
 import LandingNavbar from '../components/Landing/LandingNavbar';
@@ -28,6 +28,8 @@ function LandingPage() {
   const [projects, setProjects] = useState([]);
   const [isProjectDrawerOpen, setIsProjectDrawerOpen] = useState(false);
   const [pendingTool, setPendingTool] = useState(null); // Track tool user wanted to use before login
+  const homeScrollRef = useRef(0);
+  const shouldRestoreScrollRef = useRef(false);
 
   // Clear logout flag when landing page loads
   useEffect(() => {
@@ -35,6 +37,7 @@ function LandingPage() {
   }, []);
 
   // Auto-open auth modal if coming from /register or /login route
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const path = location.pathname;
     if (path === '/register') {
@@ -49,6 +52,7 @@ function LandingPage() {
       window.history.replaceState({}, '', '/');
     }
   }, [location.pathname]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const openAuthModal = (type) => {
     setAuthType(type === 'login' ? 'signin' : 'signup');
@@ -73,6 +77,10 @@ function LandingPage() {
   };
 
   const handleToolClick = (tool) => {
+    if (view.type === 'home') {
+      homeScrollRef.current = window.scrollY || 0;
+      shouldRestoreScrollRef.current = true;
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     if (user) {
@@ -99,11 +107,19 @@ function LandingPage() {
     
     // Check for special pages
     if (targetId === 'terms') {
+      if (view.type === 'home') {
+        homeScrollRef.current = window.scrollY || 0;
+        shouldRestoreScrollRef.current = true;
+      }
       setView({ type: 'terms' });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     if (targetId === 'privacy') {
+      if (view.type === 'home') {
+        homeScrollRef.current = window.scrollY || 0;
+        shouldRestoreScrollRef.current = true;
+      }
       setView({ type: 'privacy' });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -133,6 +149,10 @@ function LandingPage() {
 
   const handleLegalNav = (page) => {
     setShowAuthModal(false);
+    if (view.type === 'home') {
+      homeScrollRef.current = window.scrollY || 0;
+      shouldRestoreScrollRef.current = true;
+    }
     setView({ type: page });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -155,6 +175,21 @@ function LandingPage() {
     newItems.splice(index, 1);
     setProjects(newItems);
   };
+
+  useLayoutEffect(() => {
+    if (view.type === 'home' && shouldRestoreScrollRef.current) {
+      const savedScroll = homeScrollRef.current || 0;
+      const root = document.documentElement;
+      const prevRootBehavior = root.style.scrollBehavior;
+
+      root.style.scrollBehavior = 'auto';
+      root.scrollTop = savedScroll;
+      window.scrollTo(0, savedScroll);
+
+      root.style.scrollBehavior = prevRootBehavior;
+      shouldRestoreScrollRef.current = false;
+    }
+  }, [view.type]);
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
@@ -192,6 +227,8 @@ function LandingPage() {
             {/* Journal Section */}
             <Journal 
               onArticleClick={(article) => {
+              homeScrollRef.current = window.scrollY || 0;
+              shouldRestoreScrollRef.current = true;
                 setView({ type: 'journal', article });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }} 
@@ -206,15 +243,6 @@ function LandingPage() {
             tool={view.tool}
             onBack={() => {
               setView({ type: 'home' });
-              setTimeout(() => {
-                const element = document.getElementById('products');
-                if (element) {
-                  const headerOffset = 85;
-                  const elementPosition = element.getBoundingClientRect().top;
-                  const offsetPosition = elementPosition + window.scrollY - headerOffset;
-                  window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                }
-              }, 50);
             }}
             onUseTool={() => handleUseToolFromPreview(view.tool)}
           />
@@ -226,23 +254,14 @@ function LandingPage() {
             tool={view.tool} 
             onBack={() => {
               setView({ type: 'home' });
-              setTimeout(() => {
-                const element = document.getElementById('products');
-                if (element) {
-                  const headerOffset = 85;
-                  const elementPosition = element.getBoundingClientRect().top;
-                  const offsetPosition = elementPosition + window.scrollY - headerOffset;
-                  window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                }
-              }, 50);
             }}
-            onSave={(content) => {
+            onSave={async (content) => {
               if (!user) {
                 setAuthType('signup');
                 setShowAuthModal(true);
                 return;
               }
-              saveProject(content);
+              await saveProject(content);
             }}
           />
         )}

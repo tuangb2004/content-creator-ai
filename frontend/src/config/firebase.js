@@ -27,12 +27,12 @@ export const db = getFirestore(app);
 export const functions = getFunctions(app);
 export const storage = getStorage(app);
 
-// Auto-connect to emulators in development (when running on localhost)
-// This allows testing without needing to deploy or pay for Firebase
-const isDevelopment = import.meta.env.DEV || import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true';
+// Auto-connect to emulators only when explicitly enabled
+// Set VITE_USE_FIREBASE_EMULATOR=true to use local emulators
+const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true';
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-if (isDevelopment && isLocalhost) {
+if (useEmulator && isLocalhost) {
   // Auth emulator
   try {
     if (!auth._delegate._config?.emulator) {

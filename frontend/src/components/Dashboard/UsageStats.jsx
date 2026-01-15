@@ -3,14 +3,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const UsageStats = () => {
-  const { theme } = useTheme();
   const { userData } = useAuth();
   const stats = useUsageStats(30); // Last 30 days
 
   // NEVER show loading - always render UI with available data
   const creditsRemaining = userData?.credits || 0;
-  const plan = userData?.plan || 'free';
-  const maxCredits = plan === 'free' ? 10 : plan === 'pro' ? 2000 : 10000;
   const isLowCredits = creditsRemaining < 2;
   const successRate = stats.totalGenerated > 0 
     ? Math.round((stats.successfulGenerations / stats.totalGenerated) * 100) 

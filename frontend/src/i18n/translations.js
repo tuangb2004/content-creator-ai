@@ -167,11 +167,11 @@ export const translations = {
         desc_1: 'CreatorAI was built to solve the "Blank Page Problem." We believe that creativity is not a lightning strike, but a workflow. By combining Large Language Models with intuitive design, we give you a studio that never sleeps.',
         desc_2: 'Whether you are a solo marketer managing 5 channels or a founder building a personal brand, our tools adapt to your voice, scaling your output without diluting your message.',
         tech_badge: 'Technology',
-        tech_title: 'Powered by \n Gemini 2.5',
-        tech_desc: 'Under the hood, we utilize Google\'s most advanced multimodal models. This allows CreatorAI to "see" images, understand complex nuance in text, and reason through strategy better than previous generations of AI.',
+        tech_title: 'Powered by \n Multi-Model AI',
+        tech_desc: 'We route each request to the best model for the job—fast text generation with Groq, deep reasoning with Gemini, and high-quality image generation with Stability or Gemini.',
         work_badge: 'Workflow',
-        work_title: 'Export & Publish.',
-        work_desc: 'Your content shouldn\'t live in a silo. Save your projects, export to PDF/DOCX, or copy directly to your CMS. We focus on the "last mile" of creation—getting your work out there.',
+        work_title: 'Create, Save, Reuse.',
+        work_desc: 'Save every generation as a project, organize it by tool, and reuse it across campaigns. Copy instantly, export when needed, and keep your creative history in one place.',
       },
       // Journal
       journal: {
@@ -778,11 +778,11 @@ export const translations = {
         desc_1: 'CreatorAI được xây dựng để giải quyết vấn đề "Trang giấy trắng". Chúng tôi tin rằng sự sáng tạo không phải là tia chớp bất chợt, mà là một quy trình. Bằng cách kết hợp các Mô hình Ngôn ngữ Lớn với thiết kế trực quan, chúng tôi mang đến cho bạn một studio không bao giờ ngủ.',
         desc_2: 'Cho dù bạn là một nhà tiếp thị solo quản lý 5 kênh hay một nhà sáng lập xây dựng thương hiệu cá nhân, các công cụ của chúng tôi đều thích ứng với giọng văn của bạn, mở rộng quy mô đầu ra mà không làm loãng thông điệp.',
         tech_badge: 'Công nghệ',
-        tech_title: 'Vận hành bởi \n Gemini 2.5',
-        tech_desc: 'Bên dưới lớp vỏ, chúng tôi sử dụng các mô hình đa phương thức tiên tiến nhất của Google. Điều này cho phép CreatorAI "nhìn thấy" hình ảnh, hiểu các sắc thái phức tạp trong văn bản và suy luận chiến lược tốt hơn các thế hệ AI trước đây.',
+        tech_title: 'Vận hành bởi \n AI đa mô hình',
+        tech_desc: 'Chúng tôi tự động chọn mô hình phù hợp cho từng tác vụ—tạo văn bản nhanh với Groq, suy luận sâu với Gemini, và tạo ảnh chất lượng cao với Stability hoặc Gemini.',
         work_badge: 'Quy trình',
-        work_title: 'Xuất bản & Chia sẻ.',
-        work_desc: 'Nội dung của bạn không nên bị cô lập. Lưu các dự án của bạn, xuất sang PDF/DOCX hoặc sao chép trực tiếp vào CMS. Chúng tôi tập trung vào "dặm cuối cùng" của sự sáng tạo—đưa tác phẩm của bạn ra thế giới.',
+        work_title: 'Tạo, Lưu, Tái sử dụng.',
+        work_desc: 'Lưu mọi nội dung thành dự án, sắp xếp theo công cụ và tái sử dụng cho nhiều chiến dịch. Sao chép nhanh, xuất khi cần, và giữ lịch sử sáng tạo ở một nơi.',
       },
       // Journal
       journal: {

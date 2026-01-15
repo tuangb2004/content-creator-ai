@@ -23,7 +23,7 @@ api.interceptors.request.use(
         return config;
       }
     } catch (error) {
-      console.warn('Failed to get Firebase token, trying MongoDB JWT token...');
+      console.warn('Failed to get Firebase token, trying MongoDB JWT token...', error);
     }
 
     // Fallback to MongoDB JWT token (for backward compatibility)

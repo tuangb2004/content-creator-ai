@@ -81,8 +81,8 @@ const ToolPreview = ({ tool, onBack, onUseTool }) => {
                         </div>
                         <p className="text-sm text-[#5D5A53] dark:text-gray-300 transition-colors duration-300">
                             {language === 'vi' 
-                                ? 'Được hỗ trợ bởi Gemini 2.5 để mang lại tốc độ và độ chính xác vượt trội. Công cụ này thích ứng với phong cách độc đáo của bạn.'
-                                : 'Powered by Gemini 2.5 for superior speed and accuracy. This tool adapts to your unique style.'}
+                                ? 'Chạy trên hệ đa mô hình: Groq cho tốc độ, Gemini cho suy luận sâu, và Stability/Gemini cho hình ảnh chất lượng cao. Công cụ tự chọn mô hình phù hợp cho từng tác vụ.'
+                                : 'Powered by a multi-model stack: Groq for speed, Gemini for deeper reasoning, and Stability/Gemini for high-quality images. The tool automatically picks the best model for each task.'}
                         </p>
                     </div>
                 </Reveal>

@@ -1,11 +1,60 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import { randomUUID } from 'crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateAuth } from './utils/validation';
 
 // Lazy load firestore
 function getDb() {
   return admin.firestore();
+}
+
+function getBucket() {
+  return admin.storage().bucket();
+}
+
+const DATA_URL_REGEX = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/;
+
+function parseImageDataUrl(value: string): { buffer: Buffer; contentType: string } | null {
+  const match = value.match(DATA_URL_REGEX);
+  if (!match) return null;
+  const [, contentType, base64Data] = match;
+  try {
+    return {
+      buffer: Buffer.from(base64Data, 'base64'),
+      contentType
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function uploadImageDataUrl(
+  dataUrl: string,
+  pathPrefix: string
+): Promise<string> {
+  const parsed = parseImageDataUrl(dataUrl);
+  if (!parsed) {
+    return dataUrl;
+  }
+
+  const token = randomUUID();
+  const extension = parsed.contentType.split('/')[1] || 'png';
+  const filePath = `${pathPrefix}/${token}.${extension}`;
+  const bucket = getBucket();
+  const file = bucket.file(filePath);
+
+  await file.save(parsed.buffer, {
+    contentType: parsed.contentType,
+    resumable: false,
+    metadata: {
+      metadata: {
+        firebaseStorageDownloadTokens: token
+      }
+    }
+  });
+
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}?alt=media&token=${token}`;
 }
 
 export interface Project {
@@ -80,6 +129,78 @@ export const saveProject = functions.https.onCall(
 
     const { title, type, content, metadata } = data;
 
+    const normalizeString = (value?: string): string | undefined => {
+      if (typeof value !== 'string') return undefined;
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    };
+
+    const normalizeImageString = (value: unknown): string | undefined => {
+      if (typeof value === 'string') return normalizeString(value);
+      if (value && typeof value === 'object') {
+        const candidate = value as { url?: unknown; imageUrl?: unknown; dataUrl?: unknown };
+        return (
+          normalizeString(typeof candidate.url === 'string' ? candidate.url : undefined) ||
+          normalizeString(typeof candidate.imageUrl === 'string' ? candidate.imageUrl : undefined) ||
+          normalizeString(typeof candidate.dataUrl === 'string' ? candidate.dataUrl : undefined)
+        );
+      }
+      return undefined;
+    };
+
+    const normalizeStringArray = (value: unknown): string[] | undefined => {
+      if (!Array.isArray(value)) return undefined;
+      const flattened = value.reduce<unknown[]>((acc, item) => {
+        if (Array.isArray(item)) {
+          acc.push(...item);
+        } else {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
+      const normalized = flattened
+        .map((item) => normalizeImageString(item) || normalizeString(typeof item === 'string' ? item : undefined))
+        .filter((item): item is string => typeof item === 'string' && item.length > 0);
+      return normalized.length > 0 ? normalized : undefined;
+    };
+
+    const normalizeContent = () => {
+      if (!content) return undefined;
+
+      if (typeof content === 'string') {
+        const text = normalizeString(content);
+        return text ? { text } : undefined;
+      }
+
+      const rawContent = content as Record<string, unknown>;
+      const text = normalizeString(typeof rawContent.text === 'string' ? rawContent.text : undefined);
+      const imageUrl = normalizeImageString(rawContent.imageUrl);
+      const images = normalizeStringArray(rawContent.images);
+
+      const normalized: SaveProjectRequest['content'] = {};
+      if (text) normalized.text = text;
+      if (imageUrl) normalized.imageUrl = imageUrl;
+      if (images && images.length > 0) normalized.images = images;
+
+      return Object.keys(normalized).length > 0 ? normalized : undefined;
+    };
+
+    const normalizeMetadata = () => {
+      if (!metadata) return undefined;
+      const normalized: SaveProjectRequest['metadata'] = {};
+      const prompt = normalizeString(metadata.prompt);
+      const template = normalizeString(metadata.template);
+      const tone = normalizeString(metadata.tone);
+      const length = normalizeString(metadata.length);
+      const style = normalizeString(metadata.style);
+      if (prompt) normalized.prompt = prompt;
+      if (template) normalized.template = template;
+      if (tone) normalized.tone = tone;
+      if (length) normalized.length = length;
+      if (style) normalized.style = style;
+      return Object.keys(normalized).length > 0 ? normalized : undefined;
+    };
+
     const db = getDb();
     const projectsRef = db.collection('projects');
 
@@ -91,14 +212,51 @@ export const saveProject = functions.https.onCall(
       userId,
       title,
       type,
-      content: content || {},
-      metadata: metadata || {},
+      content: {},
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     };
 
+    const normalizedContent = normalizeContent();
+    if (normalizedContent) {
+      projectData.content = normalizedContent;
+    }
+
+    const normalizedMetadata = normalizeMetadata();
+    if (normalizedMetadata) {
+      projectData.metadata = normalizedMetadata;
+    }
+
     try {
-      const docRef = await projectsRef.add(projectData);
+      const docRef = projectsRef.doc();
+
+      if (projectData.type === 'image' && projectData.content) {
+        const contentToUpdate: SaveProjectRequest['content'] = { ...projectData.content };
+        const pathPrefix = `projects/${userId}/${docRef.id}`;
+
+        if (contentToUpdate.imageUrl) {
+          contentToUpdate.imageUrl = await uploadImageDataUrl(
+            contentToUpdate.imageUrl,
+            pathPrefix
+          );
+        }
+
+        if (contentToUpdate.images && contentToUpdate.images.length > 0) {
+          const uploadedImages = await Promise.all(
+            contentToUpdate.images.map((imageUrl) =>
+              uploadImageDataUrl(imageUrl, pathPrefix)
+            )
+          );
+          contentToUpdate.images = uploadedImages;
+          if (!contentToUpdate.imageUrl && uploadedImages[0]) {
+            contentToUpdate.imageUrl = uploadedImages[0];
+          }
+        }
+
+        projectData.content = contentToUpdate;
+      }
+
+      await docRef.set(projectData);
       
       // Get the created document
       const docSnap = await docRef.get();

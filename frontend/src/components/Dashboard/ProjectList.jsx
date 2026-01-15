@@ -1,10 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-const ProjectItem = ({ item, index, onRemove }) => {
+const ProjectItem = ({ item, onRemove, isHighlighted }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const itemRef = useRef(null);
+
+  useEffect(() => {
+    if (isHighlighted && itemRef.current) {
+      itemRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isHighlighted]);
 
   return (
-    <div className="bg-white border border-[#D6D1C7] rounded-sm overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col h-full">
+    <div
+      ref={itemRef}
+      className={`bg-white border border-[#D6D1C7] rounded-sm overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col h-full ${
+        isHighlighted ? 'ring-2 ring-[#2C2A26] ring-offset-2 ring-offset-[#F5F2EB]' : ''
+      }`}
+    >
         {/* Header */}
         <div className="p-4 border-b border-[#F5F2EB] flex justify-between items-center bg-[#F9F8F6]">
             <div className="flex items-center gap-2">
@@ -84,7 +96,7 @@ const ProjectItem = ({ item, index, onRemove }) => {
   );
 };
 
-const ProjectList = ({ items, onRemoveItem }) => {
+const ProjectList = ({ items, onRemoveItem, highlightedProjectId }) => {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-[#D6D1C7] rounded-sm bg-[#F9F8F6]">
@@ -102,7 +114,12 @@ const ProjectList = ({ items, onRemoveItem }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
       {items.map((item, idx) => (
-        <ProjectItem key={`${item.id}-${idx}`} item={item} index={idx} onRemove={onRemoveItem} />
+        <ProjectItem
+          key={`${item.id}-${idx}`}
+          item={item}
+          onRemove={onRemoveItem}
+          isHighlighted={item.id === highlightedProjectId}
+        />
       ))}
     </div>
   );

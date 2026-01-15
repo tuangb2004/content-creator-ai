@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +11,7 @@ export const useUsageStats = (days = 30) => {
   const { user } = useAuth();
   
   // Cache helper functions
-  const getCache = (userId) => {
+  const getCache = useCallback((userId) => {
     if (!userId) return null;
     try {
       const cached = sessionStorage.getItem(`usageStats_${userId}_${days}`);
@@ -23,33 +23,35 @@ export const useUsageStats = (days = 30) => {
           return parsed.data;
         }
       }
-    } catch (e) {
+    } catch (error) {
+      void error;
       // Ignore cache errors
     }
     return null;
-  };
+  }, [days]);
 
-  const setCache = (userId, data) => {
+  const setCache = useCallback((userId, data) => {
     if (!userId) return;
     try {
       sessionStorage.setItem(`usageStats_${userId}_${days}`, JSON.stringify({
         data,
         timestamp: Date.now()
       }));
-    } catch (e) {
+    } catch (error) {
+      void error;
       // Ignore cache errors
     }
-  };
+  }, [days]);
 
   // Initialize state with cached data if available - NEVER start with loading
-  const defaultStats = {
+  const defaultStats = useMemo(() => ({
     totalGenerated: 0,
     creditsUsed: 0,
     successfulGenerations: 0,
     failedGenerations: 0,
     byAction: {},
     loading: false // Always false - never block UI
-  };
+  }), []);
 
   const [stats, setStats] = useState(() => {
     // Check cache on initial mount
@@ -159,7 +161,7 @@ export const useUsageStats = (days = 30) => {
 
     // Always fetch in background, but don't block UI
     fetchStats();
-  }, [user, days]);
+  }, [user, days, defaultStats, getCache, setCache]);
 
   return stats;
 };

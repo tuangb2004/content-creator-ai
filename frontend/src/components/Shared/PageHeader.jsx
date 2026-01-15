@@ -3,7 +3,7 @@ import { Bell, Folder } from 'lucide-react';
 import ProfileDropdown from './ProfileDropdown';
 import LanguageDropdown from './LanguageDropdown';
 
-function PageHeader({ title, credits = 630 }) {
+function PageHeader({ title }) {
   return (
     <header className="px-6 py-3 flex items-center justify-between sticky top-0 bg-white z-10">
       <div>

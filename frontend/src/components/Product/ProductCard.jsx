@@ -9,7 +9,7 @@ const ProductCard = ({ product, onClick }) => {
 
   return (
     <div className="group flex flex-col gap-6 cursor-pointer h-full" onClick={() => onClick(product)}>
-      <div className="relative w-full aspect-[4/3] overflow-hidden bg-[#EBE7DE] dark:bg-gray-700 transition-colors duration-300">
+      <div className="relative w-full aspect-[4/3] overflow-hidden bg-[#EBE7DE] dark:bg-[#2C2A26] transition-colors duration-500">
         <img 
           src={product.imageUrl} 
           alt={name} 
@@ -26,10 +26,10 @@ const ProductCard = ({ product, onClick }) => {
       </div>
       
       <div className="text-center">
-        <h3 className="text-2xl font-serif font-medium text-[#2C2A26] dark:text-gray-100 mb-1 group-hover:opacity-70 transition-all duration-300">{name}</h3>
-        <p className="text-sm font-light text-[#5D5A53] dark:text-gray-400 mb-3 tracking-wide transition-colors duration-300">{tagline}</p>
+        <h3 className="text-2xl font-serif font-medium text-[#2C2A26] dark:text-[#F5F2EB] mb-1 group-hover:opacity-70 transition-all duration-300">{name}</h3>
+        <p className="text-sm font-light text-[#5D5A53] dark:text-[#A8A29E] mb-3 tracking-wide transition-colors duration-300">{tagline}</p>
         <div className="flex justify-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-[#A8A29E] dark:text-gray-500 border border-[#D6D1C7] dark:border-gray-600 px-2 py-1 rounded-sm transition-colors duration-300">{product.category}</span>
+            <span className="text-[10px] uppercase tracking-wider text-[#A8A29E] border border-[#D6D1C7] dark:border-[#433E38] dark:text-[#A8A29E] px-2 py-1 rounded-sm transition-colors duration-300">{product.category}</span>
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 const PrivacyPolicy = ({ onBack }) => {
   const { theme } = useTheme();
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
 
   return (
     <div className={`min-h-screen pt-24 pb-20 animate-fade-in-up transition-colors duration-500 ${

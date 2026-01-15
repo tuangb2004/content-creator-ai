@@ -16,11 +16,31 @@ import {
 import { chat } from './chat';
 import { initializeUserIfNeeded } from './initializeUser';
 
+const resolveStorageBucket = (): string | undefined => {
+  const explicitBucket = process.env.FIREBASE_STORAGE_BUCKET;
+  if (explicitBucket) return explicitBucket;
+
+  const firebaseConfigRaw = process.env.FIREBASE_CONFIG;
+  if (firebaseConfigRaw) {
+    try {
+      const parsed = JSON.parse(firebaseConfigRaw);
+      if (parsed?.storageBucket) return parsed.storageBucket;
+      if (parsed?.projectId) return `${parsed.projectId}.appspot.com`;
+    } catch {
+      // ignore malformed FIREBASE_CONFIG
+    }
+  }
+
+  const projectId = process.env.GCLOUD_PROJECT;
+  return projectId ? `${projectId}.appspot.com` : undefined;
+};
+
 // Initialize Firebase Admin
 // In emulator, Admin SDK automatically connects to emulators via environment variables
 // FIREBASE_AUTH_EMULATOR_HOST is set automatically by firebase-tools
 if (!admin.apps.length) {
-admin.initializeApp();
+  const storageBucket = resolveStorageBucket();
+  admin.initializeApp(storageBucket ? { storageBucket } : undefined);
 }
 
 // Export Cloud Functions

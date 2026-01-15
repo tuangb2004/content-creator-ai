@@ -43,24 +43,24 @@ const ProductGrid = ({ onProductClick, searchQuery = '', compact = false }) => {
   }, [activeCategory, searchQuery, language]);
 
   return (
-    <section id="products" className={`${compact ? 'pt-2 pb-12 px-0' : 'py-32 px-6 md:px-12'} bg-[#F5F2EB] dark:bg-gray-900 transition-colors duration-300`}>
+    <section id="products" className={`${compact ? 'pt-2 pb-12 px-0' : 'py-32 px-6 md:px-12'} bg-[#F5F2EB] dark:bg-[#1C1B19] transition-colors duration-500`}>
       <div className="max-w-[1800px] mx-auto">
         
         <div className={`flex flex-col items-center text-center ${compact ? 'mb-12' : 'mb-24'} space-y-8`}>
           <Reveal>
-            <h2 className={`${compact ? 'text-3xl md:text-5xl' : 'text-4xl md:text-6xl'} font-serif text-[#2C2A26] dark:text-gray-100 transition-colors duration-300`}>{t?.tools?.title || 'Your Studio'}</h2>
+            <h2 className={`${compact ? 'text-3xl md:text-5xl' : 'text-4xl md:text-6xl'} font-serif text-[#2C2A26] dark:text-[#F5F2EB]`}>{t?.tools?.title || 'Your Studio'}</h2>
           </Reveal>
           
           <Reveal delay={200}>
-            <div className="flex flex-wrap justify-center gap-8 pt-4 border-t border-[#D6D1C7]/50 w-full max-w-2xl mx-auto">
+            <div className="flex flex-wrap justify-center gap-8 pt-4 border-t border-[#D6D1C7]/50 dark:border-[#433E38]/50 w-full max-w-2xl mx-auto">
                 {categories.map(cat => (
                 <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
                     className={`text-sm uppercase tracking-widest pb-1 border-b transition-all duration-300 ${
                     activeCategory === cat.id 
-                        ? 'border-[#2C2A26] dark:border-gray-100 text-[#2C2A26] dark:text-gray-100' 
-                        : 'border-transparent text-[#A8A29E] dark:text-gray-500 hover:text-[#2C2A26] dark:hover:text-gray-300'
+                        ? 'border-[#2C2A26] text-[#2C2A26] dark:border-[#F5F2EB] dark:text-[#F5F2EB]' 
+                        : 'border-transparent text-[#A8A29E] hover:text-[#2C2A26] dark:text-[#5D5A53] dark:hover:text-[#A8A29E]'
                     }`}
                 >
                     {cat.label}

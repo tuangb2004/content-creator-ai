@@ -5,7 +5,7 @@ import { auth, functions } from '../../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import toast from 'react-hot-toast';
+import toast from '../../utils/toast';
 
 /**
  * Component to poll session status and auto-login when verified

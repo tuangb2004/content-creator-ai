@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +11,7 @@ export const useActivityLogs = (logLimit = 50) => {
   const { user } = useAuth();
   
   // Cache helper functions
-  const getCache = (userId) => {
+  const getCache = useCallback((userId) => {
     if (!userId) return null;
     try {
       const cached = sessionStorage.getItem(`activityLogs_${userId}_${logLimit}`);
@@ -28,23 +28,25 @@ export const useActivityLogs = (logLimit = 50) => {
           return data;
         }
       }
-    } catch (e) {
+    } catch (error) {
+      void error;
       // Ignore cache errors
     }
     return null;
-  };
+  }, [logLimit]);
 
-  const setCache = (userId, data) => {
+  const setCache = useCallback((userId, data) => {
     if (!userId) return;
     try {
       sessionStorage.setItem(`activityLogs_${userId}_${logLimit}`, JSON.stringify({
         data,
         timestamp: Date.now()
       }));
-    } catch (e) {
+    } catch (error) {
+      void error;
       // Ignore cache errors
     }
-  };
+  }, [logLimit]);
 
   // Initialize with cached data - NEVER start with loading
   const [logs, setLogs] = useState(() => {
@@ -54,11 +56,12 @@ export const useActivityLogs = (logLimit = 50) => {
     }
     return [];
   });
-  const [loading, setLoading] = useState(false); // Always false - never block UI
+  const loading = false; // Always false - never block UI
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLogs([]);
       return;
     }
@@ -82,12 +85,32 @@ export const useActivityLogs = (logLimit = 50) => {
           limit(logLimit)
         );
 
-        const querySnapshot = await getDocs(q);
+        let querySnapshot;
+        try {
+          querySnapshot = await getDocs(q);
+        } catch (indexError) {
+          const message = `${indexError?.message || ''}`.toLowerCase();
+          if (message.includes('requires an index') || message.includes('failed-precondition')) {
+            const fallbackQuery = query(
+              logsRef,
+              where('userId', '==', user.uid),
+              limit(logLimit)
+            );
+            querySnapshot = await getDocs(fallbackQuery);
+          } else {
+            throw indexError;
+          }
+        }
+
         const logsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
           timestamp: doc.data().timestamp?.toDate() || new Date()
-        }));
+        })).sort((a, b) => {
+          const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+          const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+          return bTime - aTime;
+        });
 
         // Update cache
         setCache(user.uid, logsData);
@@ -102,7 +125,7 @@ export const useActivityLogs = (logLimit = 50) => {
 
     // Always fetch in background, don't block UI
     fetchLogs();
-  }, [user, logLimit]);
+  }, [user, logLimit, getCache, setCache]);
 
   const refetch = () => {
     if (user) {
@@ -116,12 +139,31 @@ export const useActivityLogs = (logLimit = 50) => {
             orderBy('timestamp', 'desc'),
             limit(logLimit)
           );
-          const querySnapshot = await getDocs(q);
+          let querySnapshot;
+          try {
+            querySnapshot = await getDocs(q);
+          } catch (indexError) {
+            const message = `${indexError?.message || ''}`.toLowerCase();
+            if (message.includes('requires an index') || message.includes('failed-precondition')) {
+              const fallbackQuery = query(
+                logsRef,
+                where('userId', '==', user.uid),
+                limit(logLimit)
+              );
+              querySnapshot = await getDocs(fallbackQuery);
+            } else {
+              throw indexError;
+            }
+          }
           const logsData = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
             timestamp: doc.data().timestamp?.toDate() || new Date()
-          }));
+          })).sort((a, b) => {
+            const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+            const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+            return bTime - aTime;
+          });
           
           // Update cache
           setCache(user.uid, logsData);

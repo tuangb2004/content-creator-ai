@@ -1,10 +1,1 @@
-# Ignore files không cần thiết khi deploy
-functions/
-backend/
-firebase.json
-firestore.rules
-firestore.indexes.json
-*.log
-node_modules/
-.git/
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
 import { translations } from '../i18n/translations';
 
@@ -12,22 +13,6 @@ export const LanguageProvider = ({ children }) => {
     localStorage.setItem('language', language);
     document.documentElement.lang = language;
   }, [language]);
-
-  // Support both function and object access
-  const t = (key) => {
-    if (typeof key === 'string') {
-      const keys = key.split('.');
-      let value = translations[language];
-      
-      for (const k of keys) {
-        value = value?.[k];
-      }
-      
-      return value || key;
-    }
-    // Return full translations object if no key provided
-    return translations[language];
-  };
 
   const changeLanguage = (lang) => {
     setLanguage(lang);

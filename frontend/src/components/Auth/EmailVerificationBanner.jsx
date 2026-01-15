@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import toast from 'react-hot-toast';
+import toast from '../../utils/toast';
 
 const EmailVerificationBanner = () => {
   const { user, resendVerificationEmail } = useAuth();

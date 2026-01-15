@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import DashboardLayout from '../components/Dashboard/DashboardLayout';
 import DashboardHome from '../components/Dashboard/DashboardHome';
-import ProductGrid from '../components/Product/ProductGrid';
+import ActivityLogs from '../components/Dashboard/ActivityLogs';
 import ProductDetail from '../components/Product/ProductDetail';
 import ProjectList from '../components/Dashboard/ProjectList';
 import ProfileSettings from '../components/Dashboard/ProfileSettings';
 import BillingPlans from '../components/Dashboard/BillingPlans';
-import ActivityLogs from '../components/Dashboard/ActivityLogs';
+import InspirationGallery from '../components/Dashboard/InspirationGallery';
 import CartDrawer from '../components/Cart/CartDrawer';
 import Assistant from '../components/Assistant/Assistant';
 import EmailVerificationBanner from '../components/Auth/EmailVerificationBanner';
@@ -40,8 +40,9 @@ function Home() {
           }
         }
         
+        const normalizedTab = parsed.dashboardTab === 'activity' ? 'dashboard' : parsed.dashboardTab;
         return {
-          dashboardTab: parsed.dashboardTab || 'dashboard',
+          dashboardTab: normalizedTab || 'dashboard',
           view: restoredView,
           scrollPosition: parsed.scrollPosition || 0
         };
@@ -57,8 +58,16 @@ function Home() {
   const [dashboardTab, setDashboardTab] = useState(savedState?.dashboardTab || 'dashboard');
   const [view, setView] = useState(savedState?.view || { type: 'home' });
   const [projects, setProjects] = useState([]);
+  const [highlightedProjectId, setHighlightedProjectId] = useState(null);
   const [isProjectDrawerOpen, setIsProjectDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const filteredTools = TOOLS.filter((tool) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const name = (tool.name || '').toLowerCase();
+    const nameVi = (tool.name_vi || '').toLowerCase();
+    return name.includes(query) || nameVi.includes(query);
+  });
   
   // Save view state to localStorage
   useEffect(() => {
@@ -96,10 +105,10 @@ function Home() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [savedState]);
 
   // Load projects from Firestore via Firebase Functions
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       const result = await getProjects();
       const projectsData = result.projects || [];
@@ -126,13 +135,14 @@ function Home() {
       // Set empty array on error to prevent crashes
       setProjects([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadProjects();
     }
-  }, [user]);
+  }, [user, loadProjects]);
 
   // Handle tool query parameter from URL (e.g., ?tool=t1)
   useEffect(() => {
@@ -142,6 +152,7 @@ function Home() {
     if (toolId) {
       const tool = TOOLS.find(t => t.id === toolId);
       if (tool) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setView({ type: 'workspace', tool });
         setDashboardTab('tools');
         // Clear the query parameter from URL
@@ -162,17 +173,43 @@ function Home() {
 
   const saveProject = async (content) => {
     try {
+      const normalizeResultContent = (value) => {
+        if (typeof value === 'string') return value.trim();
+        if (Array.isArray(value)) {
+          const first = value.find((item) => typeof item === 'string' && item.trim().length > 0);
+          return typeof first === 'string' ? first.trim() : '';
+        }
+        if (value && typeof value === 'object') {
+          const candidate = value;
+          if (typeof candidate.url === 'string') return candidate.url.trim();
+          if (typeof candidate.imageUrl === 'string') return candidate.imageUrl.trim();
+          if (typeof candidate.dataUrl === 'string') return candidate.dataUrl.trim();
+        }
+        return '';
+      };
+
+      const resultContent = normalizeResultContent(content?.result);
+      if (content?.type === 'image') {
+        if (!resultContent) {
+          throw new Error('Image content is empty.');
+        }
+      } else if (!resultContent) {
+        throw new Error('Text content is empty.');
+      }
+
+      const projectType = content.type === 'image' ? 'image' :
+        (content.toolName?.toLowerCase().includes('blog') ? 'blog' :
+        content.toolName?.toLowerCase().includes('caption') ? 'caption' :
+        content.toolName?.toLowerCase().includes('email') ? 'email' :
+        content.toolName?.toLowerCase().includes('product') ? 'product' : 'blog');
+
       // Map content to Firestore project format
       const projectData = {
         title: content.prompt || content.toolName || 'Untitled Project',
-        type: content.type === 'image' ? 'image' : 
-              (content.toolName?.toLowerCase().includes('blog') ? 'blog' :
-              content.toolName?.toLowerCase().includes('caption') ? 'caption' :
-              content.toolName?.toLowerCase().includes('email') ? 'email' :
-              content.toolName?.toLowerCase().includes('product') ? 'product' : 'blog'),
-        content: content.type === 'image' 
-          ? { imageUrl: content.result, images: [content.result] }
-          : { text: content.result },
+        type: projectType,
+        content: projectType === 'image'
+          ? { imageUrl: resultContent, images: [resultContent] }
+          : { text: resultContent },
         metadata: {
           prompt: content.prompt || ''
         }
@@ -180,16 +217,15 @@ function Home() {
 
       // Save to Firestore via Firebase Function
       await saveProjectFunction(projectData);
-      
+
       // Reload projects to get the saved project with proper ID
       await loadProjects();
-      
+
       setIsProjectDrawerOpen(true);
+      return true;
     } catch (error) {
       console.error('Failed to save project:', error);
-      // Still add to local state for immediate feedback
-      setProjects([content, ...projects]);
-      setIsProjectDrawerOpen(true);
+      throw error;
     }
   };
 
@@ -202,12 +238,37 @@ function Home() {
     } catch (error) {
       console.error('Failed to delete project:', error);
       // If delete fails, still remove from local state for items that were only in memory
-      setProjects(projects.filter(p => p.id !== id));
+      setProjects(prev => prev.filter(p => p.id !== id));
     }
   };
 
-  const handleCartClick = () => {
-    setIsProjectDrawerOpen(true);
+  const openProjectFromActivity = (project) => {
+    if (!project?.id) return;
+    setHighlightedProjectId(project.id);
+    setDashboardTab('projects');
+    setView({ type: 'home' });
+  };
+
+  const handleTryToolFromInspiration = (tool, initialPrompt, initialStyle) => {
+    if (!tool?.id) return;
+    const storageKey = `tool_${tool.id}_draft`;
+    const stateToSave = {
+      prompt: initialPrompt || '',
+      style: initialStyle || 'Professional',
+      result: { type: tool.inputType === 'image_prompt' ? 'image' : 'text', content: '' },
+      history: [initialPrompt || ''],
+      historyIndex: 0,
+      timestamp: Date.now()
+    };
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+    } catch (error) {
+      console.warn('Failed to store inspiration preset:', error);
+    }
+
+    setView({ type: 'workspace', tool });
+    setDashboardTab('tools');
   };
 
   return (
@@ -215,10 +276,10 @@ function Home() {
       activeTab={dashboardTab} 
       onTabChange={(tab) => {
         setDashboardTab(tab);
-        if (view.type === 'workspace' && (tab === 'dashboard' || tab === 'tools' || tab === 'projects' || tab === 'activity')) {
+        if (view.type === 'workspace' && (tab === 'dashboard' || tab === 'tools' || tab === 'projects' || tab === 'inspiration')) {
           setView({ type: 'home' });
         }
-        if (tab === 'settings' || tab === 'billing' || tab === 'activity') {
+        if (tab === 'settings' || tab === 'billing') {
           setView({ type: 'home' });
         }
       }}
@@ -235,24 +296,86 @@ function Home() {
       )}
 
       {/* If user is NOT in workspace, show dashboard tabs */}
-      {view.type === 'home' && (
+      {(view.type === 'home' || view.type === 'activity') && (
         <>
-          {dashboardTab === 'dashboard' && (
+          {dashboardTab === 'dashboard' && view.type === 'home' && (
             <DashboardHome 
               onToolSelect={(t) => setView({ type: 'workspace', tool: t })} 
               recentProjects={projects.slice(0, 5)} 
+              onViewAll={() => setDashboardTab('tools')}
+              onViewAuditLog={() => setView({ type: 'activity' })}
+              onViewProjects={() => setDashboardTab('projects')}
+              onOpenProject={openProjectFromActivity}
             />
           )}
+          {dashboardTab === 'dashboard' && view.type === 'activity' && (
+            <ActivityLogs onBack={() => setView({ type: 'home' })} />
+          )}
           {(dashboardTab === 'tools' || dashboardTab === 'inspiration') && (
-            <div>
-              <h2 className={`text-4xl font-serif mb-8 transition-colors duration-300 ${
-                theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-              }`}>All Tools</h2>
-              <ProductGrid 
-                onProductClick={(t) => setView({ type: 'workspace', tool: t })} 
-                searchQuery={searchQuery}
-                compact={true}
-              />
+            <div className="py-12">
+              {dashboardTab === 'tools' ? (
+                <>
+                  <div className="flex justify-between items-end mb-8">
+                    <div>
+                      <h2 className={`text-3xl font-serif mb-2 transition-colors duration-300 ${
+                        theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+                      }`}>Tools Directory</h2>
+                      <p className={`${theme === 'dark' ? 'text-[#5D5A53]' : 'text-[#A8A29E]'}`}>
+                        Access your creative utility suite.
+                      </p>
+                    </div>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        placeholder="Search tools..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className={`border px-4 py-2 text-sm outline-none w-64 rounded-sm transition-colors ${
+                          theme === 'dark'
+                            ? 'bg-[#1C1B19] border-[#433E38] text-[#F5F2EB] placeholder-[#5D5A53] focus:border-[#F5F2EB]'
+                            : 'bg-white border-[#D6D1C7] text-[#2C2A26] placeholder-[#A8A29E] focus:border-[#2C2A26]'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {filteredTools.map((tool) => {
+                      const displayName = tool.name || '';
+                      return (
+                        <div 
+                          key={tool.id} 
+                          onClick={() => setView({ type: 'workspace', tool })}
+                          className={`flex items-center gap-4 p-4 border transition-all cursor-pointer group ${
+                            theme === 'dark'
+                              ? 'bg-[#2C2A26] border-[#433E38] hover:border-[#F5F2EB]'
+                              : 'bg-white border-[#D6D1C7] hover:border-[#2C2A26]'
+                          }`}
+                        >
+                          <div className={`w-12 h-12 flex-shrink-0 overflow-hidden ${
+                            theme === 'dark' ? 'bg-[#1C1B19]' : 'bg-[#F5F2EB]'
+                          }`}>
+                            <img src={tool.imageUrl} alt="" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`text-sm font-bold truncate ${
+                              theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+                            }`}>{displayName}</h4>
+                            <p className="text-[10px] text-[#A8A29E] uppercase tracking-widest">{tool.category}</p>
+                          </div>
+                          <button className="p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <InspirationGallery onTryTool={handleTryToolFromInspiration} />
+              )}
             </div>
           )}
           {dashboardTab === 'projects' && (
@@ -271,10 +394,13 @@ function Home() {
                 </span>
               </div>
               
-              <ProjectList items={projects} onRemoveItem={removeProject} />
+              <ProjectList
+                items={projects}
+                onRemoveItem={removeProject}
+                highlightedProjectId={highlightedProjectId}
+              />
             </div>
           )}
-          {dashboardTab === 'activity' && <ActivityLogs />}
           {dashboardTab === 'settings' && <ProfileSettings />}
           {dashboardTab === 'billing' && <BillingPlans />}
         </>

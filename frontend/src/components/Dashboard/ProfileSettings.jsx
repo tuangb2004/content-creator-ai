@@ -3,13 +3,13 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { updateProfile } from 'firebase/auth';
-import { doc, updateDoc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { auth, db, storage } from '../../config/firebase';
-import toast from 'react-hot-toast';
+import toast from '../../utils/toast';
 
 const ProfileSettings = () => {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const { user, userData, refreshUserData } = useAuth();
   const { theme } = useTheme();
   const fileInputRef = useRef(null);
@@ -52,7 +52,7 @@ const ProfileSettings = () => {
         email: user.email || prev.email || '',
       }));
     }
-  }, [user]);
+  }, [user, formData.email]);
 
   // Load user data on mount
   useEffect(() => {
