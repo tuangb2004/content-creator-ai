@@ -21,10 +21,12 @@ const BillingPlans = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   // Map plan names to amounts (VND)
+  // Exchange rate: 1 USD ≈ 23,800 VND
   const PLAN_PRICES = {
-    pro_monthly: 690000, // 29 USD * 23800 VND/USD ≈ 690,000 VND
-    pro_yearly: 5712000, // 24 USD/month * 12 * 23800 VND/USD ≈ 5,712,000 VND
-    agency_monthly: 2356200, // 99 USD * 23800 VND/USD ≈ 2,356,200 VND
+    pro_monthly: 690000, // 29 USD * 23,800 VND/USD ≈ 690,000 VND
+    pro_yearly: 6840000, // 24 USD/month * 12 months * 23,800 VND/USD ≈ 6,840,000 VND
+    agency_monthly: 2356200, // 99 USD * 23,800 VND/USD ≈ 2,356,200 VND
+    agency_yearly: 22562400, // 79 USD/month * 12 months * 23,800 VND/USD ≈ 22,562,400 VND
   };
 
   const currentPlan = userData?.plan || 'free';
@@ -111,14 +113,15 @@ const BillingPlans = () => {
     {
       id: 'starter',
       name: t?.billing?.starter?.name || 'Starter',
-      desc: t?.billing?.starter?.desc || 'Essential tools for hobbyists.',
-      credits: t?.billing?.starter?.credits || '10',
+      desc: t?.billing?.starter?.desc || 'Perfect for small creators and explorers.',
+      credits: t?.billing?.starter?.credits || '20',
       priceMonthly: 0,
       priceYearly: 0,
       features: [
-        t?.billing?.starter?.features?.credits || '10 Credits (One Time)', 
-        t?.billing?.starter?.features?.tools || 'Basic Text Tools', 
-        t?.billing?.starter?.features?.support || 'Standard Support'
+        t?.billing?.starter?.features?.credits || '20 Free Monthly Credits', 
+        t?.billing?.starter?.features?.tools || 'Gemini 3 Flash Access', 
+        t?.billing?.starter?.features?.seo || 'Basic SEO Tools', 
+        t?.billing?.starter?.features?.support || 'Community Support'
       ],
       button: t?.billing?.currentPlan || 'Current Plan',
       active: currentPlan === 'free',
@@ -127,15 +130,15 @@ const BillingPlans = () => {
     {
       id: 'pro',
       name: t?.billing?.pro?.name || 'Pro Studio',
-      desc: t?.billing?.pro?.desc || 'For professional creators.',
-      credits: t?.billing?.pro?.credits || '2,000',
+      desc: t?.billing?.pro?.desc || 'Best for professional content creators.',
+      credits: t?.billing?.pro?.credits || '2,500',
       priceMonthly: 29,
       priceYearly: 24,
       features: [
-        t?.billing?.pro?.features?.credits || '2,000 Credits / mo', 
-        t?.billing?.pro?.features?.tools || 'All AI Tools Access', 
-        t?.billing?.pro?.features?.images || 'High-Res Image Gen', 
-        t?.billing?.pro?.features?.support || 'Priority Support'
+        t?.billing?.pro?.features?.credits || '2,500 Monthly Credits', 
+        t?.billing?.pro?.features?.reasoning || 'Gemini 3 Pro Reasoning', 
+        t?.billing?.pro?.features?.images || 'Nano Banana Pro Access', 
+        t?.billing?.pro?.features?.support || 'Priority 24/7 Support'
       ],
       button: t?.billing?.upgradeToPro || 'Upgrade to Pro',
       active: currentPlan === 'pro',
@@ -143,18 +146,18 @@ const BillingPlans = () => {
     },
     {
       id: 'agency',
-      name: t?.billing?.agency?.name || 'Agency',
-      desc: t?.billing?.agency?.desc || 'Scale your content operations.',
-      credits: t?.billing?.agency?.credits || '10,000',
+      name: t?.billing?.agency?.name || 'Agency Elite',
+      desc: t?.billing?.agency?.desc || 'For high-volume content operations.',
+      credits: t?.billing?.agency?.credits || '12,000',
       priceMonthly: 99,
       priceYearly: 79,
       features: [
-        t?.billing?.agency?.features?.credits || '10,000 Credits / mo', 
-        t?.billing?.agency?.features?.seats || 'Multi-seat Access (3)', 
-        t?.billing?.agency?.features?.api || 'API Access', 
-        t?.billing?.agency?.features?.models || 'Custom Models'
+        t?.billing?.agency?.features?.credits || '12,000 Monthly Credits', 
+        t?.billing?.agency?.features?.unlimited || 'Unlimited Gemini 3 Pro', 
+        t?.billing?.agency?.features?.api || 'API & Multi-Seat Access', 
+        t?.billing?.agency?.features?.manager || 'Dedicated Account Manager'
       ],
-      button: t?.billing?.contactSales || 'Contact Sales',
+      button: t?.billing?.goUnlimited || 'Go Unlimited',
       active: currentPlan === 'agency',
       highlight: false
     }
@@ -165,10 +168,10 @@ const BillingPlans = () => {
       <div className="text-center max-w-2xl mx-auto">
         <h2 className={`text-4xl font-serif mb-4 transition-colors duration-300 ${
           theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-        }`}>{t?.billing?.title || 'Plans & Pricing'}</h2>
+        }`}>{t?.billing?.title || 'Choose Your Power'}</h2>
         <p className={`font-light text-lg transition-colors duration-300 ${
           theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-        }`}>{t?.billing?.subtitle || 'Choose the perfect plan for your creative workflow.'} <br/> {t?.billing?.subtitle2 || 'Upgrade or downgrade at any time.'}</p>
+        }`}>{t?.billing?.subtitle || 'Scale your creativity with our flexible credit plans.'}</p>
 
         <div className="flex justify-center items-center mt-8 gap-4">
           <span className={`text-xs uppercase tracking-widest font-bold transition-colors ${
@@ -259,9 +262,9 @@ const BillingPlans = () => {
               disabled={plan.active || loading}
               onClick={() => {
                 if (plan.id === 'pro') {
-                  handleUpgrade(billingCycle === 'monthly' ? 'pro_monthly' : 'pro_yearly', 'Pro');
+                  handleUpgrade(billingCycle === 'monthly' ? 'pro_monthly' : 'pro_yearly', 'Pro Studio');
                 } else if (plan.id === 'agency') {
-                  handleUpgrade('agency_monthly', 'Agency');
+                  handleUpgrade(billingCycle === 'monthly' ? 'agency_monthly' : 'agency_yearly', 'Agency Elite');
                 }
               }}
               className={`w-full py-4 text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-default ${
@@ -313,13 +316,18 @@ const BillingPlans = () => {
           theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
         }`}>
           <div className="flex justify-between items-center mb-6">
-            <h3 className={`font-serif text-lg ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>Payment Method</h3>
+            <h3 className={`font-serif text-lg transition-colors duration-300 ${
+              theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+            }`}>{t?.billing?.paymentMethod || 'Payment Method'}</h3>
             <button 
-              className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                theme === 'dark' ? 'text-[#A8A29E] hover:text-[#F5F2EB]' : 'text-[#A8A29E] hover:text-[#2C2A26]'
+              onClick={() => setIsPaymentModalOpen(true)}
+              className={`text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer ${
+                theme === 'dark' 
+                  ? 'text-[#A8A29E] hover:text-[#F5F2EB]' 
+                  : 'text-[#A8A29E] hover:text-[#2C2A26]'
               }`}
             >
-              Edit
+              {t?.billing?.edit || 'Edit'}
             </button>
           </div>
           <div className={`flex items-center gap-4 p-4 border rounded-sm transition-colors duration-300 ${

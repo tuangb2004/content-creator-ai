@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -15,7 +16,9 @@ const PaymentModal = ({ isOpen, onClose, onSave }) => {
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -43,20 +46,50 @@ const PaymentModal = ({ isOpen, onClose, onSave }) => {
     }, 1500);
   };
 
-  return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center px-4">
-      {/* Backdrop */}
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center px-4 min-h-screen" 
+      style={{ 
+        zIndex: 9999,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        minHeight: '100vh',
+        overflow: 'auto'
+      }}
+    >
+      {/* Backdrop - Fixed to cover entire viewport */}
       <div 
-        className="absolute inset-0 bg-[#2C2A26]/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-[#2C2A26]/60 backdrop-blur-sm transition-opacity"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh'
+        }}
         onClick={onClose}
       />
 
-      {/* Modal Content */}
-      <div className={`relative w-full max-w-md shadow-2xl overflow-hidden border rounded-sm transition-all duration-300 ${
-        theme === 'dark' 
-          ? 'bg-[#1C1B19] border-[#433E38]' 
-          : 'bg-[#F5F2EB] border-[#D6D1C7]'
-      }`}>
+      {/* Modal Content - Centered */}
+      <div 
+        className={`relative w-full max-w-md shadow-2xl overflow-hidden border rounded-sm transition-all duration-300 ${
+          theme === 'dark' 
+            ? 'bg-[#1C1B19] border-[#433E38]' 
+            : 'bg-[#F5F2EB] border-[#D6D1C7]'
+        }`}
+        style={{
+          position: 'relative',
+          zIndex: 10000,
+          margin: 'auto'
+        }}
+      >
         
         {/* Header */}
         <div className={`flex justify-between items-center p-6 border-b transition-colors ${
@@ -289,6 +322,11 @@ const PaymentModal = ({ isOpen, onClose, onSave }) => {
       </div>
     </div>
   );
+
+  // Render modal using portal to body to avoid z-index issues
+  return typeof window !== 'undefined' 
+    ? createPortal(modalContent, document.body)
+    : null;
 };
 
 export default PaymentModal;
