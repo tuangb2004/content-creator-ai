@@ -1,5 +1,6 @@
 import { Reveal } from './Reveal';
 import { useLanguage } from '../../contexts/LanguageContext';
+import technologyImage from '../../assets/images/Technology.jpeg';
 
 const About = () => {
   const { t } = useLanguage();
@@ -31,13 +32,10 @@ const About = () => {
           <Reveal delay={400}>
             <div className="mt-12">
                 <img 
-                    src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1200" 
+                    src={new URL('../../assets/images/SaaS.jpeg', import.meta.url).href}
                     alt="Modern Creator Workspace" 
-                    className="w-full h-[400px] object-cover grayscale contrast-[0.9] brightness-110"
+                    className="w-full h-[400px] object-cover sepia-[0.15] contrast-[0.92] brightness-[0.98] saturate-[0.85]"
                 />
-                <p className="text-sm font-medium uppercase tracking-widest text-[#A8A29E] mt-4">
-                    CreatorAI Labs, San Francisco
-                </p>
             </div>
           </Reveal>
         </div>
@@ -48,9 +46,9 @@ const About = () => {
         <div className="order-2 lg:order-1 relative h-[500px] lg:h-auto overflow-hidden group">
             <Reveal className="h-full w-full">
                 <img 
-                    src="https://images.unsplash.com/photo-1558494949-ef526b0042a0?auto=format&fit=crop&q=80&w=1200" 
-                    alt="Server Rack Abstract" 
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-105"
+                    src={technologyImage}
+                    alt="Technology illustration" 
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-105 sepia-[0.12] contrast-[0.95] brightness-[0.96] saturate-[0.9]"
                 />
             </Reveal>
         </div>
@@ -58,10 +56,10 @@ const About = () => {
            <Reveal delay={100}>
                 <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#5D5A53] mb-6 block">{t?.about?.tech_badge || 'Technology'}</span>
                 <h3 className="text-4xl md:text-5xl font-serif mb-8 text-[#2C2A26] dark:text-gray-100 leading-tight whitespace-pre-wrap transition-colors duration-300">
-                    {t?.about?.tech_title || 'Powered by \n Gemini 2.5'}
+                    {t?.about?.tech_title || 'Powered by \n Multi-Model AI'}
                 </h3>
                 <p className="text-lg text-[#5D5A53] dark:text-gray-300 font-light leading-relaxed mb-12 max-w-md transition-colors duration-300">
-                    {t?.about?.tech_desc || 'Under the hood, we utilize Google\'s most advanced multimodal models. This allows CreatorAI to "see" images, understand complex nuance in text, and reason through strategy better than previous generations of AI.'}
+                    {t?.about?.tech_desc || 'We route each request to the best model for the job—fast text generation with Groq, deep reasoning with Gemini, and high-quality image generation with Stability or Gemini. The result: reliable output tailored to your workflow.'}
                 </p>
            </Reveal>
         </div>
@@ -72,19 +70,19 @@ const About = () => {
            <Reveal delay={100}>
                 <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#A8A29E] mb-6 block">{t?.about?.work_badge || 'Workflow'}</span>
                 <h3 className="text-4xl md:text-5xl font-serif mb-8 text-[#F5F2EB] leading-tight">
-                    {t?.about?.work_title || 'Export & Publish.'}
+                    {t?.about?.work_title || 'Create, Save, Reuse.'}
                 </h3>
                 <p className="text-lg text-[#A8A29E] font-light leading-relaxed mb-12 max-w-md">
-                    {t?.about?.work_desc || 'Your content shouldn\'t live in a silo. Save your projects, export to PDF/DOCX, or copy directly to your CMS. We focus on the "last mile" of creation—getting your work out there.'}
+                    {t?.about?.work_desc || 'Save every generation as a project, organize it by tool, and reuse it across campaigns. Copy instantly, export when needed, and keep your creative history in one place.'}
                 </p>
            </Reveal>
         </div>
         <div className="relative h-[500px] lg:h-auto overflow-hidden group">
             <Reveal className="h-full w-full">
                 <img 
-                    src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=1200" 
+                    src={new URL('../../assets/images/Creativity.jpeg', import.meta.url).href}
                     alt="Digital Network" 
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-105 brightness-90"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-105 sepia-[0.18] contrast-[0.93] brightness-[0.94] saturate-[0.88]"
                 />
             </Reveal>
         </div>

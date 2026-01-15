@@ -150,14 +150,14 @@ const LandingNavbar = ({ onNavClick, projectCount = 0, onCartClick, onAuthClick,
           </div>
           
           {/* CENTER: Navigation Links (Absolute centered on desktop) - Hide when search is open to prevent overlap */}
-          <div className={`hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-10 text-[13px] font-medium tracking-[0.15em] uppercase transition-all duration-300 z-10 ${textColorClass} ${isSearchOpen ? 'opacity-0 scale-95 pointer-events-none invisible' : 'opacity-100 scale-100 pointer-events-auto visible'}`}>
+          <div className={`hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-8 text-[13px] font-medium tracking-[0.12em] uppercase transition-all duration-300 z-10 ${textColorClass} ${isSearchOpen ? 'opacity-0 scale-95 pointer-events-none invisible' : 'opacity-100 scale-100 pointer-events-auto visible'}`}>
             <a href="#products" onClick={(e) => handleLinkClick(e, 'products')} className="hover:opacity-60 transition-opacity">{t?.nav?.suite || 'Creative Suite'}</a>
             <a href="#about" onClick={(e) => handleLinkClick(e, 'about')} className="hover:opacity-60 transition-opacity">{t?.nav?.phil || 'Philosophy'}</a>
             <a href="#journal" onClick={(e) => handleLinkClick(e, 'journal')} className="hover:opacity-60 transition-opacity">{t?.nav?.res || 'Resources'}</a>
           </div>
 
           {/* RIGHT: Actions - Higher z-index when search is open */}
-          <div className={`hidden md:flex items-center gap-6 transition-all duration-500 ${textColorClass} ${isSearchOpen ? 'z-[55]' : 'z-20'}`}>
+          <div className={`hidden lg:flex items-center gap-4 transition-all duration-500 ${textColorClass} ${isSearchOpen ? 'z-[55]' : 'z-20'}`}>
             
             {/* Search Bar - Higher z-index to prevent overlap */}
             <div className={`relative flex items-center transition-all duration-300 ${isSearchOpen ? 'w-48 xl:w-64' : 'w-8'}`}>
@@ -304,31 +304,32 @@ const LandingNavbar = ({ onNavClick, projectCount = 0, onCartClick, onAuthClick,
               </div>
             )}
 
-            {/* Mobile Menu Button */}
-            <button 
-              className={`block md:hidden z-20 focus:outline-none transition-all duration-500 ${textColorClass} ${isSearchOpen ? 'opacity-70' : 'opacity-100'}`}
-              onClick={() => {
-                setMobileMenuOpen(!mobileMenuOpen);
-                setIsSearchOpen(false);
-              }}
-            >
-              {mobileMenuOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
-              )}
-            </button>
           </div>
+
+          {/* Mobile Menu Button - Outside actions div so it shows on mobile */}
+          <button 
+            className={`lg:hidden z-20 focus:outline-none transition-all duration-500 ${textColorClass}`}
+            onClick={() => {
+              setMobileMenuOpen(!mobileMenuOpen);
+              setIsSearchOpen(false);
+            }}
+          >
+            {mobileMenuOpen ? (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            )}
+          </button>
         </div>
       </nav>
 
       {/* Mobile Menu Overlay */}
       <div 
-        className={`fixed inset-0 bg-[#F5F2EB] dark:bg-gray-900 z-[45] flex flex-col pt-24 px-8 transition-all duration-500 ease-in-out md:hidden ${
+        className={`fixed inset-0 bg-[#F5F2EB] dark:bg-gray-900 z-[45] flex flex-col pt-24 px-8 transition-all duration-500 ease-in-out lg:hidden ${
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         onClick={(e) => {
