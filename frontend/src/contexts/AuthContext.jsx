@@ -9,12 +9,11 @@ import {
   FacebookAuthProvider,
   signInWithPopup,
   signInWithCustomToken,
-  sendPasswordResetEmail,
-  sendEmailVerification,
   updateProfile
 } from 'firebase/auth';
+import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import { auth, db, functions } from '../config/firebase';
 
 const AuthContext = createContext(null);
 
@@ -460,52 +459,66 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Send password reset email
+   * Send password reset email using custom function (SendGrid)
    */
   const resetPassword = async (email) => {
     try {
-      await sendPasswordResetEmail(auth, email, {
-        url: window.location.origin + '/dashboard',
-        handleCodeInApp: false
-      });
-      return { success: true };
+      console.log('[AuthContext] Requesting password reset for:', email);
+      const sendPasswordReset = httpsCallable(functions, 'sendCustomPasswordReset');
+      const result = await sendPasswordReset({ email });
+      console.log('[AuthContext] Password reset email sent successfully:', result);
+      return { 
+        success: true, 
+        message: result.data?.message || 'Password reset email sent. Please check your inbox.' 
+      };
     } catch (error) {
+      console.error('[AuthContext] Failed to send password reset email:', error);
+      // Handle Firebase Functions errors
+      if (error.code === 'functions/invalid-argument') {
+        throw formatAuthError({ code: 'auth/invalid-email', message: error.message });
+      } else if (error.code === 'functions/internal') {
+        throw formatAuthError({ code: 'auth/internal-error', message: error.message });
+      }
       throw formatAuthError(error);
     }
   };
 
   /**
-   * Resend email verification
-   * Can be called with user object or email string
+   * Resend email verification using custom function (SendGrid)
+   * User must be authenticated to resend verification email
    */
   const resendVerificationEmail = async (emailOrUser = null) => {
-    let targetUser = user;
-    
-    // If email string provided, try to sign in temporarily to send verification
-    if (typeof emailOrUser === 'string') {
-      // For unverified users, we can't sign them in
-      // So we'll need to handle this differently - maybe through a backend function
-      // For now, throw an error
-      throw new Error('Cannot resend verification email without being logged in. Please try signing in again after verifying your email.');
-    } else if (emailOrUser && emailOrUser.email) {
-      // If user object provided, use it
-      targetUser = emailOrUser;
-    }
-    
-    if (!targetUser) {
-      throw new Error('No user logged in');
+    if (!user) {
+      throw new Error('No user logged in. Please sign in first to resend verification email.');
     }
     
     try {
-      console.log('[AuthContext] Resending email verification to:', targetUser.email);
-      await sendEmailVerification(targetUser, {
-        url: window.location.origin + '/',
-        handleCodeInApp: false
-      });
-      console.log('[AuthContext] Verification email resent successfully');
-      return { success: true };
+      console.log('[AuthContext] Resending email verification for user:', user.email);
+      const resendVerification = httpsCallable(functions, 'resendCustomVerification');
+      const result = await resendVerification();
+      
+      if (result.data?.alreadyVerified) {
+        console.log('[AuthContext] Email is already verified');
+        return { 
+          success: true, 
+          alreadyVerified: true,
+          message: result.data?.message || 'Email is already verified.' 
+        };
+      }
+      
+      console.log('[AuthContext] Verification email resent successfully:', result);
+      return { 
+        success: true, 
+        message: result.data?.message || 'Verification email sent. Please check your inbox.' 
+      };
     } catch (error) {
       console.error('[AuthContext] Failed to resend verification email:', error);
+      // Handle Firebase Functions errors
+      if (error.code === 'functions/unauthenticated') {
+        throw formatAuthError({ code: 'auth/unauthenticated', message: 'Please sign in to resend verification email.' });
+      } else if (error.code === 'functions/internal') {
+        throw formatAuthError({ code: 'auth/internal-error', message: error.message });
+      }
       throw formatAuthError(error);
     }
   };

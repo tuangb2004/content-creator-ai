@@ -71,6 +71,9 @@ export async function sendVerificationEmail(
       console.log(`   To test on mobile, set SITE_URL to your public URL (e.g., ngrok tunnel or public IP).`);
     }
     
+    // Normalize SITE_URL: remove trailing slash to avoid double slashes in links
+    siteUrl = siteUrl.replace(/\/+$/, '');
+    
     console.log(`🌐 Site URL: ${siteUrl}`);
     
     // Build verification URL with session_id if provided
@@ -268,7 +271,10 @@ export async function sendVerificationEmail(
 export async function sendPasswordResetEmail(userEmail: string): Promise<void> {
   try {
     // Get site URL from config or environment
-    const siteUrl = process.env.SITE_URL || functions.config().app?.site_url || 'https://creatorai.app';
+    let siteUrl = process.env.SITE_URL || functions.config().app?.site_url || 'https://creatorai.app';
+    
+    // Normalize SITE_URL: remove trailing slash to avoid double slashes in links
+    siteUrl = siteUrl.replace(/\/+$/, '');
     
     // Generate password reset link
     const actionCodeSettings = {
@@ -330,7 +336,11 @@ export async function sendProjectCompletedEmail(
   displayName?: string
 ): Promise<void> {
   try {
-    const siteUrl = process.env.SITE_URL || functions.config().app?.site_url || 'https://creatorai.app';
+    let siteUrl = process.env.SITE_URL || functions.config().app?.site_url || 'https://creatorai.app';
+    
+    // Normalize SITE_URL: remove trailing slash to avoid double slashes in links
+    siteUrl = siteUrl.replace(/\/+$/, '');
+    
     const dashboardUrl = `${siteUrl}/dashboard`;
     
     const htmlContent = getProjectCompletedTemplate(projectTitle, projectType, dashboardUrl, siteUrl);
@@ -376,7 +386,11 @@ export async function sendProductUpdatesEmail(
   displayName?: string
 ): Promise<void> {
   try {
-    const siteUrl = process.env.SITE_URL || functions.config().app?.site_url || 'https://creatorai.app';
+    let siteUrl = process.env.SITE_URL || functions.config().app?.site_url || 'https://creatorai.app';
+    
+    // Normalize SITE_URL: remove trailing slash to avoid double slashes in links
+    siteUrl = siteUrl.replace(/\/+$/, '');
+    
     const dashboardUrl = `${siteUrl}/dashboard`;
     
     const htmlContent = getProductUpdatesTemplate(updates, dashboardUrl, siteUrl);
