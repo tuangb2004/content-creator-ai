@@ -58,9 +58,9 @@ export const payosWebhook = functions.https.onRequest(async (req, res) => {
   }
 
   // Verify webhook signature
-  // NOTE: Temporarily disabled for local testing. Re-enable for production!
-  // TODO: Enable signature verification before deploying to production
-  const ENABLE_SIGNATURE_VERIFICATION = process.env.ENABLE_PAYOS_SIGNATURE_VERIFICATION === 'true';
+  // Enabled by default for production security
+  // Set DISABLE_PAYOS_SIGNATURE_VERIFICATION=true to disable (for testing only)
+  const ENABLE_SIGNATURE_VERIFICATION = process.env.DISABLE_PAYOS_SIGNATURE_VERIFICATION !== 'true';
   
   if (ENABLE_SIGNATURE_VERIFICATION) {
     try {
@@ -85,8 +85,9 @@ export const payosWebhook = functions.https.onRequest(async (req, res) => {
       return;
     }
   } else {
-    console.log('⚠️ WARNING: Signature verification is disabled for testing');
-    console.log('⚠️ To enable: Set ENABLE_PAYOS_SIGNATURE_VERIFICATION=true in environment');
+    console.log('⚠️ WARNING: Signature verification is DISABLED for testing');
+    console.log('⚠️ This should ONLY be used in local development');
+    console.log('⚠️ To enable: Remove DISABLE_PAYOS_SIGNATURE_VERIFICATION from environment');
   }
 
   const { code, desc, data: paymentData } = webhookData;

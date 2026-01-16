@@ -15,6 +15,7 @@ import {
 } from './authSession';
 import { chat } from './chat';
 import { initializeUserIfNeeded } from './initializeUser';
+import { getTikTokAuthUrl, handleTikTokCallback } from './tiktokAuth';
 
 const resolveStorageBucket = (): string | undefined => {
   const explicitBucket = process.env.FIREBASE_STORAGE_BUCKET;
@@ -61,6 +62,8 @@ export {
   markSessionCompletedCallable,
   markSessionVerifiedCallable,
   chat,
-  initializeUserIfNeeded
+  initializeUserIfNeeded,
+  getTikTokAuthUrl,
+  handleTikTokCallback
 };
 

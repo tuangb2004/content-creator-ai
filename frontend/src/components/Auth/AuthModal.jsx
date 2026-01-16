@@ -29,7 +29,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
   const [verificationEmail, setVerificationEmail] = useState('');
   const [verificationSessionId, setVerificationSessionId] = useState(null);
   const [showWaitingScreen, setShowWaitingScreen] = useState(false);
-  const { login, register, loginWithGoogle, loginWithFacebook, resetPassword } = useAuth();
+  const { login, register, loginWithGoogle, loginWithFacebook, loginWithTikTok, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   // Reset mode when modal opens/closes or type changes
@@ -120,6 +120,9 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
         if (onLogin) onLogin();
         onClose();
         navigate('/dashboard');
+      } else if (provider === 'tiktok') {
+        await loginWithTikTok();
+        // TikTok login redirects to OAuth URL - no toast needed
       } else {
         toast.error(`${provider} login is not yet implemented`);
       }

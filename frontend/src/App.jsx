@@ -11,6 +11,8 @@ import LandingPage from './pages/LandingPage';
 import Home from './pages/Home';
 import ProjectsPage from './pages/ProjectsPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 function App() {
   useEffect(() => {
@@ -34,6 +36,9 @@ function App() {
                   <Route path="/login" element={<LandingPage />} />
                   {/* Email verification page */}
                   <Route path="/verify-email" element={<VerifyEmailPage />} />
+                  {/* Legal pages */}
+                  <Route path="/terms" element={<TermsPage />} />
+                  <Route path="/privacy" element={<PrivacyPage />} />
 
                   {/* Protected Routes */}
                   <Route

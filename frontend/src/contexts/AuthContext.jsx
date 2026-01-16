@@ -252,6 +252,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
+   * Login with TikTok
+   */
+  const loginWithTikTok = async () => {
+    try {
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../config/firebase');
+      
+      // Get TikTok auth URL from Cloud Function
+      const getTikTokUrl = httpsCallable(functions, 'getTikTokAuthUrl');
+      const result = await getTikTokUrl({});
+      
+      // Redirect to TikTok OAuth
+      window.location.href = result.data.authUrl;
+    } catch (error) {
+      throw formatAuthError(error);
+    }
+  };
+
+  /**
    * Logout
    */
   const logout = async () => {
@@ -382,6 +401,7 @@ export const AuthProvider = ({ children }) => {
     register,
     loginWithGoogle,
     loginWithFacebook,
+    loginWithTikTok,
     logout,
     resetPassword,
     resendVerificationEmail,

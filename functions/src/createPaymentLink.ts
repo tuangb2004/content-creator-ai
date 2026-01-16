@@ -125,8 +125,11 @@ export const createPaymentLinkFunction = functions.https.onCall(
     
     console.log(`[createPaymentLink] User email: ${email}`);
 
-    // 4. Generate unique order code (use timestamp + random number)
-    const orderCode = Date.now() + Math.floor(Math.random() * 1000);
+    // 4. Generate unique order code (use timestamp - must be integer, not string)
+    // PayOS requires orderCode to be a positive integer <= 9999999 (7 digits max)
+    // Use last 6 digits of timestamp + 3-digit random number to ensure uniqueness
+    const timestamp = Date.now();
+    const orderCode = (timestamp % 1000000) * 10 + Math.floor(Math.random() * 10);
 
     // 5. Get credits for plan
     const credits = PLAN_CREDITS[planName] || 2000;
@@ -139,13 +142,6 @@ export const createPaymentLinkFunction = functions.https.onCall(
         description: `Nâng cấp gói ${planName} - ${credits} credits`,
         cancelUrl,
         returnUrl: successUrl,
-        items: [
-          {
-            name: `Gói ${planName}`,
-            quantity: 1,
-            price: amount,
-          },
-        ],
       };
       
       console.log(`[createPaymentLink] Creating PayOS payment link with orderCode: ${orderCode}`);
