@@ -186,8 +186,37 @@ function PrivacyPage() {
             </ul>
           </section>
 
+          <section id="data-deletion" className="mb-8 scroll-mt-20">
+            <h2 className="text-2xl font-semibold mb-4">13. Data Deletion Request</h2>
+            <p className="mb-4 leading-relaxed">
+              You have the right to request deletion of your personal data from CreatorAI Studio. To delete your data:
+            </p>
+            <ol className="list-decimal pl-6 mb-4 space-y-2">
+              <li><strong>Log in</strong> to your CreatorAI Studio account</li>
+              <li>Navigate to <strong>Settings</strong> → <strong>Account</strong></li>
+              <li>Click <strong>"Delete Account"</strong> button</li>
+              <li>Confirm the deletion by entering your password</li>
+              <li>Your account and all associated data will be permanently deleted within 30 days</li>
+            </ol>
+            <p className="mb-4 leading-relaxed">
+              <strong>Alternative Method:</strong> If you cannot access your account, please contact us at <strong>support@creatorai.studio</strong> with your account email address and we will process your deletion request.
+            </p>
+            <p className="mb-4 leading-relaxed">
+              <strong>Note:</strong> After deletion, all your data including:
+            </p>
+            <ul className="list-disc pl-6 mb-4 space-y-2">
+              <li>Account information (email, name, profile)</li>
+              <li>Generated content and projects</li>
+              <li>Payment history (retained for legal compliance)</li>
+              <li>Usage data and analytics</li>
+            </ul>
+            <p className="mb-4 leading-relaxed">
+              will be permanently removed and cannot be recovered. Some data may be retained for legal or regulatory purposes as required by law.
+            </p>
+          </section>
+
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">13. Contact Us</h2>
+            <h2 className="text-2xl font-semibold mb-4">14. Contact Us</h2>
             <p className="mb-4 leading-relaxed">
               If you have questions about this Privacy Policy or our practices, please contact us:
             </p>
@@ -200,7 +229,7 @@ function PrivacyPage() {
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">14. GDPR Compliance (EU Users)</h2>
+            <h2 className="text-2xl font-semibold mb-4">15. GDPR Compliance (EU Users)</h2>
             <p className="mb-4 leading-relaxed">
               If you are in the European Economic Area (EEA), you have additional rights under GDPR, including:
             </p>
