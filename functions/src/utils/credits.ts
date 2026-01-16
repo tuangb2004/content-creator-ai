@@ -133,7 +133,7 @@ export async function initializeUser(userId: string, email: string): Promise<voi
     await userRef.set({
       email,
       plan: 'free',
-      credits: 10, // Free tier: 10 credits
+      credits: 20, // Free tier: 20 credits (matches Starter plan)
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     });

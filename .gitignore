@@ -43,3 +43,6 @@ Thumbs.db
 *.log
 firestore-debug.log
 
+
+.vercel
+.env*.local

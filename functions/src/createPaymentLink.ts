@@ -18,11 +18,13 @@ interface CreatePaymentLinkRequest {
 
 /**
  * Map plan names to credits
+ * Updated to match frontend BillingPlans.jsx
  */
 const PLAN_CREDITS: Record<string, number> = {
-  pro_monthly: 2000,
-  pro_yearly: 24000,
-  agency_monthly: 10000,
+  pro_monthly: 2500,        // 2,500 credits/month
+  pro_yearly: 30000,        // 2,500 * 12 months = 30,000 credits
+  agency_monthly: 12000,    // 12,000 credits/month
+  agency_yearly: 144000,    // 12,000 * 12 months = 144,000 credits
 };
 
 /**
@@ -92,11 +94,11 @@ export const createPaymentLinkFunction = functions.https.onCall(
         throw new functions.https.HttpsError('failed-precondition', 'User email not found in authentication token');
       }
       
-      // Create user document with free plan
+      // Create user document with free plan (Starter)
       await userRef.set({
         email,
         plan: 'free',
-        credits: 10, // Free tier: 10 credits
+        credits: 20, // Free tier: 20 credits (matches Starter plan)
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
       });
