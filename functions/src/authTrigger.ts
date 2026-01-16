@@ -2,7 +2,6 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { initializeUser } from './utils/credits';
 import { sendVerificationEmail } from './emailService';
-import { logActivity } from './utils/logging';
 
 /**
  * Initialize user when they sign up (Firebase Auth trigger)

@@ -42,7 +42,7 @@ export async function checkCredits(userId: string): Promise<number> {
  * Decrement credits using Firestore Transaction (atomic)
  * Returns credits after decrement
  */
-export async function decrementCredits(userId: string, amount: number = 1): Promise<number> {
+export async function decrementCredits(userId: string, amount: number = 1, metadata?: { toolName?: string; contentType?: string }): Promise<number> {
   const db = getDb();
   const userRef = db.collection('users').doc(userId);
   let creditsAfter = 0;
@@ -74,6 +74,9 @@ export async function decrementCredits(userId: string, amount: number = 1): Prom
       updatedAt: FieldValue.serverTimestamp()
     });
   });
+
+  // Note: Credit deduction is not logged here because Studio Pulse only shows credits added
+  // Credit deduction is logged separately in generateContent.ts after successful generation
 
   return creditsAfter;
 }
