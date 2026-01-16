@@ -142,12 +142,20 @@ export const AuthProvider = ({ children }) => {
             sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_6`);
             console.log('🗑️ Cleared activity logs cache');
           }
-          // Trigger activity logs refresh after a short delay
-          setTimeout(() => {
-            console.log('🔄 Dispatching refreshActivityLogs event...');
-            // Dispatch custom event to trigger refetch
-            window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
-          }, 2000); // Increased delay to ensure Firestore write completes
+          // Trigger activity logs refresh with multiple attempts to ensure it's fetched
+          // Firestore writes can be slightly delayed
+          const refreshLogs = (attempt = 1, maxAttempts = 3) => {
+            const delay = attempt * 2000; // 2s, 4s, 6s
+            setTimeout(() => {
+              console.log(`🔄 Dispatching refreshActivityLogs event (attempt ${attempt}/${maxAttempts})...`);
+              window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
+              
+              if (attempt < maxAttempts) {
+                refreshLogs(attempt + 1, maxAttempts);
+              }
+            }, delay);
+          };
+          refreshLogs();
         }).catch((logError) => {
           console.error('❌ Failed to log login activity:', logError);
           console.error('Error details:', logError.code, logError.message, logError);
@@ -245,6 +253,42 @@ export const AuthProvider = ({ children }) => {
         }
       }
       
+      // Log login activity (fire and forget - don't block login)
+      console.log('🔐 Attempting to log Google login activity...');
+      setTimeout(async () => {
+        try {
+          const { httpsCallable } = await import('firebase/functions');
+          const { functions } = await import('../config/firebase');
+          const logLogin = httpsCallable(functions, 'logUserLogin');
+          const result = await logLogin({
+            provider: 'google.com',
+            userAgent: navigator.userAgent
+          });
+          console.log('✅ Login activity logged successfully:', result);
+          if (userCredential.user?.uid) {
+            sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_50`);
+            sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_6`);
+            console.log('🗑️ Cleared activity logs cache');
+          }
+          // Trigger activity logs refresh with multiple attempts to ensure it's fetched
+          const refreshLogs = (attempt = 1, maxAttempts = 3) => {
+            const delay = attempt * 2000; // 2s, 4s, 6s
+            setTimeout(() => {
+              console.log(`🔄 Dispatching refreshActivityLogs event (attempt ${attempt}/${maxAttempts})...`);
+              window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
+              
+              if (attempt < maxAttempts) {
+                refreshLogs(attempt + 1, maxAttempts);
+              }
+            }, delay);
+          };
+          refreshLogs();
+        } catch (logError) {
+          console.error('❌ Failed to log login activity:', logError);
+          console.error('Error code:', logError.code, 'Message:', logError.message);
+        }
+      }, 500);
+      
       // Auth state listener will update user state automatically
       return {
         user: userCredential.user,
@@ -293,10 +337,21 @@ export const AuthProvider = ({ children }) => {
           if (userCredential.user?.uid) {
             sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_50`);
             sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_6`);
+            console.log('🗑️ Cleared activity logs cache');
           }
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
-          }, 2000);
+          // Trigger activity logs refresh with multiple attempts to ensure it's fetched
+          const refreshLogs = (attempt = 1, maxAttempts = 3) => {
+            const delay = attempt * 2000; // 2s, 4s, 6s
+            setTimeout(() => {
+              console.log(`🔄 Dispatching refreshActivityLogs event (attempt ${attempt}/${maxAttempts})...`);
+              window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
+              
+              if (attempt < maxAttempts) {
+                refreshLogs(attempt + 1, maxAttempts);
+              }
+            }, delay);
+          };
+          refreshLogs();
         } catch (logError) {
           console.error('❌ Failed to log login activity:', logError);
           console.error('Error code:', logError.code, 'Message:', logError.message);
@@ -353,10 +408,21 @@ export const AuthProvider = ({ children }) => {
           if (userCredential.user?.uid) {
             sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_50`);
             sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_6`);
+            console.log('🗑️ Cleared activity logs cache');
           }
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
-          }, 2000);
+          // Trigger activity logs refresh with multiple attempts to ensure it's fetched
+          const refreshLogs = (attempt = 1, maxAttempts = 3) => {
+            const delay = attempt * 2000; // 2s, 4s, 6s
+            setTimeout(() => {
+              console.log(`🔄 Dispatching refreshActivityLogs event (attempt ${attempt}/${maxAttempts})...`);
+              window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
+              
+              if (attempt < maxAttempts) {
+                refreshLogs(attempt + 1, maxAttempts);
+              }
+            }, delay);
+          };
+          refreshLogs();
         } catch (logError) {
           console.error('❌ Failed to log login activity:', logError);
           console.error('Error code:', logError.code, 'Message:', logError.message);

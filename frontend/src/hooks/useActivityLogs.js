@@ -103,6 +103,11 @@ export const useActivityLogs = (logLimit = 50) => {
         return bTime - aTime;
       });
 
+      console.log(`📥 Fetched ${logsData.length} activity logs from Firestore for user ${user.uid}`);
+      logsData.forEach((log, index) => {
+        console.log(`  [${index}] ID: ${log.id}, Action: "${log.action}", UserId: ${log.userId}, Timestamp: ${log.timestamp}`);
+      });
+
       // Update cache
       setCache(user.uid, logsData);
       

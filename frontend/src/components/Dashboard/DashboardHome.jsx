@@ -65,22 +65,50 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
       return [];
     }
 
-    return logs
+    // Debug: Log all actions to see what's being filtered
+    console.log('🔍 Activity logs received:', logs.length, 'logs');
+    logs.forEach((log, index) => {
+      console.log(`  [${index}] ID: ${log.id}, Action: "${log.action}", Timestamp: ${log.timestamp}, Metadata:`, log.metadata);
+    });
+
+    const filtered = logs
       .filter((log) => {
         // Only show specific activity types
         const action = String(log.action || '').toLowerCase();
+        
+        // Debug: Check each action
+        console.log(`🔎 Filtering log [${log.id}]: action="${log.action}" -> lowercase="${action}"`);
         
         // For credits_updated, only show when credits are added (change > 0)
         if (action === 'credits_updated') {
           const metadata = log.metadata || {};
           const change = metadata.change || 0;
-          return change > 0; // Only show when credits are added
+          const included = change > 0;
+          console.log(`  📊 Credits updated: change=${change}, included=${included}`);
+          return included;
         }
         
-        return action === 'generate_content' || 
+        const isAllowed = action === 'generate_content' || 
                action === 'user_login' ||
                action === 'image_exported';
-      })
+        
+        // Debug: Log why logs are filtered out
+        if (!isAllowed && action) {
+          console.log(`  🚫 Filtered out: action="${action}" is not in allowed list [generate_content, user_login, image_exported]`);
+        } else if (isAllowed) {
+          console.log(`  ✅ Included: action="${action}"`);
+        }
+        
+        return isAllowed;
+      });
+
+    // Debug: Log filtered results
+    console.log('✅ Filtered activity logs:', filtered.length, 'logs');
+    filtered.forEach((log, index) => {
+      console.log(`  [${index}] ID: ${log.id}, Action: "${log.action}", Timestamp: ${log.timestamp}`);
+    });
+
+    return filtered
       .map((log) => {
         const action = String(log.action || '').toLowerCase();
         const metadata = log.metadata || {};
