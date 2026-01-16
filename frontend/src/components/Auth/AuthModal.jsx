@@ -166,18 +166,15 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
         const emailToVerify = result.email || formData.email;
         const sessionId = result.sessionId;
         
-        if (sessionId) {
-          // Show waiting screen with polling
+        // Always show waiting screen if email was sent (even without sessionId)
+        if (emailToVerify) {
           setVerificationEmail(emailToVerify);
-          setVerificationSessionId(sessionId);
+          if (sessionId) {
+            setVerificationSessionId(sessionId);
+            localStorage.setItem('pendingVerificationSessionId', sessionId);
+          }
           setShowWaitingScreen(true);
           // Don't close modal - waiting screen will be shown instead
-          toast.success(t?.auth?.accountCreated || 'Account created! Please check your email to verify your account.');
-        } else if (emailToVerify) {
-          // Fallback to old flow if no session
-          setVerificationEmail(emailToVerify);
-          setShowVerificationMessage(true);
-          setMode('email');
           toast.success(t?.auth?.accountCreated || 'Account created! Please check your email to verify your account.');
         }
       } else {
@@ -313,7 +310,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
         <div className="p-8 md:p-10 text-center">
           
           {/* VIEW: VERIFICATION WAITING SCREEN */}
-          {showWaitingScreen && verificationSessionId && (
+          {showWaitingScreen && verificationEmail && (
             <VerificationWaitingScreen
               email={verificationEmail}
               sessionId={verificationSessionId}

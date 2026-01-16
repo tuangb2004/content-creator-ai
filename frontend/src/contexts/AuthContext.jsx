@@ -192,21 +192,51 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('pendingVerificationPassword', btoa(password));
       localStorage.setItem('pendingVerificationEmail', email);
       
-      // Create verification session and send email
+      // Wait for Firebase auth token to be ready before creating session
+      // Force token refresh to ensure it's available
       let sessionId = null;
       try {
-        const { httpsCallable } = await import('firebase/functions');
-        const { functions } = await import('../config/firebase');
-        const createSession = httpsCallable(functions, 'createVerificationSession');
-        const result = await createSession({});
+        // Wait for token to be ready (with retry)
+        let tokenReady = false;
+        for (let i = 0; i < 5; i++) {
+          try {
+            const token = await userCredential.user.getIdToken(false);
+            if (token) {
+              tokenReady = true;
+              break;
+            }
+          } catch (e) {
+            console.log(`[AuthContext] Waiting for token... (attempt ${i + 1}/5)`);
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+        }
         
-        sessionId = result.data?.session_id;
-        if (sessionId) {
-          localStorage.setItem('pendingVerificationSessionId', sessionId);
-          console.log('[AuthContext] Verification session created:', sessionId);
+        if (tokenReady) {
+          const { httpsCallable } = await import('firebase/functions');
+          const { functions } = await import('../config/firebase');
+          const createSession = httpsCallable(functions, 'createVerificationSession');
+          const result = await createSession({});
+          
+          sessionId = result.data?.session_id;
+          if (sessionId) {
+            localStorage.setItem('pendingVerificationSessionId', sessionId);
+            console.log('[AuthContext] Verification session created:', sessionId);
+          }
+        } else {
+          throw new Error('Token not ready after retries');
         }
       } catch (sessionError) {
         console.warn('[AuthContext] Failed to create verification session:', sessionError);
+        // Fallback: try to send verification email without session
+        try {
+          const { httpsCallable } = await import('firebase/functions');
+          const { functions } = await import('../config/firebase');
+          const resendVerification = httpsCallable(functions, 'resendCustomVerification');
+          await resendVerification({ email: email });
+          console.log('[AuthContext] Fallback: Verification email sent without session');
+        } catch (emailError) {
+          console.error('[AuthContext] Failed to send verification email (fallback):', emailError);
+        }
       }
       
       // Sign out user immediately after registration - they need to verify email first
