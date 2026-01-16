@@ -132,11 +132,18 @@ export const AuthProvider = ({ children }) => {
         logLogin({
           provider: userCredential.user.providerData[0]?.providerId || 'email',
           userAgent: navigator.userAgent
+        }).then(() => {
+          console.log('✅ Login activity logged successfully');
+          // Trigger activity logs refresh after a short delay
+          setTimeout(() => {
+            // Dispatch custom event to trigger refetch
+            window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
+          }, 1000);
         }).catch((logError) => {
-          console.warn('Failed to log login activity:', logError);
+          console.error('❌ Failed to log login activity:', logError);
         });
       } catch (logError) {
-        console.warn('Failed to initialize login logging:', logError);
+        console.error('❌ Failed to initialize login logging:', logError);
         // Don't fail login if logging fails
       }
       
@@ -270,11 +277,16 @@ export const AuthProvider = ({ children }) => {
         logLogin({
           provider: 'facebook.com',
           userAgent: navigator.userAgent
+        }).then(() => {
+          console.log('✅ Login activity logged successfully');
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
+          }, 1000);
         }).catch((logError) => {
-          console.warn('Failed to log login activity:', logError);
+          console.error('❌ Failed to log login activity:', logError);
         });
       } catch (logError) {
-        console.warn('Failed to initialize login logging:', logError);
+        console.error('❌ Failed to initialize login logging:', logError);
         // Don't fail login if logging fails
       }
       
@@ -322,11 +334,16 @@ export const AuthProvider = ({ children }) => {
         logLogin({
           provider: 'tiktok',
           userAgent: navigator.userAgent
+        }).then(() => {
+          console.log('✅ Login activity logged successfully');
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
+          }, 1000);
         }).catch((logError) => {
-          console.warn('Failed to log login activity:', logError);
+          console.error('❌ Failed to log login activity:', logError);
         });
       } catch (logError) {
-        console.warn('Failed to initialize login logging:', logError);
+        console.error('❌ Failed to initialize login logging:', logError);
         // Don't fail login if logging fails
       }
       

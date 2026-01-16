@@ -59,6 +59,61 @@ export const useActivityLogs = (logLimit = 50) => {
   const loading = false; // Always false - never block UI
   const [error, setError] = useState(null);
 
+  const fetchLogs = useCallback(async () => {
+    if (!user) {
+      setLogs([]);
+      return;
+    }
+
+    try {
+      setError(null);
+
+      const logsRef = collection(db, 'activity_logs');
+      const q = query(
+        logsRef,
+        where('userId', '==', user.uid),
+        orderBy('timestamp', 'desc'),
+        limit(logLimit)
+      );
+
+      let querySnapshot;
+      try {
+        querySnapshot = await getDocs(q);
+      } catch (indexError) {
+        const message = `${indexError?.message || ''}`.toLowerCase();
+        if (message.includes('requires an index') || message.includes('failed-precondition')) {
+          const fallbackQuery = query(
+            logsRef,
+            where('userId', '==', user.uid),
+            limit(logLimit)
+          );
+          querySnapshot = await getDocs(fallbackQuery);
+        } else {
+          throw indexError;
+        }
+      }
+
+      const logsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate() || new Date()
+      })).sort((a, b) => {
+        const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+        const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+        return bTime - aTime;
+      });
+
+      // Update cache
+      setCache(user.uid, logsData);
+      
+      // Update state (silently updates UI)
+      setLogs(logsData);
+    } catch (err) {
+      console.error('Error fetching activity logs:', err);
+      setError(err.message);
+    }
+  }, [user, logLimit, getCache, setCache]);
+
   useEffect(() => {
     if (!user) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -73,109 +128,26 @@ export const useActivityLogs = (logLimit = 50) => {
       // Still fetch fresh data in background
     }
 
-    const fetchLogs = async () => {
-      try {
-        setError(null);
-
-        const logsRef = collection(db, 'activity_logs');
-        const q = query(
-          logsRef,
-          where('userId', '==', user.uid),
-          orderBy('timestamp', 'desc'),
-          limit(logLimit)
-        );
-
-        let querySnapshot;
-        try {
-          querySnapshot = await getDocs(q);
-        } catch (indexError) {
-          const message = `${indexError?.message || ''}`.toLowerCase();
-          if (message.includes('requires an index') || message.includes('failed-precondition')) {
-            const fallbackQuery = query(
-              logsRef,
-              where('userId', '==', user.uid),
-              limit(logLimit)
-            );
-            querySnapshot = await getDocs(fallbackQuery);
-          } else {
-            throw indexError;
-          }
-        }
-
-        const logsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          timestamp: doc.data().timestamp?.toDate() || new Date()
-        })).sort((a, b) => {
-          const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-          const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
-          return bTime - aTime;
-        });
-
-        // Update cache
-        setCache(user.uid, logsData);
-        
-        // Update state (silently updates UI)
-        setLogs(logsData);
-      } catch (err) {
-        console.error('Error fetching activity logs:', err);
-        setError(err.message);
-      }
-    };
-
     // Always fetch in background, don't block UI
     fetchLogs();
-  }, [user, logLimit, getCache, setCache]);
 
-  const refetch = () => {
+    // Listen for refresh events (e.g., after login)
+    const handleRefresh = () => {
+      console.log('🔄 Refreshing activity logs...');
+      fetchLogs();
+    };
+    window.addEventListener('refreshActivityLogs', handleRefresh);
+
+    return () => {
+      window.removeEventListener('refreshActivityLogs', handleRefresh);
+    };
+  }, [user, logLimit, getCache, setCache, fetchLogs]);
+
+  const refetch = useCallback(() => {
     if (user) {
-      const fetchLogs = async () => {
-        try {
-          setError(null);
-          const logsRef = collection(db, 'activity_logs');
-          const q = query(
-            logsRef,
-            where('userId', '==', user.uid),
-            orderBy('timestamp', 'desc'),
-            limit(logLimit)
-          );
-          let querySnapshot;
-          try {
-            querySnapshot = await getDocs(q);
-          } catch (indexError) {
-            const message = `${indexError?.message || ''}`.toLowerCase();
-            if (message.includes('requires an index') || message.includes('failed-precondition')) {
-              const fallbackQuery = query(
-                logsRef,
-                where('userId', '==', user.uid),
-                limit(logLimit)
-              );
-              querySnapshot = await getDocs(fallbackQuery);
-            } else {
-              throw indexError;
-            }
-          }
-          const logsData = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            timestamp: doc.data().timestamp?.toDate() || new Date()
-          })).sort((a, b) => {
-            const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-            const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
-            return bTime - aTime;
-          });
-          
-          // Update cache
-          setCache(user.uid, logsData);
-          setLogs(logsData);
-        } catch (err) {
-          console.error('Error fetching activity logs:', err);
-          setError(err.message);
-        }
-      };
       fetchLogs();
     }
-  };
+  }, [user, fetchLogs]);
 
   return { logs, loading, error, refetch };
 };
