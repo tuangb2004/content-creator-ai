@@ -1,0 +1,17 @@
+name: Vercel Auto Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel Deploy
+        run: |
+          echo "Push to main branch detected"
+          echo "Vercel should auto-deploy via Git Integration"
+          echo "If auto-deploy is not working, check Vercel Project Settings > Git"
