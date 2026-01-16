@@ -23,8 +23,23 @@
     ],
     "rewrites": [
       {
+        "source": "**/*.txt",
+        "destination": "/$1"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**/*.txt",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain"
+          }
+        ]
       }
     ]
   },
