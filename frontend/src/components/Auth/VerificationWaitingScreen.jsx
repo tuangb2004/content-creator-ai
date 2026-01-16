@@ -88,11 +88,10 @@ function VerificationWaitingScreen({ email, sessionId, onComplete }) {
       }
     };
 
-    // Poll every 2 seconds
-    const intervalId = setInterval(pollSessionStatus, 2000);
-    
-    // Initial poll
+    // Poll every 1.5 seconds for faster detection (especially for cross-device)
+    // Start with immediate poll, then regular interval
     pollSessionStatus();
+    const intervalId = setInterval(pollSessionStatus, 1500);
 
     // Countdown timer
     const countdownInterval = setInterval(() => {
@@ -117,13 +116,35 @@ function VerificationWaitingScreen({ email, sessionId, onComplete }) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Open email client (Gmail or default email app)
+  const openEmailClient = () => {
+    // Extract domain from email
+    const emailDomain = email.split('@')[1]?.toLowerCase() || '';
+    
+    // Map common email providers to their web URLs
+    const emailProviders = {
+      'gmail.com': 'https://mail.google.com',
+      'outlook.com': 'https://outlook.live.com',
+      'hotmail.com': 'https://outlook.live.com',
+      'yahoo.com': 'https://mail.yahoo.com',
+      'icloud.com': 'https://www.icloud.com/mail',
+    };
+    
+    const emailUrl = emailProviders[emailDomain] || `mailto:${email}`;
+    window.open(emailUrl, '_blank');
+  };
+
+  // Allow component to be used as modal content or standalone
+  const containerClass = 'flex items-center justify-center px-4 py-8';
+  const contentClass = `w-full max-w-md p-8 rounded-lg border ${
+    theme === 'dark'
+      ? 'bg-[#1C1B19] border-[#433E38]'
+      : 'bg-[#F5F2EB] border-[#D6D1C7]'
+  }`;
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className={`w-full max-w-md p-8 rounded-lg border ${
-        theme === 'dark'
-          ? 'bg-[#1C1B19] border-[#433E38]'
-          : 'bg-[#F5F2EB] border-[#D6D1C7]'
-      }`}>
+    <div className={containerClass}>
+      <div className={contentClass}>
         {status === 'pending' && (
           <div className="text-center">
             <div className={`w-16 h-16 mx-auto mb-4 border-4 border-t-transparent rounded-full animate-spin ${
@@ -139,6 +160,24 @@ function VerificationWaitingScreen({ email, sessionId, onComplete }) {
             }`}>
               {t?.auth?.checkEmailVerify || 'Please check your email and click the verification link.'}
             </p>
+            
+            {/* Check Email Button */}
+            <button
+              onClick={openEmailClient}
+              className={`w-full py-3 px-4 mb-4 rounded-sm border transition-colors flex items-center justify-center gap-2 ${
+                theme === 'dark'
+                  ? 'bg-[#2C2A26] border-[#433E38] text-[#F5F2EB] hover:bg-[#433E38]'
+                  : 'bg-[#2C2A26] border-[#2C2A26] text-[#F5F2EB] hover:bg-[#433E38]'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+              </svg>
+              <span className="font-medium">
+                {t?.auth?.checkEmail || 'Check Email'}
+              </span>
+            </button>
+            
             <p className={`text-xs ${
               theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
             }`}>
@@ -148,6 +187,11 @@ function VerificationWaitingScreen({ email, sessionId, onComplete }) {
               theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
             }`}>
               {t?.auth?.autoLoginWhenVerified || 'You will be automatically logged in once verified.'}
+            </p>
+            <p className={`text-xs mt-1 ${
+              theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
+            }`}>
+              {t?.auth?.worksOnAnyDevice || 'Works on any device - verify on any device and this page will automatically update.'}
             </p>
           </div>
         )}

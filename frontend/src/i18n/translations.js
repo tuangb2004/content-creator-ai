@@ -83,6 +83,8 @@ export const translations = {
         checkInboxSpam: 'Please check your inbox (and spam folder) and click the verification link to activate your account.',
         afterVerifying: 'After verifying, you can sign in below.',
         checkInboxButton: 'Check Inbox',
+        checkEmail: 'Check Email',
+        worksOnAnyDevice: 'Works on any device - verify on any device and this page will automatically update.',
         iveVerified: 'I\'ve verified',
         processing: 'Processing...',
         back: 'Back',

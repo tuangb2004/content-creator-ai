@@ -77,23 +77,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
     }
   }, [formData.email, mode]);
 
-  // Show waiting screen if verification is in progress (even if modal is closed)
-  if (showWaitingScreen && verificationSessionId) {
-    return (
-      <VerificationWaitingScreen
-        email={verificationEmail}
-        sessionId={verificationSessionId}
-        onComplete={() => {
-          setShowWaitingScreen(false);
-          setVerificationSessionId(null);
-          if (onLogin) onLogin();
-          onClose(); // Close modal after completion
-        }}
-      />
-    );
-  }
-
-  if (!isOpen) return null;
+  if (!isOpen && !showWaitingScreen) return null;
 
   const handleLegalNav = (e, page) => {
     e.preventDefault();
@@ -283,7 +267,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
             ? 'bg-black/60' 
             : 'bg-[#2C2A26]/40'
         }`}
-        onClick={onClose}
+        onClick={showWaitingScreen ? undefined : onClose}
       />
 
       {/* Modal Card */}
@@ -293,22 +277,24 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
           : 'bg-[#F5F2EB] border-[#D6D1C7]'
       }`}>
         
-        {/* Close Button */}
-        <button 
-          onClick={onClose}
-          className={`absolute top-4 right-4 transition-colors z-10 ${
-            theme === 'dark'
-              ? 'text-gray-400 hover:text-gray-200'
-              : 'text-[#A8A29E] hover:text-[#2C2A26]'
-          }`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        {/* Close Button - Hide when waiting for verification */}
+        {!showWaitingScreen && (
+          <button 
+            onClick={onClose}
+            className={`absolute top-4 right-4 transition-colors z-10 ${
+              theme === 'dark'
+                ? 'text-gray-400 hover:text-gray-200'
+                : 'text-[#A8A29E] hover:text-[#2C2A26]'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
 
-        {/* Back Button (Only in Email Mode or Forgot PW) */}
-        {(mode === 'email' || mode === 'forgot_password') && (
+        {/* Back Button (Only in Email Mode or Forgot PW, hide when waiting) */}
+        {(mode === 'email' || mode === 'forgot_password') && !showWaitingScreen && (
           <button 
             onClick={() => mode === 'forgot_password' ? setMode('email') : setMode('options')}
             className={`absolute top-4 left-4 transition-colors z-10 flex items-center gap-1 text-xs uppercase tracking-widest font-medium ${
@@ -326,6 +312,23 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
 
         <div className="p-8 md:p-10 text-center">
           
+          {/* VIEW: VERIFICATION WAITING SCREEN */}
+          {showWaitingScreen && verificationSessionId && (
+            <VerificationWaitingScreen
+              email={verificationEmail}
+              sessionId={verificationSessionId}
+              onComplete={() => {
+                setShowWaitingScreen(false);
+                setVerificationSessionId(null);
+                if (onLogin) onLogin();
+                onClose(); // Close modal after completion
+              }}
+            />
+          )}
+
+          {/* VIEW: OPTIONS / EMAIL FORM / FORGOT PASSWORD */}
+          {!showWaitingScreen && (
+            <>
           {/* Header Text */}
           <div className="mb-8">
             <h2 className={`text-3xl font-serif mb-2 transition-colors duration-300 ${
@@ -824,6 +827,8 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
                 }`}
               >{t?.footer?.privacyPolicy || 'Privacy Policy'}</button>.
             </p>
+          )}
+            </>
           )}
         </div>
       </div>
