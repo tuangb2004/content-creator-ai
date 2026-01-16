@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider,
   FacebookAuthProvider,
   signInWithPopup,
+  signInWithCustomToken,
   sendPasswordResetEmail,
   sendEmailVerification,
   updateProfile
@@ -402,6 +403,7 @@ export const AuthProvider = ({ children }) => {
     loginWithGoogle,
     loginWithFacebook,
     loginWithTikTok,
+    signInWithCustomTokenAuth,
     logout,
     resetPassword,
     resendVerificationEmail,

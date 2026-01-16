@@ -16,9 +16,10 @@ import TermsOfService from '../components/Legal/TermsOfService';
 import PrivacyPolicy from '../components/Legal/PrivacyPolicy';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import toast from '../utils/toast';
 
 function LandingPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, signInWithCustomTokenAuth } = useAuth();
   const { theme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -44,6 +45,28 @@ function LandingPage() {
   useEffect(() => {
     localStorage.removeItem('logging_out');
   }, []);
+
+  // Handle TikTok OAuth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tiktokToken = urlParams.get('tiktok_token');
+    
+    if (tiktokToken && !user && !loading) {
+      // Remove token from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Sign in with custom token
+      signInWithCustomTokenAuth(tiktokToken)
+        .then(() => {
+          toast.success('Đăng nhập TikTok thành công!');
+          navigate('/dashboard', { replace: true });
+        })
+        .catch((error) => {
+          console.error('TikTok sign-in error:', error);
+          toast.error(error.message || 'Đăng nhập TikTok thất bại');
+        });
+    }
+  }, [user, loading, signInWithCustomTokenAuth, navigate]);
 
   // Auto-open auth modal if coming from /register or /login route
   /* eslint-disable react-hooks/set-state-in-effect */
