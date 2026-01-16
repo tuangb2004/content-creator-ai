@@ -62,40 +62,78 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
 
   const activities = useMemo(() => {
     if (!logs || logs.length === 0) {
-      return [
-        {
-          id: 'empty',
-          type: 'task',
-          title: 'No activity yet',
-          detail: 'Generate content to see your studio pulse here.',
-          time: '--'
-        }
-      ];
+      return [];
     }
 
-    return logs.map((log) => {
-      const action = String(log.action || '').toLowerCase();
-      const metadata = log.metadata || {};
-      const isBilling = action.includes('credit') || action.includes('payment');
-      const isAccount = action.includes('login') || action.includes('auth') || action.includes('session');
+    return logs
+      .filter((log) => {
+        // Only show specific activity types
+        const action = String(log.action || '').toLowerCase();
+        
+        // For credits_updated, only show when credits are added (change > 0)
+        if (action === 'credits_updated') {
+          const metadata = log.metadata || {};
+          const change = metadata.change || 0;
+          return change > 0; // Only show when credits are added
+        }
+        
+        return action === 'generate_content' || 
+               action === 'user_login' ||
+               action === 'image_exported';
+      })
+      .map((log) => {
+        const action = String(log.action || '').toLowerCase();
+        const metadata = log.metadata || {};
 
-      let title = action.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-      if (action === 'generate_content') title = 'Content Generated';
+        // Determine event type and styling
+        let eventType = 'content'; // default
+        let title = '';
+        let detail = '';
+        let circleColor = 'bg-[#2C2A26] dark:bg-[#F5F2EB]'; // dark grey/black
 
-      let detail = metadata.toolName || metadata.toolId || 'Studio activity';
-      if (action === 'generate_content') {
-        const contentType = metadata.contentType ? String(metadata.contentType).toUpperCase() : 'CONTENT';
-        detail = `${contentType} • ${metadata.toolName || 'Creative Tool'}`;
-      }
+        if (action === 'generate_content') {
+          eventType = 'content';
+          title = 'CONTENT GENERATED';
+          // Format: "SEO Editorial: "Future of AI"" or "IMAGE: Tool Name"
+          const contentType = metadata.contentType ? String(metadata.contentType).toUpperCase() : 'CONTENT';
+          const toolName = metadata.toolName || 'Creative Tool';
+          // For text content, show format like "SEO Editorial: "Title""
+          if (contentType === 'TEXT' || contentType === 'CONTENT') {
+            // Try to extract title from prompt or use tool name
+            const prompt = metadata.prompt || '';
+            const shortPrompt = prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt;
+            detail = `${toolName}: "${shortPrompt}"`;
+          } else {
+            detail = `${contentType}: ${toolName}`;
+          }
+          circleColor = 'bg-[#2C2A26] dark:bg-[#F5F2EB]'; // dark grey/black
+        } else if (action === 'credits_updated') {
+          // Only credits added (change > 0) pass the filter
+          eventType = 'credits';
+          title = 'CREDITS UPDATED';
+          detail = metadata.reason || (metadata.planName ? `Plan upgrade: ${metadata.planName}` : 'Daily allowance added');
+          circleColor = 'bg-emerald-500'; // green (#2ecc71)
+        } else if (action === 'user_login') {
+          eventType = 'login';
+          title = 'NEW LOGIN';
+          detail = metadata.platform || 'Chrome on Windows';
+          circleColor = 'bg-orange-500'; // orange (#f39c12)
+        } else if (action === 'image_exported') {
+          eventType = 'export';
+          title = 'IMAGE EXPORTED';
+          detail = metadata.toolName || metadata.projectId || 'Visual Studio';
+          circleColor = 'bg-[#2C2A26] dark:bg-[#F5F2EB]'; // dark grey/black
+        }
 
-      return {
-        id: log.id,
-        type: isBilling ? 'billing' : isAccount ? 'account' : 'task',
-        title,
-        detail,
-        time: formatRelativeTime(log.timestamp)
-      };
-    });
+        return {
+          id: log.id,
+          eventType,
+          title,
+          detail,
+          time: formatRelativeTime(log.timestamp),
+          circleColor
+        };
+      });
   }, [logs]);
 
   return (
@@ -185,42 +223,47 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
         <div className="lg:col-span-4 space-y-6">
           <h3 className="text-sm font-bold uppercase tracking-widest text-[#A8A29E]">Studio Pulse</h3>
           <div className={`border p-6 rounded-sm shadow-sm transition-colors ${
-            theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
+            theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-[#F8F6F2] border-[#D6D1C7]'
           }`}>
-            <div className={`space-y-8 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] ${
-              theme === 'dark' ? 'before:bg-[#433E38]' : 'before:bg-[#D6D1C7]'
-            }`}>
-              {activities.map((act) => (
-                <div key={act.id} className="relative pl-8">
-                  <div className={`absolute left-0 top-1.5 w-[23px] h-[23px] rounded-full border-4 z-10 ${
-                    theme === 'dark' ? 'border-[#2C2A26]' : 'border-white'
-                  } ${
-                    act.type === 'task' ? (theme === 'dark' ? 'bg-[#F5F2EB]' : 'bg-[#2C2A26]')
-                    : act.type === 'billing' ? 'bg-emerald-500'
-                    : 'bg-amber-500'
-                  }`}></div>
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center mb-0.5">
-                      <span className={`text-xs font-bold uppercase tracking-wider ${
-                        theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                      }`}>{act.title}</span>
-                      <span className="text-[10px] text-[#A8A29E] italic">{act.time}</span>
+            {activities.length === 0 ? (
+              <div className="text-center py-8 text-[#A8A29E]">
+                <p className="text-sm font-light">No activity yet</p>
+                <p className="text-xs mt-1">Generate content to see your studio pulse here.</p>
+              </div>
+            ) : (
+              <div className={`space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] ${
+                theme === 'dark' ? 'before:bg-[#433E38]' : 'before:bg-[#D6D1C7]'
+              }`}>
+                {activities.map((act) => (
+                  <div key={act.id} className="relative pl-8">
+                    <div className={`absolute left-0 top-1.5 w-[23px] h-[23px] rounded-full border-4 z-10 ${
+                      theme === 'dark' ? 'border-[#2C2A26]' : 'border-[#F8F6F2]'
+                    } ${act.circleColor}`}></div>
+                    <div className="flex flex-col">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <span className={`text-xs font-bold uppercase tracking-wider ${
+                          theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+                        }`}>{act.title}</span>
+                        <span className="text-[10px] text-[#A8A29E] font-light">{act.time}</span>
+                      </div>
+                      <p className={`text-xs font-light leading-relaxed ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>{act.detail}</p>
                     </div>
-                    <p className={`text-xs font-light ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>{act.detail}</p>
                   </div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={onViewAuditLog}
-              className={`w-full mt-8 py-3 border text-[10px] font-bold uppercase tracking-widest transition-colors ${
-              theme === 'dark'
-                ? 'border-[#433E38] text-[#F5F2EB] hover:bg-[#1C1B19]'
-                : 'border-[#D6D1C7] text-[#2C2A26] hover:bg-[#F5F2EB]'
-            }`}
-            >
-              View Full Audit Log
-            </button>
+                ))}
+              </div>
+            )}
+            {activities.length > 0 && (
+              <button
+                onClick={onViewAuditLog}
+                className={`w-full mt-8 py-3 border text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                theme === 'dark'
+                  ? 'border-[#433E38] text-[#F5F2EB] hover:bg-[#1C1B19]'
+                  : 'border-[#D6D1C7] text-[#2C2A26] hover:bg-[#F5F2EB]'
+              }`}
+              >
+                VIEW FULL AUDIT LOG
+              </button>
+            )}
           </div>
         </div>
       </div>

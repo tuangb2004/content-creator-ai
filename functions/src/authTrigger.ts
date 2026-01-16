@@ -2,6 +2,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { initializeUser } from './utils/credits';
 import { sendVerificationEmail } from './emailService';
+import { logActivity } from './utils/logging';
 
 /**
  * Initialize user when they sign up (Firebase Auth trigger)
@@ -24,6 +25,9 @@ export const onUserCreate = functions.auth.user().onCreate(async (user) => {
     await initializeUser(uid, email);
 
     console.log(`✅ User ${uid} initialized with free credits`);
+
+    // Note: Login activity is logged from frontend via logUserLogin function
+    // This ensures we have accurate userAgent and platform info
 
     // Check if user was created by resendCustomVerification (has skipVerificationEmail flag)
     // This prevents duplicate verification emails

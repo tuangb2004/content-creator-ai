@@ -16,6 +16,7 @@ import {
 import { chat } from './chat';
 import { initializeUserIfNeeded } from './initializeUser';
 import { getTikTokAuthUrl, handleTikTokCallback } from './tiktokAuth';
+import { logUserLogin } from './logUserLogin';
 
 const resolveStorageBucket = (): string | undefined => {
   const explicitBucket = process.env.FIREBASE_STORAGE_BUCKET;
@@ -64,6 +65,7 @@ export {
   chat,
   initializeUserIfNeeded,
   getTikTokAuthUrl,
-  handleTikTokCallback
+  handleTikTokCallback,
+  logUserLogin
 };
 

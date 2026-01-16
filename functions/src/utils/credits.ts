@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { FieldValue } from 'firebase-admin/firestore';
 import { UserData } from '../types';
+import { logActivity } from './logging';
 
 // Lazy load firestore to avoid calling before initializeApp()
 function getDb() {
@@ -80,11 +81,13 @@ export async function decrementCredits(userId: string, amount: number = 1): Prom
 /**
  * Increment credits (for refund or purchase)
  */
-export async function incrementCredits(userId: string, amount: number): Promise<number> {
+export async function incrementCredits(userId: string, amount: number, metadata?: { reason?: string }): Promise<number> {
   const db = getDb();
   const userRef = db.collection('users').doc(userId);
+  let creditsBefore = 0;
+  let creditsAfter = 0;
 
-  return db.runTransaction(async (transaction) => {
+  await db.runTransaction(async (transaction) => {
     const userDoc = await transaction.get(userRef);
 
     if (!userDoc.exists) {
@@ -96,28 +99,74 @@ export async function incrementCredits(userId: string, amount: number): Promise<
 
     const userData = userDoc.data() as UserData;
     const currentCredits = userData.credits || 0;
-    const creditsAfter = currentCredits + amount;
+    creditsBefore = currentCredits;
+    creditsAfter = currentCredits + amount;
 
     transaction.update(userRef, {
       credits: creditsAfter,
       updatedAt: FieldValue.serverTimestamp()
     });
-
-    return creditsAfter;
   });
+
+  // Log credit update activity
+  try {
+    await logActivity({
+      userId,
+      action: 'credits_updated',
+      creditsBefore,
+      creditsAfter,
+      success: true,
+      metadata: {
+        change: amount,
+        reason: metadata?.reason || `Added ${amount} credits`,
+        type: amount > 0 ? 'added' : 'deducted'
+      }
+    });
+  } catch (logError) {
+    console.warn('Failed to log credit increment activity:', logError);
+    // Don't fail credit operation if logging fails
+  }
+
+  return creditsAfter;
 }
 
 /**
  * Set credits (for initial setup or plan upgrade)
  */
-export async function setCredits(userId: string, credits: number): Promise<void> {
+export async function setCredits(userId: string, credits: number, metadata?: { reason?: string; planName?: string }): Promise<void> {
   const db = getDb();
   const userRef = db.collection('users').doc(userId);
+  
+  // Get current credits before update
+  const userDoc = await userRef.get();
+  const creditsBefore = userDoc.exists ? (userDoc.data() as UserData).credits || 0 : 0;
 
   await userRef.update({
     credits,
     updatedAt: FieldValue.serverTimestamp()
   });
+
+  // Log credit update activity if credits changed
+  if (credits !== creditsBefore) {
+    try {
+      await logActivity({
+        userId,
+        action: 'credits_updated',
+        creditsBefore,
+        creditsAfter: credits,
+        success: true,
+        metadata: {
+          change: credits - creditsBefore,
+          reason: metadata?.reason || (metadata?.planName ? `Plan upgrade: ${metadata.planName}` : `Credits set to ${credits}`),
+          planName: metadata?.planName,
+          type: credits > creditsBefore ? 'added' : 'set'
+        }
+      });
+    } catch (logError) {
+      console.warn('Failed to log credit set activity:', logError);
+      // Don't fail credit operation if logging fails
+    }
+  }
 }
 
 /**

@@ -155,7 +155,10 @@ export const generateContent = functions.https.onCall(
       creditsAfter = creditsBefore;
     } else {
       try {
-        creditsAfter = await decrementCredits(userId, creditsToCharge);
+        creditsAfter = await decrementCredits(userId, creditsToCharge, {
+          toolName,
+          contentType
+        });
       } catch (error: any) {
         if (error.code === 'failed-precondition') {
           throw error; // Re-throw credit errors
@@ -230,13 +233,15 @@ export const generateContent = functions.https.onCall(
         template,
         tone,
         length,
+        prompt: prompt.substring(0, 100), // Store first 100 chars for activity log
         promptLength: prompt.length,
         creditsUsed: creditsToCharge,
         estimatedInputTokens: estimateTokens(prompt),
         estimatedOutputTokens: estimateOutputTokens(length),
         heavyMultiplier,
         toolId,
-        toolName
+        toolName,
+        toolCategory
       }
     });
 

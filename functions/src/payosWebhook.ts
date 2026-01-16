@@ -161,7 +161,10 @@ export const payosWebhook = functions.https.onRequest(async (req, res) => {
         updatedAt: FieldValue.serverTimestamp(),
       });
 
-      await setCredits(userId, credits);
+      await setCredits(userId, credits, {
+        reason: `Plan upgrade: ${planName}`,
+        planName
+      });
 
       // Update payment link status
       await paymentLinkRef.update({
