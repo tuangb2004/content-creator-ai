@@ -24,7 +24,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const functions = getFunctions(app);
+// Initialize functions with region (us-central1 matches backend)
+export const functions = getFunctions(app, 'us-central1');
 export const storage = getStorage(app);
 
 // Auto-connect to emulators only when explicitly enabled

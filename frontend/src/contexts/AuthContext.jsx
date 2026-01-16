@@ -279,15 +279,16 @@ export const AuthProvider = ({ children }) => {
       }
       
       // Log login activity (fire and forget - don't block login)
-      try {
-        const { httpsCallable } = await import('firebase/functions');
-        const { functions } = await import('../config/firebase');
-        const logLogin = httpsCallable(functions, 'logUserLogin');
-        // Don't await - fire and forget to not block login
-        logLogin({
-          provider: 'facebook.com',
-          userAgent: navigator.userAgent
-        }).then((result) => {
+      console.log('🔐 Attempting to log Facebook login activity...');
+      setTimeout(async () => {
+        try {
+          const { httpsCallable } = await import('firebase/functions');
+          const { functions } = await import('../config/firebase');
+          const logLogin = httpsCallable(functions, 'logUserLogin');
+          const result = await logLogin({
+            provider: 'facebook.com',
+            userAgent: navigator.userAgent
+          });
           console.log('✅ Login activity logged successfully:', result);
           if (userCredential.user?.uid) {
             sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_50`);
@@ -296,14 +297,11 @@ export const AuthProvider = ({ children }) => {
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
           }, 2000);
-        }).catch((logError) => {
+        } catch (logError) {
           console.error('❌ Failed to log login activity:', logError);
-          console.error('Error details:', logError.code, logError.message);
-        });
-      } catch (logError) {
-        console.error('❌ Failed to initialize login logging:', logError);
-        // Don't fail login if logging fails
-      }
+          console.error('Error code:', logError.code, 'Message:', logError.message);
+        }
+      }, 500);
       
       // Auth state listener will update user state automatically
       return {
@@ -341,15 +339,16 @@ export const AuthProvider = ({ children }) => {
       const userCredential = await signInWithCustomToken(auth, customToken);
       
       // Log login activity (fire and forget - don't block login)
-      try {
-        const { httpsCallable } = await import('firebase/functions');
-        const { functions } = await import('../config/firebase');
-        const logLogin = httpsCallable(functions, 'logUserLogin');
-        // Don't await - fire and forget to not block login
-        logLogin({
-          provider: 'tiktok',
-          userAgent: navigator.userAgent
-        }).then((result) => {
+      console.log('🔐 Attempting to log TikTok login activity...');
+      setTimeout(async () => {
+        try {
+          const { httpsCallable } = await import('firebase/functions');
+          const { functions } = await import('../config/firebase');
+          const logLogin = httpsCallable(functions, 'logUserLogin');
+          const result = await logLogin({
+            provider: 'tiktok',
+            userAgent: navigator.userAgent
+          });
           console.log('✅ Login activity logged successfully:', result);
           if (userCredential.user?.uid) {
             sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_50`);
@@ -358,14 +357,11 @@ export const AuthProvider = ({ children }) => {
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
           }, 2000);
-        }).catch((logError) => {
+        } catch (logError) {
           console.error('❌ Failed to log login activity:', logError);
-          console.error('Error details:', logError.code, logError.message);
-        });
-      } catch (logError) {
-        console.error('❌ Failed to initialize login logging:', logError);
-        // Don't fail login if logging fails
-      }
+          console.error('Error code:', logError.code, 'Message:', logError.message);
+        }
+      }, 500);
       
       // Auth state listener will update user state automatically
       return {
