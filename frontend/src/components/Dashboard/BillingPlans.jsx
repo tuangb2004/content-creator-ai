@@ -20,6 +20,11 @@ const BillingPlans = () => {
   const [loading, setLoading] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
+  // Debug: Log modal state changes
+  useEffect(() => {
+    console.log('PaymentModal state changed:', isPaymentModalOpen);
+  }, [isPaymentModalOpen]);
+
   // Map plan names to amounts (VND)
   // Exchange rate: 1 USD ≈ 23,800 VND
   const PLAN_PRICES = {
@@ -320,8 +325,14 @@ const BillingPlans = () => {
               theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
             }`}>{t?.billing?.paymentMethod || 'Payment Method'}</h3>
             <button 
-              onClick={() => setIsPaymentModalOpen(true)}
-              className={`text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer ${
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Edit button clicked, opening modal...');
+                setIsPaymentModalOpen(true);
+              }}
+              type="button"
+              className={`text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer hover:opacity-80 ${
                 theme === 'dark' 
                   ? 'text-[#A8A29E] hover:text-[#F5F2EB]' 
                   : 'text-[#A8A29E] hover:text-[#2C2A26]'

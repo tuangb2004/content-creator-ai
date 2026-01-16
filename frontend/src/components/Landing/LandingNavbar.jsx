@@ -103,9 +103,16 @@ const LandingNavbar = ({ onNavClick, projectCount = 0, onCartClick, onAuthClick,
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Navigate to landing page after logout
+      navigate('/', { replace: true });
+      // Force reload to clear any cached state
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   // Text color changes based on scroll state and theme
@@ -257,17 +264,7 @@ const LandingNavbar = ({ onNavClick, projectCount = 0, onCartClick, onAuthClick,
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            {/* Cart/Projects Button */}
-            {user && (
-              <button 
-                onClick={handleCartClick}
-                className={`text-xs font-medium uppercase tracking-widest hover:opacity-60 transition-all duration-300 ml-2 ${isSearchOpen ? 'opacity-70' : 'opacity-100'}`}
-              >
-                My Projects {projectCount > 0 && `(${projectCount})`}
-              </button>
-            )}
-
-            {/* Auth Buttons */}
+            {/* Auth Buttons - Only show when NOT logged in */}
             {!user && (
               <>
                 <button 
@@ -284,24 +281,6 @@ const LandingNavbar = ({ onNavClick, projectCount = 0, onCartClick, onAuthClick,
                     {t?.nav?.start || 'Get Started'}
                 </button>
               </>
-            )}
-
-            {/* User Menu - If logged in */}
-            {user && (
-              <div className={`flex items-center gap-3 transition-opacity duration-300 ${isSearchOpen ? 'opacity-70' : 'opacity-100'}`}>
-                <Link
-                  to="/dashboard"
-                  className="text-xs font-medium uppercase tracking-widest hover:opacity-60 transition-opacity"
-                >
-                  Dashboard
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="text-xs font-medium uppercase tracking-widest hover:opacity-60 transition-opacity"
-                >
-                  Logout
-                </button>
-              </div>
             )}
 
           </div>
@@ -400,28 +379,7 @@ const LandingNavbar = ({ onNavClick, projectCount = 0, onCartClick, onAuthClick,
         </div>
         
         <div className="mt-8 flex flex-col gap-4">
-          {user ? (
-            <>
-              <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="w-full py-4 border border-[#2C2A26] dark:border-gray-400 text-[#2C2A26] dark:text-gray-100 text-xs font-bold uppercase tracking-widest hover:bg-[#2C2A26] dark:hover:bg-gray-700 hover:text-[#F5F2EB] dark:hover:text-gray-100 transition-colors text-center">Dashboard</Link>
-              {projectCount > 0 && (
-                <button 
-                  onClick={() => { handleCartClick(); setMobileMenuOpen(false); }} 
-                  className="w-full py-4 border border-[#2C2A26] dark:border-gray-400 text-[#2C2A26] dark:text-gray-100 text-xs font-bold uppercase tracking-widest hover:bg-[#2C2A26] dark:hover:bg-gray-700 hover:text-[#F5F2EB] dark:hover:text-gray-100 transition-colors"
-                >
-                  My Projects ({projectCount})
-                </button>
-              )}
-              <button 
-                onClick={() => {
-                  handleLogout();
-                  setMobileMenuOpen(false);
-                }} 
-                className="w-full py-4 bg-[#2C2A26] dark:bg-gray-700 text-[#F5F2EB] dark:text-gray-100 text-xs font-bold uppercase tracking-widest hover:bg-[#433E38] dark:hover:bg-gray-600 transition-colors"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
+          {!user && (
             <>
               <button 
                   onClick={() => { setMobileMenuOpen(false); onAuthClick && onAuthClick('signin'); }}

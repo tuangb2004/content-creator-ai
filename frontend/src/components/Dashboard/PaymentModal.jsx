@@ -16,6 +16,9 @@ const PaymentModal = ({ isOpen, onClose, onSave }) => {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  // Debug log
+  console.log('PaymentModal render - isOpen:', isOpen);
+
   if (!isOpen) {
     return null;
   }
@@ -324,9 +327,25 @@ const PaymentModal = ({ isOpen, onClose, onSave }) => {
   );
 
   // Render modal using portal to body to avoid z-index issues
-  return typeof window !== 'undefined' 
-    ? createPortal(modalContent, document.body)
-    : null;
+  // Fallback to direct render if portal fails
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  // Ensure document.body exists before creating portal
+  if (!document.body) {
+    console.warn('document.body not available, rendering directly');
+    return modalContent;
+  }
+
+  try {
+    const portal = createPortal(modalContent, document.body);
+    console.log('PaymentModal portal created successfully');
+    return portal;
+  } catch (error) {
+    console.error('Portal error, rendering directly:', error);
+    return modalContent;
+  }
 };
 
 export default PaymentModal;

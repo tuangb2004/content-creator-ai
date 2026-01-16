@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AuthModal from '../components/Auth/AuthModal';
 import LandingNavbar from '../components/Landing/LandingNavbar';
 import Hero from '../components/Landing/Hero';
@@ -18,9 +18,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 function LandingPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { theme } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authType, setAuthType] = useState('signup'); // 'signin' or 'signup'
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +31,14 @@ function LandingPage() {
   const [pendingTool, setPendingTool] = useState(null); // Track tool user wanted to use before login
   const homeScrollRef = useRef(0);
   const shouldRestoreScrollRef = useRef(false);
+
+  // Redirect logged-in users to dashboard (unless they just logged out)
+  useEffect(() => {
+    if (!loading && user && !localStorage.getItem('logging_out')) {
+      // User is logged in and not logging out - redirect to dashboard
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   // Clear logout flag when landing page loads
   useEffect(() => {

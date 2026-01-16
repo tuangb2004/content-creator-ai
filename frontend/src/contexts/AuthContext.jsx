@@ -256,11 +256,18 @@ export const AuthProvider = ({ children }) => {
    */
   const logout = async () => {
     try {
+      // Set flag to indicate user is logging out (prevents auto-redirect to dashboard)
+      localStorage.setItem('logging_out', 'true');
       await signOut(auth);
+      // Clear the flag after a short delay to allow redirect
+      setTimeout(() => {
+        localStorage.removeItem('logging_out');
+      }, 1000);
       // Auth state listener will clear user state automatically
-      // Redirect will be handled by ProtectedRoute
+      // Redirect will be handled by ProtectedRoute or LandingPage
     } catch (error) {
       console.error('Logout error:', error);
+      localStorage.removeItem('logging_out');
       throw formatAuthError(error);
     }
   };
