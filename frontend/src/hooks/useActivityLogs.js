@@ -134,6 +134,10 @@ export const useActivityLogs = (logLimit = 50) => {
     // Listen for refresh events (e.g., after login)
     const handleRefresh = () => {
       console.log('🔄 Refreshing activity logs...');
+      // Clear cache before refetching
+      if (user?.uid) {
+        sessionStorage.removeItem(`activityLogs_${user.uid}_${logLimit}`);
+      }
       fetchLogs();
     };
     window.addEventListener('refreshActivityLogs', handleRefresh);

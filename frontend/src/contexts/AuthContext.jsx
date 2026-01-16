@@ -124,23 +124,33 @@ export const AuthProvider = ({ children }) => {
       }
       
       // Log login activity (fire and forget - don't block login)
+      console.log('🔐 Attempting to log login activity...');
       try {
         const { httpsCallable } = await import('firebase/functions');
         const { functions } = await import('../config/firebase');
         const logLogin = httpsCallable(functions, 'logUserLogin');
+        console.log('📞 Calling logUserLogin function...');
         // Don't await - fire and forget to not block login
         logLogin({
           provider: userCredential.user.providerData[0]?.providerId || 'email',
           userAgent: navigator.userAgent
-        }).then(() => {
-          console.log('✅ Login activity logged successfully');
+        }).then((result) => {
+          console.log('✅ Login activity logged successfully:', result);
+          // Clear cache to force fresh fetch
+          if (userCredential.user?.uid) {
+            sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_50`);
+            sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_6`);
+            console.log('🗑️ Cleared activity logs cache');
+          }
           // Trigger activity logs refresh after a short delay
           setTimeout(() => {
+            console.log('🔄 Dispatching refreshActivityLogs event...');
             // Dispatch custom event to trigger refetch
             window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
-          }, 1000);
+          }, 2000); // Increased delay to ensure Firestore write completes
         }).catch((logError) => {
           console.error('❌ Failed to log login activity:', logError);
+          console.error('Error details:', logError.code, logError.message, logError);
         });
       } catch (logError) {
         console.error('❌ Failed to initialize login logging:', logError);
@@ -277,13 +287,18 @@ export const AuthProvider = ({ children }) => {
         logLogin({
           provider: 'facebook.com',
           userAgent: navigator.userAgent
-        }).then(() => {
-          console.log('✅ Login activity logged successfully');
+        }).then((result) => {
+          console.log('✅ Login activity logged successfully:', result);
+          if (userCredential.user?.uid) {
+            sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_50`);
+            sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_6`);
+          }
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
-          }, 1000);
+          }, 2000);
         }).catch((logError) => {
           console.error('❌ Failed to log login activity:', logError);
+          console.error('Error details:', logError.code, logError.message);
         });
       } catch (logError) {
         console.error('❌ Failed to initialize login logging:', logError);
@@ -334,13 +349,18 @@ export const AuthProvider = ({ children }) => {
         logLogin({
           provider: 'tiktok',
           userAgent: navigator.userAgent
-        }).then(() => {
-          console.log('✅ Login activity logged successfully');
+        }).then((result) => {
+          console.log('✅ Login activity logged successfully:', result);
+          if (userCredential.user?.uid) {
+            sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_50`);
+            sessionStorage.removeItem(`activityLogs_${userCredential.user.uid}_6`);
+          }
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
-          }, 1000);
+          }, 2000);
         }).catch((logError) => {
           console.error('❌ Failed to log login activity:', logError);
+          console.error('Error details:', logError.code, logError.message);
         });
       } catch (logError) {
         console.error('❌ Failed to initialize login logging:', logError);
