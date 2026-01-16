@@ -226,8 +226,9 @@ export const AuthProvider = ({ children }) => {
   const loginWithFacebook = async () => {
     try {
       const provider = new FacebookAuthProvider();
-      provider.addScope('email'); // Request email permission
-      provider.addScope('public_profile'); // Request profile permission
+      // Note: Firebase Auth automatically requests basic profile and email
+      // Only add additional scopes if needed and approved by Facebook
+      // provider.addScope('public_profile'); // Default scope, usually not needed
       
       const userCredential = await signInWithPopup(auth, provider);
       
