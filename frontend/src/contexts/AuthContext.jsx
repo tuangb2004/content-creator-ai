@@ -272,6 +272,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
+   * Sign in with custom token (for TikTok OAuth callback)
+   */
+  const signInWithCustomTokenAuth = async (customToken) => {
+    try {
+      const userCredential = await signInWithCustomToken(auth, customToken);
+      // Auth state listener will update user state automatically
+      return {
+        user: userCredential.user,
+      };
+    } catch (error) {
+      throw formatAuthError(error);
+    }
+  };
+
+  /**
    * Logout
    */
   const logout = async () => {
