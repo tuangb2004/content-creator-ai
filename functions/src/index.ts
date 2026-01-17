@@ -4,15 +4,7 @@ import { createPaymentLinkFunction } from './createPaymentLink';
 import { payosWebhook } from './payosWebhook';
 import { onUserCreate } from './authTrigger';
 import { saveProject, getProjects, deleteProject } from './projects';
-import { sendCustomPasswordReset, resendCustomVerification } from './customAuthFunctions';
-import { 
-  getSessionStatusEndpoint,
-  getSessionStatusCallable,
-  verifyEmailEndpoint, 
-  createVerificationSession,
-  markSessionCompletedCallable,
-  markSessionVerifiedCallable
-} from './authSession';
+import { sendCustomPasswordReset } from './customAuthFunctions';
 import { chat } from './chat';
 import { initializeUserIfNeeded } from './initializeUser';
 import { getTikTokAuthUrl, handleTikTokCallback } from './tiktokAuth';
@@ -55,13 +47,6 @@ export {
   getProjects,
   deleteProject,
   sendCustomPasswordReset,
-  resendCustomVerification,
-  getSessionStatusEndpoint,
-  getSessionStatusCallable,
-  verifyEmailEndpoint,
-  createVerificationSession,
-  markSessionCompletedCallable,
-  markSessionVerifiedCallable,
   chat,
   initializeUserIfNeeded,
   getTikTokAuthUrl,

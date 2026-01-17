@@ -454,7 +454,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Send password reset email using custom function (SendGrid)
+   * Send password reset email using custom function (SendGrid - optional custom template)
    */
   const resetPassword = async (email) => {
     try {
@@ -479,7 +479,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Resend email verification using custom function (SendGrid)
+   * Resend email verification using Firebase built-in function
    * User must be authenticated to resend verification email
    */
   const resendVerificationEmail = async (emailOrUser = null) => {
@@ -489,22 +489,25 @@ export const AuthProvider = ({ children }) => {
     
     try {
       console.log('[AuthContext] Resending email verification for user:', user.email);
-      const resendVerification = httpsCallable(functions, 'resendCustomVerification');
-      const result = await resendVerification();
       
-      if (result.data?.alreadyVerified) {
+      // Check if email is already verified
+      if (user.emailVerified) {
         console.log('[AuthContext] Email is already verified');
         return { 
           success: true, 
           alreadyVerified: true,
-          message: result.data?.message || 'Email is already verified.' 
+          message: 'Email is already verified.' 
         };
       }
       
-      console.log('[AuthContext] Verification email resent successfully:', result);
+      // Use Firebase built-in sendEmailVerification
+      const { sendEmailVerification } = await import('firebase/auth');
+      await sendEmailVerification(user);
+      
+      console.log('[AuthContext] Verification email resent successfully');
       return { 
         success: true, 
-        message: result.data?.message || 'Verification email sent. Please check your inbox.' 
+        message: 'Verification email sent. Please check your inbox.' 
       };
     } catch (error) {
       console.error('[AuthContext] Failed to resend verification email:', error);
