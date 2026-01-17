@@ -31,18 +31,8 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
   const { login, register, loginWithGoogle, loginWithFacebook, loginWithTikTok, resetPassword } = useAuth();
   const navigate = useNavigate();
 
-  // Check localStorage for pending verification on mount and whenever isOpen changes
-  useEffect(() => {
-    const pendingEmail = localStorage.getItem('pendingVerificationEmail');
-    const showVerificationModal = localStorage.getItem('showVerificationModal') === 'true';
-    
-    if (showVerificationModal && pendingEmail && !showWaitingScreen) {
-      // User is waiting for verification - show modal
-      console.log('[AuthModal] Restoring verification state from localStorage');
-      setVerificationEmail(pendingEmail);
-      setShowWaitingScreen(true);
-    }
-  }, [isOpen, showWaitingScreen]); // Check when isOpen changes (including when it becomes false)
+  // Flow chuẩn: Không cần localStorage persistence
+  // User sẽ được login và ProtectedRoute sẽ show blocking screen
 
   // Reset mode when modal opens/closes or type changes
   useEffect(() => {
@@ -68,13 +58,9 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
       setPasswordStrength({ score: 0, strength: 'weak', feedback: [] });
       setEmailError('');
     } else if (!showWaitingScreen) {
-      // Only reset waiting screen state if modal is closed AND not waiting for verification
-      // BUT: Don't reset if there's a flag in localStorage (user is waiting for verification)
-      const hasVerificationFlag = localStorage.getItem('showVerificationModal') === 'true';
-      if (!hasVerificationFlag) {
-        setShowWaitingScreen(false);
-        setVerificationEmail('');
-      }
+      // Reset waiting screen state when modal closes
+      setShowWaitingScreen(false);
+      setVerificationEmail('');
     }
   }, [isOpen, type]); // Also reset when type changes
 
@@ -97,8 +83,8 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
     }
   }, [formData.email, mode]);
 
-  // Always show modal if waiting for verification (even if isOpen is false)
-  const shouldShowModal = isOpen || showWaitingScreen || localStorage.getItem('showVerificationModal') === 'true';
+  // Show modal if open or waiting for verification
+  const shouldShowModal = isOpen || showWaitingScreen;
   
   if (!shouldShowModal) return null;
 
@@ -193,24 +179,16 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
         
         console.log('[AuthModal] Register result:', { emailToVerify, emailSent });
         
-        // Only show waiting screen if email was actually sent
-        if (emailToVerify && emailSent) {
-          // Set showWaitingScreen FIRST before any other operations
-          // This ensures modal stays open even if user signs out
-          setShowWaitingScreen(true);
-          setVerificationEmail(emailToVerify);
-          // Save to localStorage to persist across sign out
-          localStorage.setItem('pendingVerificationEmail', emailToVerify);
-          localStorage.setItem('showVerificationModal', 'true');
-          console.log('[AuthModal] Set showWaitingScreen to true');
-          // Don't close modal - waiting screen will be shown instead
+        // Flow chuẩn: User được login với emailVerified=false
+        // ProtectedRoute sẽ tự động show blocking screen
+        if (emailSent) {
           toast.success(t?.auth?.accountCreated || 'Account created! Please check your email to verify your account.');
+          // Close modal and redirect - ProtectedRoute will show blocking screen
+          onClose();
+          navigate('/dashboard');
         } else {
-          console.warn('[AuthModal] Email not sent or no email to verify, result:', result);
-          // If email wasn't sent, show error but don't close modal
-          if (!emailSent) {
-            toast.error(t?.auth?.failedToSendEmail || 'Failed to send verification email. Please try again.');
-          }
+          console.warn('[AuthModal] Email not sent, result:', result);
+          toast.error(t?.auth?.failedToSendEmail || 'Failed to send verification email. Please try again.');
         }
       } else {
         try {
@@ -230,31 +208,15 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
       onClose();
       navigate('/dashboard');
         } catch (error) {
-          // If email not verified error, show resend option
-          if (error.code === 'auth/email-not-verified') {
-            // Keep modal open, show verification message
-            setVerificationEmail(formData.email);
-            setShowVerificationMessage(true);
-            toast.error(error.message || t?.auth?.emailNotVerified || 'Email not verified');
-          } else {
-            throw error; // Re-throw other errors to be caught by outer catch
-          }
+          // Re-throw error to be caught by outer catch
+          throw error;
         }
       }
     } catch (error) {
       console.error('[AuthModal] Error during registration/login:', error);
-      // If registration fails but we have email, still show waiting screen
-      if (type === 'signup' && formData.email) {
-        console.log('[AuthModal] Registration failed but showing waiting screen with email:', formData.email);
-        setVerificationEmail(formData.email);
-        setShowWaitingScreen(true);
-        toast.error(error.message || t?.auth?.errorOccurred || 'An error occurred. Please check your email.');
-      } else {
-        toast.error(error.message || t?.auth?.errorOccurred || 'An error occurred');
-        setShowWaitingScreen(false);
-        setVerificationSessionId(null);
-        setVerificationEmail('');
-      }
+      toast.error(error.message || t?.auth?.errorOccurred || 'An error occurred');
+      setShowWaitingScreen(false);
+      setVerificationEmail('');
     } finally {
       setLoading(false);
     }
@@ -306,30 +268,18 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
       {/* Backdrop */}
       <div 
-        className={`absolute inset-0 backdrop-blur-sm transition-opacity ${
-          theme === 'dark' 
-            ? 'bg-black/60' 
-            : 'bg-[#2C2A26]/40'
-        }`}
-        onClick={showWaitingScreen || localStorage.getItem('showVerificationModal') === 'true' ? undefined : onClose}
+        className="absolute inset-0 bg-[#2C2A26]/40 dark:bg-black/60 backdrop-blur-sm transition-opacity"
+        onClick={showWaitingScreen ? undefined : onClose}
       />
 
       {/* Modal Card */}
-      <div className={`relative w-full max-w-md shadow-2xl overflow-hidden border animate-fade-in-up transition-all duration-300 rounded-sm ${
-        theme === 'dark'
-          ? 'bg-[#1C1B19] border-[#433E38]'
-          : 'bg-[#F5F2EB] border-[#D6D1C7]'
-      }`}>
+      <div className="relative bg-[#F5F2EB] dark:bg-[#1C1B19] w-full max-w-md shadow-2xl overflow-hidden border border-[#D6D1C7] dark:border-[#433E38] animate-fade-in-up rounded-sm transition-all duration-300">
         
         {/* Close Button - Hide when waiting for verification */}
-        {!showWaitingScreen && localStorage.getItem('showVerificationModal') !== 'true' && (
+        {!showWaitingScreen && (
           <button 
             onClick={onClose}
-            className={`absolute top-4 right-4 transition-colors z-10 ${
-              theme === 'dark'
-                ? 'text-gray-400 hover:text-gray-200'
-                : 'text-[#A8A29E] hover:text-[#2C2A26]'
-            }`}
+            className="absolute top-4 right-4 text-[#A8A29E] hover:text-[#2C2A26] dark:hover:text-[#F5F2EB] transition-colors z-10"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -341,11 +291,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
         {(mode === 'email' || mode === 'forgot_password') && !showWaitingScreen && (
           <button 
             onClick={() => mode === 'forgot_password' ? setMode('email') : setMode('options')}
-            className={`absolute top-4 left-4 transition-colors z-10 flex items-center gap-1 text-xs uppercase tracking-widest font-medium ${
-              theme === 'dark'
-                ? 'text-gray-400 hover:text-gray-200'
-                : 'text-[#A8A29E] hover:text-[#2C2A26]'
-            }`}
+            className="absolute top-4 left-4 text-[#A8A29E] hover:text-[#2C2A26] dark:hover:text-[#F5F2EB] transition-colors z-10 flex items-center gap-1 text-xs uppercase tracking-widest font-medium"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -363,10 +309,8 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
               onComplete={() => {
                 setShowWaitingScreen(false);
                 setVerificationEmail('');
-                // Clear localStorage
-                localStorage.removeItem('pendingVerificationEmail');
-                localStorage.removeItem('showVerificationModal');
-                onClose(); // Close modal - user will need to login
+                // Close modal - user will need to login
+                onClose();
               }}
             />
           )}
@@ -492,36 +436,30 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
                   </button>
                 </>
               ) : (
-                <div className={`border p-6 rounded-sm space-y-4 ${
-                  theme === 'dark' 
-                    ? 'bg-[#2C2A26] border-[#433E38]' 
-                    : 'bg-[#EBE7DE] border-[#D6D1C7]'
-                }`}>
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${
-                    theme === 'dark' ? 'bg-[#433E38] text-[#F5F2EB]' : 'bg-[#D6D1C7] text-[#2C2A26]'
-                  }`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                <div className="animate-fade-in-up space-y-6 text-center">
+                  {/* Large Success Icon */}
+                  <div className="w-20 h-20 bg-[#2C2A26] dark:bg-[#F5F2EB] rounded-full flex items-center justify-center mx-auto mb-8 text-[#F5F2EB] dark:text-[#2C2A26] shadow-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-10 h-10">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
                   </div>
-                  <div>
-                    <p className={`text-sm font-bold mb-1 ${
-                      theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                    }`}>{t?.auth?.checkInbox || 'Check your inbox'}</p>
-                    <p className={`text-xs leading-relaxed ${
-                      theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-                    }`}>
-                      {t?.auth?.resetEmailSent || 'We\'ve sent password reset instructions to'} <br/><strong className={theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}>{formData.email}</strong>.
-                    </p>
-                  </div>
+
+                  {/* Title */}
+                  <h2 className="text-3xl font-serif text-[#2C2A26] dark:text-[#F5F2EB] mb-3">
+                    {t?.auth?.checkInbox || 'Check your inbox'}
+                  </h2>
+
+                  {/* Message */}
+                  <p className="text-[#5D5A53] dark:text-[#A8A29E] font-light text-sm mb-10 leading-relaxed">
+                    {t?.auth?.resetEmailSent || 'We\'ve sent password reset instructions to'} <br/>
+                    <span className="font-bold text-[#2C2A26] dark:text-[#F5F2EB]">{formData.email}</span>.
+                  </p>
+
+                  {/* Back to Login Button */}
                   <button 
                     type="button"
                     onClick={() => setMode('email')}
-                    className={`w-full border py-2 text-xs font-bold uppercase tracking-widest transition-colors rounded-sm ${
-                      theme === 'dark'
-                        ? 'bg-[#433E38] border-[#5D5A53] text-[#F5F2EB] hover:bg-[#5D5A53]'
-                        : 'bg-[#2C2A26] border-[#D6D1C7] text-[#F5F2EB] hover:bg-[#433E38]'
-                    }`}
+                    className="w-full bg-white dark:bg-[#2C2A26] border border-[#D6D1C7] dark:border-[#433E38] text-[#5D5A53] dark:text-[#A8A29E] py-3 text-xs font-medium uppercase tracking-widest hover:bg-[#EBE7DE] dark:hover:bg-[#433E38]/80 transition-colors"
                   >
                     {t?.auth?.backToLogIn || 'Back to Log In'}
                   </button>

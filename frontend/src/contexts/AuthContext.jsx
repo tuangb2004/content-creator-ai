@@ -107,19 +107,30 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Login with email and password
+   * 
+   * Flow chuẩn industry:
+   * - Cho phép login ngay cả khi chưa verify
+   * - ProtectedRoute sẽ tự động show blocking screen nếu chưa verify
+   * - ❌ KHÔNG signOut() - chỉ block quyền
    */
   const login = async (email, password) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
       // Check if email is verified (only for email/password users, not social login)
+      // Flow chuẩn: Cho phép login, ProtectedRoute sẽ block nếu chưa verify
+      // ❌ KHÔNG signOut() - user được login, ProtectedRoute sẽ handle blocking
       if (userCredential.user.providerData[0]?.providerId === 'password' && !userCredential.user.emailVerified) {
-        // Sign out the user immediately if email not verified
-        await signOut(auth);
-        throw {
-          code: 'auth/email-not-verified',
-          message: 'Vui lòng xác thực email trước khi đăng nhập. Chúng tôi đã gửi email xác thực đến địa chỉ email của bạn.'
-        };
+        // Resend verification email automatically (silent)
+        try {
+          const { sendEmailVerification } = await import('firebase/auth');
+          await sendEmailVerification(userCredential.user);
+          console.log('[AuthContext] Verification email resent automatically');
+        } catch (emailError) {
+          console.error('[AuthContext] Failed to resend verification email:', emailError);
+        }
+        // User is logged in - ProtectedRoute will show blocking screen
+        // No error thrown - let ProtectedRoute handle it
       }
       
       // Log login activity (fire and forget - don't block login)
@@ -176,7 +187,12 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Register new user with email and password
-   * Flow chuẩn: Tạo account → Gửi email → Sign out → User phải verify và login lại
+   * 
+   * Flow chuẩn industry:
+   * - Tạo user và gửi email verification
+   * - User ĐƯỢC login (emailVerified = false)
+   * - ProtectedRoute sẽ tự động show blocking screen
+   * - ❌ KHÔNG signOut() - chỉ block quyền
    */
   const register = async (name, email, password) => {
     try {
@@ -191,7 +207,6 @@ export const AuthProvider = ({ children }) => {
       }
       
       // Step 3: Send email verification using Firebase built-in function
-      // This is the standard way - simple and secure
       let emailSent = false;
       try {
         const { sendEmailVerification } = await import('firebase/auth');
@@ -200,17 +215,15 @@ export const AuthProvider = ({ children }) => {
         console.log('[AuthContext] Verification email sent');
       } catch (emailError) {
         console.error('[AuthContext] Failed to send verification email:', emailError);
-        // If email fails, we still sign out user - they can request resend later
         emailSent = false;
+        // Don't throw - user can request resend later
       }
       
-      // Step 4: Sign out user immediately - they need to verify email first
-      await signOut(auth);
-      console.log('[AuthContext] User signed out after registration');
-      
-      // Step 5: Return result (user is signed out)
+      // Step 4: Return result (user is logged in with emailVerified = false)
+      // ProtectedRoute will automatically show blocking screen
+      // ❌ KHÔNG signOut() - flow chuẩn industry
       return {
-        user: null,
+        user: userCredential.user,
         emailSent: emailSent,
         email: userCredential.user.email
       };

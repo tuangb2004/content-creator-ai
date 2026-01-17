@@ -33,10 +33,12 @@ function LandingPage() {
   const homeScrollRef = useRef(0);
   const shouldRestoreScrollRef = useRef(false);
 
-  // Redirect logged-in users to dashboard (unless they just logged out)
+  // Redirect logged-in users to dashboard
+  // Flow chuẩn: Nếu user chưa verify, ProtectedRoute sẽ show blocking screen
   useEffect(() => {
     if (!loading && user && !localStorage.getItem('logging_out')) {
-      // User is logged in and not logging out - redirect to dashboard
+      // User is logged in - redirect to dashboard
+      // ProtectedRoute will handle email verification check
       navigate('/dashboard', { replace: true });
     }
   }, [user, loading, navigate]);
@@ -45,38 +47,6 @@ function LandingPage() {
   useEffect(() => {
     localStorage.removeItem('logging_out');
   }, []);
-
-  // Auto-open auth modal if user is waiting for verification
-  // Check immediately on mount and whenever user changes (including sign out)
-  useEffect(() => {
-    const checkVerificationModal = () => {
-      const showVerificationModal = localStorage.getItem('showVerificationModal');
-      const pendingEmail = localStorage.getItem('pendingVerificationEmail');
-      
-      if (showVerificationModal === 'true' && pendingEmail && !user && !loading) {
-        // User is waiting for verification - open modal
-        console.log('[LandingPage] Auto-opening verification modal');
-        setAuthType('signup');
-        setShowAuthModal(true);
-      }
-    };
-    
-    // Check immediately
-    checkVerificationModal();
-    
-    // Also check when user or loading changes (including when user signs out)
-  }, [user, loading]);
-  
-  // Keep modal open if verification is pending, even if user signs out
-  useEffect(() => {
-    const showVerificationModal = localStorage.getItem('showVerificationModal');
-    if (showVerificationModal === 'true' && !showAuthModal) {
-      // Modal should be open but isn't - open it immediately
-      console.log('[LandingPage] Keeping verification modal open');
-      setAuthType('signup');
-      setShowAuthModal(true);
-    }
-  }, [showAuthModal]);
 
   // Handle TikTok OAuth callback
   useEffect(() => {
@@ -390,11 +360,9 @@ function LandingPage() {
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={() => {
-          // Don't close modal if user is waiting for verification
-          const showVerificationModal = localStorage.getItem('showVerificationModal');
-          if (showVerificationModal !== 'true') {
-            setShowAuthModal(false);
-          }
+          // Flow chuẩn: Modal có thể đóng bình thường
+          // Nếu user chưa verify, ProtectedRoute sẽ show blocking screen
+          setShowAuthModal(false);
         }} 
         onLogin={handleLogin}
         onNavigate={handleLegalNav}
