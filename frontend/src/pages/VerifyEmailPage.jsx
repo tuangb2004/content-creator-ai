@@ -27,7 +27,7 @@ function VerifyEmailPage() {
       if (!oobCode || mode !== 'verifyEmail') {
         setStatus('error');
         toast.error(t?.auth?.invalidLink || 'Invalid verification link');
-        setTimeout(() => navigate('/'), 3000);
+        // Don't redirect on error either - let user close manually
         return;
       }
 
@@ -55,18 +55,18 @@ function VerifyEmailPage() {
         }
 
         setStatus('success');
-        toast.success(t?.auth?.emailVerifiedSuccess || 'Email verified successfully!');
-
-        // Redirect after 2 seconds
+        
+        // Don't redirect - just show success message and auto-close tab
+        // The original tab will detect verification via polling and auto-login
         setTimeout(() => {
-          if (sessionId) {
-            // If session exists, desktop will auto-login
-            // Just redirect to home
-            navigate('/');
+          // Close the tab/window if possible (only works if opened via window.open)
+          if (window.opener) {
+            window.close();
           } else {
-            navigate('/');
+            // If can't close, just stay on success message (no redirect)
+            // User can manually close the tab
           }
-        }, 2000);
+        }, 1500);
       } catch (error) {
         console.error('Verification error:', error);
         setStatus('error');
@@ -79,7 +79,7 @@ function VerifyEmailPage() {
         }
         
         toast.error(errorMessage);
-        setTimeout(() => navigate('/'), 3000);
+        // Don't redirect on error - let user close manually
       }
     };
 
@@ -123,7 +123,7 @@ function VerifyEmailPage() {
             <p className={`text-sm ${
               theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
             }`}>
-              {t?.auth?.redirecting || 'Redirecting...'}
+              {t?.auth?.youCanCloseThisTab || 'You can close this tab. Your other tab will automatically log you in.'}
             </p>
           </div>
         )}
