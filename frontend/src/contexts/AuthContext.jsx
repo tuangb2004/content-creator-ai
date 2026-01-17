@@ -294,23 +294,34 @@ export const AuthProvider = ({ children }) => {
         }
       }
       
-      // Sign out user immediately after registration - they need to verify email first
-      // Always sign out (user needs to verify email before they can use the account)
-      await signOut(auth);
-      
       // If email wasn't sent, return error info but don't throw
       // This allows the UI to handle the error gracefully
       if (!emailSent) {
         console.error('[AuthContext] Registration completed but verification email was not sent');
       }
       
-      // Return user info but user is signed out
-      return {
+      // Return result FIRST so AuthModal can set showWaitingScreen before sign out
+      const result = {
         user: null,
         emailSent: emailSent,
         email: userCredential.user.email,
         sessionId: sessionId
       };
+      
+      // Sign out user AFTER returning result (with delay to ensure UI updates)
+      // This ensures AuthModal can set showWaitingScreen before user is signed out
+      // User needs to verify email before they can use the account
+      // Use setTimeout to allow AuthModal to process the result and set showWaitingScreen
+      setTimeout(async () => {
+        try {
+          await signOut(auth);
+          console.log('[AuthContext] User signed out after registration');
+        } catch (signOutError) {
+          console.error('[AuthContext] Error signing out user:', signOutError);
+        }
+      }, 500); // Delay to ensure showWaitingScreen is set in AuthModal
+      
+      return result;
     } catch (error) {
       throw formatAuthError(error);
     }
