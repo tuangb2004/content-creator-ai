@@ -33,7 +33,7 @@ const PLAN_CREDITS: Record<string, number> = {
 export const createPaymentLinkFunction = functions.https.onCall(
   async (data: CreatePaymentLinkRequest, context: functions.https.CallableContext) => {
     console.log('[createPaymentLink] Received request:', JSON.stringify(data, null, 2));
-    
+
     // 1. Validate authentication
     let userId: string;
     try {
@@ -49,7 +49,7 @@ export const createPaymentLinkFunction = functions.https.onCall(
       console.error('[createPaymentLink] Invalid request data: data is not an object');
       throw new functions.https.HttpsError('invalid-argument', 'Invalid request data');
     }
-    
+
     if (!data.amount || data.amount <= 0) {
       console.error(`[createPaymentLink] Invalid amount: ${data.amount}`);
       throw new functions.https.HttpsError('invalid-argument', 'Amount must be greater than 0');
@@ -58,7 +58,7 @@ export const createPaymentLinkFunction = functions.https.onCall(
       console.error('[createPaymentLink] Missing planName');
       throw new functions.https.HttpsError('invalid-argument', 'Plan name is required');
     }
-    
+
     if (!data.successUrl || !data.cancelUrl) {
       console.error('[createPaymentLink] Missing successUrl or cancelUrl');
       throw new functions.https.HttpsError('invalid-argument', 'successUrl and cancelUrl are required');
@@ -69,7 +69,7 @@ export const createPaymentLinkFunction = functions.https.onCall(
     // 3. Get user email
     const db = getDb();
     const userRef = db.collection('users').doc(userId);
-    
+
     let userDoc;
     try {
       userDoc = await userRef.get();
@@ -79,21 +79,21 @@ export const createPaymentLinkFunction = functions.https.onCall(
     }
 
     let email: string;
-    
+
     if (!userDoc.exists) {
       console.warn(`[createPaymentLink] User ${userId} not found in Firestore, creating user document...`);
-      
+
       // Fallback: Create user document if it doesn't exist
       // This can happen if auth trigger didn't run or failed
       // Get email from context token (works in both emulator and production)
       email = (context.auth?.token?.email as string) || '';
-      
+
       if (!email) {
         console.error(`[createPaymentLink] User ${userId} has no email in token`);
         console.error(`[createPaymentLink] Context auth:`, JSON.stringify(context.auth, null, 2));
         throw new functions.https.HttpsError('failed-precondition', 'User email not found in authentication token');
       }
-      
+
       // Create user document with free plan (Starter)
       await userRef.set({
         email,
@@ -102,7 +102,7 @@ export const createPaymentLinkFunction = functions.https.onCall(
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
       });
-      
+
       console.log(`[createPaymentLink] User document created for ${userId} with email: ${email}`);
     } else {
       const userData = userDoc.data();
@@ -122,7 +122,7 @@ export const createPaymentLinkFunction = functions.https.onCall(
         }
       }
     }
-    
+
     console.log(`[createPaymentLink] User email: ${email}`);
 
     // 4. Generate unique order code (use timestamp - must be integer, not string)
@@ -142,8 +142,16 @@ export const createPaymentLinkFunction = functions.https.onCall(
         description: `Nâng cấp gói ${planName} - ${credits} credits`,
         cancelUrl,
         returnUrl: successUrl,
+        // PayOS requires items array
+        items: [
+          {
+            name: `Gói ${planName}`,
+            quantity: 1,
+            price: amount,
+          }
+        ],
       };
-      
+
       console.log(`[createPaymentLink] Creating PayOS payment link with orderCode: ${orderCode}`);
       const result = await createPaymentLink(paymentRequest);
 
@@ -188,15 +196,15 @@ export const createPaymentLinkFunction = functions.https.onCall(
         cause: error.cause,
         name: error.name
       });
-      
+
       // Provide more detailed error message
       let errorMessage = error.message || 'Unknown error occurred';
-      
+
       // Add helpful suggestions based on error type
       if (errorMessage.includes('Cannot connect') || errorMessage.includes('ENOTFOUND')) {
         errorMessage += ' Please check your internet connection and VPN settings.';
       }
-      
+
       throw new functions.https.HttpsError(
         'internal',
         `Failed to create payment link: ${errorMessage}`

@@ -28,13 +28,14 @@ const BillingPlans = () => {
   // Map plan names to amounts (VND)
   // Exchange rate: 1 USD ≈ 23,800 VND
 
-  // 🧪 TEST MODE: Using small amounts for safe testing
+  // 🧪 TEST MODE: Using reduced amounts for safe testing
+  // PayOS minimum amount: 10,000 VND
   // TODO: REVERT TO PRODUCTION PRICES AFTER TESTING!
   const PLAN_PRICES = {
-    pro_monthly: 1000, // TEST: 1,000 VND (~$0.04) - PRODUCTION: 690,000 VND
-    pro_yearly: 2000, // TEST: 2,000 VND (~$0.08) - PRODUCTION: 6,840,000 VND
-    agency_monthly: 3000, // TEST: 3,000 VND (~$0.13) - PRODUCTION: 2,356,200 VND
-    agency_yearly: 5000, // TEST: 5,000 VND (~$0.21) - PRODUCTION: 22,562,400 VND
+    pro_monthly: 10000, // TEST: 10,000 VND (~$0.42) - PRODUCTION: 690,000 VND
+    pro_yearly: 20000, // TEST: 20,000 VND (~$0.84) - PRODUCTION: 6,840,000 VND
+    agency_monthly: 30000, // TEST: 30,000 VND (~$1.26) - PRODUCTION: 2,356,200 VND
+    agency_yearly: 50000, // TEST: 50,000 VND (~$2.10) - PRODUCTION: 22,562,400 VND
   };
 
   /* PRODUCTION PRICES (uncomment after testing):
@@ -190,8 +191,8 @@ const BillingPlans = () => {
 
         <div className="flex justify-center items-center mt-8 gap-4">
           <span className={`text-xs uppercase tracking-widest font-bold transition-colors ${billingCycle === 'monthly'
-              ? (theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]')
-              : 'text-[#A8A29E]'
+            ? (theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]')
+            : 'text-[#A8A29E]'
             }`}>{t?.billing?.monthly || 'Monthly'}</span>
           <button
             onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
@@ -203,8 +204,8 @@ const BillingPlans = () => {
           </button>
           <div className="flex items-center gap-2">
             <span className={`text-xs uppercase tracking-widest font-bold transition-colors ${billingCycle === 'yearly'
-                ? (theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]')
-                : 'text-[#A8A29E]'
+              ? (theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]')
+              : 'text-[#A8A29E]'
               }`}>{t?.billing?.yearly || 'Yearly'}</span>
             <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full">{t?.billing?.save20 || 'Save 20%'}</span>
           </div>
@@ -216,12 +217,12 @@ const BillingPlans = () => {
           <div
             key={plan.id}
             className={`relative flex flex-col p-8 rounded-sm transition-all duration-300 ${plan.highlight
-                ? (theme === 'dark'
-                  ? 'bg-[#433E38] text-[#F5F2EB] shadow-2xl scale-105 border-none z-10'
-                  : 'bg-[#2C2A26] text-[#F5F2EB] shadow-2xl scale-105 border-none z-10')
-                : (theme === 'dark'
-                  ? 'bg-[#2C2A26] border border-[#433E38] text-[#F5F2EB] hover:shadow-lg'
-                  : 'bg-white border border-[#D6D1C7] text-[#2C2A26] hover:shadow-lg')
+              ? (theme === 'dark'
+                ? 'bg-[#433E38] text-[#F5F2EB] shadow-2xl scale-105 border-none z-10'
+                : 'bg-[#2C2A26] text-[#F5F2EB] shadow-2xl scale-105 border-none z-10')
+              : (theme === 'dark'
+                ? 'bg-[#2C2A26] border border-[#433E38] text-[#F5F2EB] hover:shadow-lg'
+                : 'bg-white border border-[#D6D1C7] text-[#2C2A26] hover:shadow-lg')
               }`}
           >
             {plan.highlight && (
@@ -233,8 +234,8 @@ const BillingPlans = () => {
 
             <h3 className="font-serif text-2xl mb-2">{plan.name}</h3>
             <p className={`text-xs mb-8 ${plan.highlight
-                ? 'text-[#A8A29E]'
-                : (theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]')
+              ? 'text-[#A8A29E]'
+              : (theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]')
               }`}>{plan.desc}</p>
 
             <div className="mb-8">
@@ -243,8 +244,8 @@ const BillingPlans = () => {
                   ${billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly}
                 </span>
                 <span className={`text-xs mb-1.5 ${plan.highlight
-                    ? 'text-[#A8A29E]'
-                    : (theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]')
+                  ? 'text-[#A8A29E]'
+                  : (theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]')
                   }`}>/ month</span>
               </div>
               <div className={`mt-2 py-1 px-3 inline-block rounded-full text-[10px] font-bold uppercase tracking-widest ${plan.highlight ? 'bg-white/10' : (theme === 'dark' ? 'bg-black/20' : 'bg-[#F9F8F6]')
@@ -274,10 +275,10 @@ const BillingPlans = () => {
                 }
               }}
               className={`w-full py-4 text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-default ${plan.highlight
-                  ? 'bg-[#F5F2EB] text-[#2C2A26] hover:bg-white'
-                  : (theme === 'dark'
-                    ? 'border border-[#F5F2EB] hover:bg-[#F5F2EB] hover:text-[#2C2A26] disabled:hover:bg-transparent disabled:hover:text-[#F5F2EB]'
-                    : 'border border-[#2C2A26] hover:bg-[#2C2A26] hover:text-[#F5F2EB] disabled:hover:bg-transparent disabled:hover:text-[#2C2A26]')
+                ? 'bg-[#F5F2EB] text-[#2C2A26] hover:bg-white'
+                : (theme === 'dark'
+                  ? 'border border-[#F5F2EB] hover:bg-[#F5F2EB] hover:text-[#2C2A26] disabled:hover:bg-transparent disabled:hover:text-[#F5F2EB]'
+                  : 'border border-[#2C2A26] hover:bg-[#2C2A26] hover:text-[#F5F2EB] disabled:hover:bg-transparent disabled:hover:text-[#2C2A26]')
                 }`}
             >
               {loading ? (t?.billing?.processing || 'Processing...') : (plan.active ? (t?.billing?.currentPlan || 'Current Plan') : plan.button)}
@@ -329,8 +330,8 @@ const BillingPlans = () => {
               }}
               type="button"
               className={`text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer hover:opacity-80 ${theme === 'dark'
-                  ? 'text-[#A8A29E] hover:text-[#F5F2EB]'
-                  : 'text-[#A8A29E] hover:text-[#2C2A26]'
+                ? 'text-[#A8A29E] hover:text-[#F5F2EB]'
+                : 'text-[#A8A29E] hover:text-[#2C2A26]'
                 }`}
             >
               {t?.billing?.edit || 'Edit'}
