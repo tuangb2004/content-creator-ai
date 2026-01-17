@@ -172,11 +172,12 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
         
         const emailToVerify = result?.email || formData.email;
         const sessionId = result?.sessionId;
+        const emailSent = result?.emailSent !== false; // Default to true if not specified
         
-        console.log('[AuthModal] Email to verify:', emailToVerify, 'Session ID:', sessionId);
+        console.log('[AuthModal] Register result:', { emailToVerify, sessionId, emailSent });
         
-        // Always show waiting screen if email was sent (even without sessionId)
-        if (emailToVerify) {
+        // Only show waiting screen if email was actually sent
+        if (emailToVerify && emailSent) {
           setVerificationEmail(emailToVerify);
           if (sessionId) {
             setVerificationSessionId(sessionId);
@@ -187,7 +188,11 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
           // Don't close modal - waiting screen will be shown instead
           toast.success(t?.auth?.accountCreated || 'Account created! Please check your email to verify your account.');
         } else {
-          console.warn('[AuthModal] No email to verify, result:', result);
+          console.warn('[AuthModal] Email not sent or no email to verify, result:', result);
+          // If email wasn't sent, show error but don't close modal
+          if (!emailSent) {
+            toast.error(t?.auth?.failedToSendEmail || 'Failed to send verification email. Please try again.');
+          }
         }
       } else {
         try {
