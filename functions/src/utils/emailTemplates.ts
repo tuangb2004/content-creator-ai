@@ -11,6 +11,10 @@ export function getEmailVerificationTemplate(actionUrl: string, siteUrl: string 
     if (!fs.existsSync(templatePath)) {
       // Fallback to source location (development)
       templatePath = path.join(__dirname, '../../src/templates/emailVerification.html');
+      if (!fs.existsSync(templatePath)) {
+        // Last fallback - try from root
+        templatePath = path.join(process.cwd(), 'functions/src/templates/emailVerification.html');
+      }
     }
     
     let template = fs.readFileSync(templatePath, 'utf-8');

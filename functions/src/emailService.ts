@@ -3,38 +3,40 @@ import * as functions from 'firebase-functions';
 import * as path from 'path';
 import { getEmailVerificationTemplate, getPasswordResetTemplate, getProjectCompletedTemplate, getProductUpdatesTemplate } from './utils/emailTemplates';
 
-// Load .env file for local development/emulator
-// Always try to load .env in development (emulator sets FUNCTIONS_EMULATOR)
-if (!process.env.FIREBASE_CONFIG || process.env.FUNCTIONS_EMULATOR) {
+// Load .env file for local development/emulator (lazy load to avoid deployment timeout)
+// Only load in emulator mode, not in production
+let dotenvLoaded = false;
+function loadDotenvIfNeeded(): void {
+  if (dotenvLoaded) return;
+  if (process.env.FIREBASE_CONFIG && !process.env.FUNCTIONS_EMULATOR) {
+    // Production - skip .env loading
+    dotenvLoaded = true;
+    return;
+  }
+  
   try {
-    // Specify the exact path to .env file in functions directory
     const dotenv = require('dotenv');
-    
-    // Try multiple paths: compiled location (lib/../.env) and source location (src/../.env)
     const pathsToTry = [
-      path.resolve(__dirname, '../.env'),  // From compiled lib/ directory
-      path.resolve(__dirname, '../../.env'), // From source src/ directory
-      path.resolve(process.cwd(), '.env'), // Current working directory
+      path.resolve(__dirname, '../.env'),
+      path.resolve(__dirname, '../../.env'),
+      path.resolve(process.cwd(), '.env'),
     ];
     
-    let loaded = false;
     for (const envPath of pathsToTry) {
-      const result = dotenv.config({ path: envPath });
-      if (!result.error) {
-        const hasApiKey = !!process.env.SENDGRID_API_KEY;
-        console.log(`📝 Loaded .env file from ${envPath}. SENDGRID_API_KEY: ${hasApiKey ? '✅ Found' : '❌ Missing'}`);
-        loaded = true;
-        break;
+      try {
+        const result = dotenv.config({ path: envPath });
+        if (!result.error) {
+          dotenvLoaded = true;
+          return;
+        }
+      } catch {
+        // Continue to next path
       }
     }
-    
-    if (!loaded) {
-      console.warn(`⚠️ Could not load .env from any of these paths: ${pathsToTry.join(', ')}`);
-    }
-  } catch (e) {
-    // dotenv not available, continue without it
-    console.warn('⚠️ Could not load dotenv:', e);
+  } catch {
+    // dotenv not available, skip
   }
+  dotenvLoaded = true;
 }
 
 /**
@@ -60,15 +62,22 @@ export async function sendVerificationEmail(
   
   try {
     // Get site URL from config or environment
-    // In emulator, use localhost for development, but in production use actual domain
-    let siteUrl = process.env.SITE_URL || functions.config().app?.site_url || 'https://creatorai.app';
+    // Priority: process.env.SITE_URL > functions.config().app.site_url > default
+    // NEVER use localhost in production - always use actual domain
+    let siteUrl = process.env.SITE_URL || functions.config().app?.site_url;
     
-    // In emulator, if SITE_URL is not set, use localhost (for testing)
-    // But note: this won't work on mobile devices - user needs to set SITE_URL to their public URL
-    if (process.env.FUNCTIONS_EMULATOR && !process.env.SITE_URL) {
+    // Only use localhost if explicitly in emulator AND SITE_URL not set
+    if (process.env.FUNCTIONS_EMULATOR && !siteUrl) {
       siteUrl = 'http://localhost:5173'; // Default Vite dev server
       console.log(`⚠️ Running in emulator without SITE_URL. Using ${siteUrl}. This won't work on mobile devices.`);
       console.log(`   To test on mobile, set SITE_URL to your public URL (e.g., ngrok tunnel or public IP).`);
+    }
+    
+    // Fallback to production URL if still not set (should not happen in production)
+    if (!siteUrl) {
+      siteUrl = 'https://creatorai.app';
+      console.warn(`⚠️ SITE_URL not configured. Using default: ${siteUrl}`);
+      console.warn(`   Please set SITE_URL in Firebase Functions config: firebase functions:config:set app.site_url="https://your-domain.com"`);
     }
     
     // Normalize SITE_URL: remove trailing slash to avoid double slashes in links
@@ -183,6 +192,9 @@ export async function sendVerificationEmail(
       siteUrl
     );
 
+    // Lazy load dotenv if needed (only for emulator)
+    loadDotenvIfNeeded();
+    
     // SendGrid Email Service
     const sgMail = require('@sendgrid/mail');
     const sendgridApiKey = process.env.SENDGRID_API_KEY || functions.config().sendgrid?.api_key;

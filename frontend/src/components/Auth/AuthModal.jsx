@@ -55,6 +55,11 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
       setShowConfirmPassword(false);
       setPasswordStrength({ score: 0, strength: 'weak', feedback: [] });
       setEmailError('');
+    } else if (!showWaitingScreen) {
+      // Only reset waiting screen state if modal is closed AND not waiting for verification
+      setShowWaitingScreen(false);
+      setVerificationSessionId(null);
+      setVerificationEmail('');
     }
   }, [isOpen, type]); // Also reset when type changes
 
@@ -163,8 +168,12 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
         const fullName = `${formData.firstName} ${formData.lastName}`.trim() || formData.firstName || formData.lastName || 'User';
         const result = await register(fullName, formData.email, formData.password);
         
-        const emailToVerify = result.email || formData.email;
-        const sessionId = result.sessionId;
+        console.log('[AuthModal] Register result:', result);
+        
+        const emailToVerify = result?.email || formData.email;
+        const sessionId = result?.sessionId;
+        
+        console.log('[AuthModal] Email to verify:', emailToVerify, 'Session ID:', sessionId);
         
         // Always show waiting screen if email was sent (even without sessionId)
         if (emailToVerify) {
@@ -174,8 +183,11 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
             localStorage.setItem('pendingVerificationSessionId', sessionId);
           }
           setShowWaitingScreen(true);
+          console.log('[AuthModal] Set showWaitingScreen to true');
           // Don't close modal - waiting screen will be shown instead
           toast.success(t?.auth?.accountCreated || 'Account created! Please check your email to verify your account.');
+        } else {
+          console.warn('[AuthModal] No email to verify, result:', result);
         }
       } else {
         try {
@@ -207,7 +219,19 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
         }
       }
     } catch (error) {
-      toast.error(error.message || t?.auth?.errorOccurred || 'An error occurred');
+      console.error('[AuthModal] Error during registration/login:', error);
+      // If registration fails but we have email, still show waiting screen
+      if (type === 'signup' && formData.email) {
+        console.log('[AuthModal] Registration failed but showing waiting screen with email:', formData.email);
+        setVerificationEmail(formData.email);
+        setShowWaitingScreen(true);
+        toast.error(error.message || t?.auth?.errorOccurred || 'An error occurred. Please check your email.');
+      } else {
+        toast.error(error.message || t?.auth?.errorOccurred || 'An error occurred');
+        setShowWaitingScreen(false);
+        setVerificationSessionId(null);
+        setVerificationEmail('');
+      }
     } finally {
       setLoading(false);
     }

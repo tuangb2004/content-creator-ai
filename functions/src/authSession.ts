@@ -337,7 +337,14 @@ export const verifyEmailEndpoint = functions.https.onRequest(async (req, res) =>
 
     // Redirect to success page or return JSON
     if (req.method === 'GET') {
-      const siteUrl = process.env.SITE_URL || 'https://creatorai.app';
+      // Get site URL from config or environment (same priority as emailService)
+      let siteUrl = process.env.SITE_URL || functions.config().app?.site_url;
+      if (!siteUrl) {
+        siteUrl = 'https://creatorai.app';
+        console.warn(`⚠️ SITE_URL not configured in verifyEmailEndpoint. Using default: ${siteUrl}`);
+      }
+      // Normalize: remove trailing slash
+      siteUrl = siteUrl.replace(/\/+$/, '');
       res.redirect(`${siteUrl}/?verified=true${sessionId ? `&session_id=${sessionId}` : ''}`);
     } else {
       res.json({
@@ -349,7 +356,14 @@ export const verifyEmailEndpoint = functions.https.onRequest(async (req, res) =>
   } catch (error: any) {
     console.error('Error verifying email:', error);
     if (req.method === 'GET') {
-      const siteUrl = process.env.SITE_URL || 'https://creatorai.app';
+      // Get site URL from config or environment (same priority as emailService)
+      let siteUrl = process.env.SITE_URL || functions.config().app?.site_url;
+      if (!siteUrl) {
+        siteUrl = 'https://creatorai.app';
+        console.warn(`⚠️ SITE_URL not configured in verifyEmailEndpoint (error). Using default: ${siteUrl}`);
+      }
+      // Normalize: remove trailing slash
+      siteUrl = siteUrl.replace(/\/+$/, '');
       res.redirect(`${siteUrl}/?verified=false`);
     } else {
       res.status(500).json({ error: 'Internal server error' });
