@@ -1,13 +1,13 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import VerifyEmailBlockingScreen from '../Auth/VerifyEmailBlockingScreen';
+import AuthModal from '../Auth/AuthModal';
 
 /**
  * ProtectedRoute - Route guard với flow chuẩn industry
  * 
  * Flow:
  * - Nếu không có user → redirect về landing page
- * - Nếu user chưa verify email (email/password only) → show blocking screen
+ * - Nếu user chưa verify email (email/password only) → show AuthModal với verify mode
  * - Nếu user đã verify → render children
  * 
  * ❌ KHÔNG signOut() - chỉ block quyền
@@ -29,8 +29,8 @@ function ProtectedRoute({ children }) {
   // Check email verification (only for email/password users, not social login)
   const isEmailPasswordUser = user.providerData[0]?.providerId === 'password';
   if (isEmailPasswordUser && !user.emailVerified) {
-    // Flow chuẩn: Show blocking screen, KHÔNG signOut
-    return <VerifyEmailBlockingScreen />;
+    // Flow chuẩn: Show AuthModal với verify mode, KHÔNG signOut
+    return <AuthModal isOpen={true} onClose={() => {}} forceVerifyMode={true} />;
   }
 
   return children;

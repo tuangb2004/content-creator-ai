@@ -6,11 +6,14 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import toast from '../../utils/toast';
 import { checkPasswordStrength, validateEmail, passwordRequirements } from '../../utils/passwordValidation';
 import VerificationWaitingScreen from './VerificationWaitingScreen';
+import { auth } from '../../config/firebase';
+import { signOut } from 'firebase/auth';
 
-const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSwitchType }) => {
+const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSwitchType, forceVerifyMode = false }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const [mode, setMode] = useState('options'); // 'options', 'email', or 'forgot_password'
+  const { user, loading: authLoading } = useAuth();
+  const [mode, setMode] = useState('options'); // 'options', 'email', 'forgot_password', or 'verify_email'
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -28,15 +31,55 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
   const [showWaitingScreen, setShowWaitingScreen] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const { login, register, loginWithGoogle, loginWithFacebook, loginWithTikTok, resetPassword } = useAuth();
   const navigate = useNavigate();
+
+  // Force verify mode if prop is set
+  useEffect(() => {
+    if (forceVerifyMode && user && !user.emailVerified) {
+      setMode('verify_email');
+    }
+  }, [forceVerifyMode, user]);
+
+  // Poll user.reload() mỗi 3 giây để check verification (khi ở verify_email mode)
+  useEffect(() => {
+    if (mode !== 'verify_email' || !user || user.emailVerified) {
+      return;
+    }
+
+    const pollVerification = async () => {
+      try {
+        await auth.currentUser?.reload();
+        const updatedUser = auth.currentUser;
+        
+        if (updatedUser?.emailVerified) {
+          // Email verified! Redirect to dashboard
+          console.log('[AuthModal] Email verified, redirecting to dashboard');
+          navigate('/dashboard', { replace: true });
+        }
+      } catch (error) {
+        console.error('[AuthModal] Error checking verification:', error);
+      }
+    };
+
+    // Poll immediately, then every 3 seconds
+    pollVerification();
+    const interval = setInterval(pollVerification, 3000);
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [mode, user, navigate]);
 
   // Flow chuẩn: Không cần localStorage persistence
   // User sẽ được login và ProtectedRoute sẽ show blocking screen
 
   // Reset mode when modal opens/closes or type changes
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !forceVerifyMode) {
       setMode('options');
       setResetSent(false);
       setShowVerificationMessage(false);
@@ -83,10 +126,72 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
     }
   }, [formData.email, mode]);
 
-  // Show modal if open or waiting for verification
-  const shouldShowModal = isOpen || showWaitingScreen;
+  // Show modal if open, waiting for verification, or forced verify mode
+  const shouldShowModal = isOpen || showWaitingScreen || (forceVerifyMode && user && !user.emailVerified);
   
   if (!shouldShowModal) return null;
+
+  // Handle verify email mode functions
+  const handleCheckVerification = async () => {
+    if (!user) return;
+    
+    setIsChecking(true);
+    try {
+      await auth.currentUser?.reload();
+      const updatedUser = auth.currentUser;
+      
+      if (updatedUser?.emailVerified) {
+        console.log('[AuthModal] Email verified via manual check');
+        navigate('/dashboard', { replace: true });
+      } else {
+        toast.info(t?.auth?.emailNotVerifiedYet || 'Email not verified yet. Please check your email and click the verification link.');
+      }
+    } catch (error) {
+      console.error('[AuthModal] Error checking verification:', error);
+      toast.error(t?.auth?.errorCheckingVerification || 'Error checking verification status. Please try again.');
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const handleResendVerificationEmail = async () => {
+    if (!user) return;
+    
+    try {
+      const { sendEmailVerification } = await import('firebase/auth');
+      await sendEmailVerification(user);
+      toast.success(t?.auth?.verificationEmailResent || 'Verification email sent! Please check your inbox.');
+    } catch (error) {
+      console.error('[AuthModal] Error resending verification email:', error);
+      toast.error(t?.auth?.failedToResendEmail || 'Failed to resend verification email. Please try again.');
+    }
+  };
+
+  const openEmailClient = () => {
+    if (!user?.email) return;
+    
+    const emailDomain = user.email.split('@')[1]?.toLowerCase() || '';
+    const emailProviders = {
+      'gmail.com': 'https://mail.google.com',
+      'outlook.com': 'https://outlook.live.com',
+      'hotmail.com': 'https://outlook.live.com',
+      'yahoo.com': 'https://mail.yahoo.com',
+      'icloud.com': 'https://www.icloud.com/mail',
+    };
+    
+    const emailUrl = emailProviders[emailDomain] || `mailto:${user.email}`;
+    window.open(emailUrl, '_blank');
+  };
+
+  const handleBackToLanding = async () => {
+    try {
+      await signOut(auth);
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error('[AuthModal] Error signing out:', error);
+      navigate('/', { replace: true });
+    }
+  };
 
   const handleLegalNav = (e, page) => {
     e.preventDefault();
@@ -266,17 +371,21 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-      {/* Backdrop */}
+      {/* Backdrop - trong suốt hơn để thấy background rõ hơn */}
       <div 
-        className="absolute inset-0 bg-[#2C2A26]/40 dark:bg-black/60 backdrop-blur-sm transition-opacity"
-        onClick={showWaitingScreen ? undefined : onClose}
+        className="absolute inset-0 backdrop-blur-md transition-opacity"
+        style={{ 
+          pointerEvents: showWaitingScreen || mode === 'verify_email' ? 'none' : 'auto',
+          backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(44, 42, 38, 0.4)'
+        }}
+        onClick={showWaitingScreen || mode === 'verify_email' ? undefined : onClose}
       />
 
       {/* Modal Card */}
       <div className="relative bg-[#F5F2EB] dark:bg-[#1C1B19] w-full max-w-md shadow-2xl overflow-hidden border border-[#D6D1C7] dark:border-[#433E38] animate-fade-in-up rounded-sm transition-all duration-300">
         
-        {/* Close Button - Hide when waiting for verification */}
-        {!showWaitingScreen && (
+        {/* Close Button - Hide when waiting for verification or verify_email mode */}
+        {!showWaitingScreen && mode !== 'verify_email' && (
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 text-[#A8A29E] hover:text-[#2C2A26] dark:hover:text-[#F5F2EB] transition-colors z-10"
@@ -287,10 +396,18 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
           </button>
         )}
 
-        {/* Back Button (Only in Email Mode or Forgot PW, hide when waiting) */}
-        {(mode === 'email' || mode === 'forgot_password') && !showWaitingScreen && (
+        {/* Back Button (Only in Email Mode, Forgot PW, or Verify Email mode) */}
+        {(mode === 'email' || mode === 'forgot_password' || mode === 'verify_email') && !showWaitingScreen && (
           <button 
-            onClick={() => mode === 'forgot_password' ? setMode('email') : setMode('options')}
+            onClick={() => {
+              if (mode === 'verify_email') {
+                handleBackToLanding();
+              } else if (mode === 'forgot_password') {
+                setMode('email');
+              } else {
+                setMode('options');
+              }
+            }}
             className="absolute top-4 left-4 text-[#A8A29E] hover:text-[#2C2A26] dark:hover:text-[#F5F2EB] transition-colors z-10 flex items-center gap-1 text-xs uppercase tracking-widest font-medium"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -302,8 +419,78 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
 
         <div className="p-8 md:p-10 text-center">
           
+          {/* VIEW: VERIFY EMAIL MODE (Blocking Screen) */}
+          {mode === 'verify_email' && user && !user.emailVerified && (
+            <>
+              {/* Large Email Icon */}
+              <div className={`w-20 h-20 bg-[#2C2A26] dark:bg-[#F5F2EB] rounded-full flex items-center justify-center mx-auto mb-8 text-[#F5F2EB] dark:text-[#2C2A26] shadow-xl`}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-10 h-10">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839-2.51l-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.022.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.981l7.5-4.039a2.25 2.25 0 012.134 0l7.5 4.039a2.25 2.25 0 011.183 1.98V11.5z" />
+                </svg>
+              </div>
+
+              {/* Title */}
+              <h2 className="text-3xl font-serif text-[#2C2A26] dark:text-[#F5F2EB] mb-3">
+                {t?.auth?.verifyEmailRequired || 'Verify Your Email'}
+              </h2>
+
+              {/* Message */}
+              <p className="text-[#5D5A53] dark:text-[#A8A29E] font-light text-sm mb-6 leading-relaxed">
+                {t?.auth?.verificationEmailSent || 'We\'ve sent a verification link to'} <br/>
+                <span className="font-bold text-[#2C2A26] dark:text-[#F5F2EB]">{user.email}</span>. <br/>
+                {t?.auth?.pleaseVerifyEmail || 'Please click the link in the email to continue.'}
+              </p>
+
+              {/* Info Text */}
+              <div className="mb-8">
+                <p className="text-[10px] text-[#A8A29E] uppercase tracking-widest">
+                  {t?.auth?.checkingAutomatically || 'We\'re checking automatically...'}
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="space-y-4">
+                {/* Check Email Button */}
+                <button
+                  onClick={openEmailClient}
+                  className="w-full bg-[#2C2A26] dark:bg-[#F5F2EB] text-[#F5F2EB] dark:text-[#2C2A26] py-4 text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-3"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                  </svg>
+                  {t?.auth?.checkEmail || 'Open Mail App'}
+                </button>
+
+                {/* I've Verified Button */}
+                <button
+                  onClick={handleCheckVerification}
+                  disabled={isChecking}
+                  className="w-full bg-white dark:bg-[#2C2A26] border border-[#D6D1C7] dark:border-[#433E38] text-[#5D5A53] dark:text-[#A8A29E] py-3 text-xs font-medium uppercase tracking-widest hover:bg-[#EBE7DE] dark:hover:bg-[#433E38]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isChecking 
+                    ? (t?.auth?.checking || 'Checking...')
+                    : (t?.auth?.iveVerified || 'I\'ve Verified')
+                  }
+                </button>
+
+                {/* Didn't receive email text with resend link */}
+                <div className="pt-4 text-center">
+                  <p className="text-[#5D5A53] dark:text-[#A8A29E] text-xs font-light">
+                    {t?.auth?.didntReceiveEmail || "Didn't receive the email?"}{' '}
+                    <button
+                      onClick={handleResendVerificationEmail}
+                      className="font-bold text-[#2C2A26] dark:text-[#F5F2EB] hover:underline underline-offset-2"
+                    >
+                      {t?.auth?.resendLink || 'Resend Link'}
+                    </button>
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* VIEW: VERIFICATION WAITING SCREEN */}
-          {showWaitingScreen && verificationEmail && (
+          {showWaitingScreen && verificationEmail && mode !== 'verify_email' && (
             <VerificationWaitingScreen
               email={verificationEmail}
               onComplete={() => {
@@ -316,7 +503,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
           )}
 
           {/* VIEW: OPTIONS / EMAIL FORM / FORGOT PASSWORD */}
-          {!showWaitingScreen && (
+          {!showWaitingScreen && mode !== 'verify_email' && (
             <>
           {/* Header Text */}
           <div className="mb-8">
