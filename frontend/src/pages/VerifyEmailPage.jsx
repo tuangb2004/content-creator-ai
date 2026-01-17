@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { applyActionCode } from 'firebase/auth';
-import { auth, functions } from '../config/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { auth } from '../config/firebase';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import toast from '../utils/toast';
 
 /**
  * Page to handle email verification from email link
- * URL: /verify-email?oobCode=...&session_id=...
+ * Flow chuẩn: CHỈ verify email, không login, không redirect
+ * URL: /verify-email?oobCode=...&mode=verifyEmail
  */
 function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { theme } = useTheme();
   const { t } = useLanguage();
   const [status, setStatus] = useState('processing');
@@ -21,36 +20,20 @@ function VerifyEmailPage() {
   useEffect(() => {
     const handleVerification = async () => {
       const oobCode = searchParams.get('oobCode');
-      const sessionId = searchParams.get('session_id');
       const mode = searchParams.get('mode');
 
       if (!oobCode || mode !== 'verifyEmail') {
         setStatus('error');
         toast.error(t?.auth?.invalidLink || 'Invalid verification link');
-        setTimeout(() => navigate('/'), 3000);
         return;
       }
 
       try {
-        // Apply action code to verify email (SOURCE OF TRUTH)
+        // CHỈ làm đúng 1 việc: Verify email trong Firebase Auth
         await applyActionCode(auth, oobCode);
-
-        // OPTIONAL: If session_id provided, mark session as verified for faster cross-device sync
-        // This is NOT required - Firebase Auth emailVerified is the source of truth
-        if (sessionId) {
-          try {
-            const markVerified = httpsCallable(functions, 'markSessionVerifiedCallable');
-            await markVerified({ session_id: sessionId });
-          } catch (sessionError) {
-            console.warn('Failed to mark session verified (optional):', sessionError);
-            // Continue anyway - email is verified, session is just an optimization
-          }
-        }
-
-        setStatus('success');
         
-        // DON'T redirect - let the original tab poll Firebase Auth and auto-login
-        // User can close this tab manually, or it will show success message
+        setStatus('success');
+        toast.success(t?.auth?.emailVerified || 'Email verified successfully');
       } catch (error) {
         console.error('Verification error:', error);
         setStatus('error');
@@ -63,12 +46,11 @@ function VerifyEmailPage() {
         }
         
         toast.error(errorMessage);
-        setTimeout(() => navigate('/'), 3000);
       }
     };
 
     handleVerification();
-  }, [searchParams, navigate, t]);
+  }, [searchParams, t]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -104,11 +86,21 @@ function VerifyEmailPage() {
             }`}>
               {t?.auth?.emailVerified || 'Email Verified!'}
             </h2>
-            <p className={`text-sm ${
+            <p className={`text-sm mb-4 ${
               theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
             }`}>
-              {t?.auth?.redirecting || 'Redirecting...'}
+              {t?.auth?.youCanNowSignIn || 'You can now return to the app and sign in.'}
             </p>
+            <button
+              onClick={() => window.close()}
+              className={`px-4 py-2 rounded-sm border transition-colors ${
+                theme === 'dark'
+                  ? 'border-[#433E38] text-[#A8A29E] hover:bg-[#433E38] hover:text-[#F5F2EB]'
+                  : 'border-[#D6D1C7] text-[#5D5A53] hover:bg-[#D6D1C7] hover:text-[#2C2A26]'
+              }`}
+            >
+              {t?.auth?.closeTab || 'Close Tab'}
+            </button>
           </div>
         )}
 

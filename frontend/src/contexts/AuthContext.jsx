@@ -176,152 +176,44 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Register new user with email and password
+   * Flow chuẩn: Tạo account → Gửi email → Sign out → User phải verify và login lại
    */
   const register = async (name, email, password) => {
     try {
+      // Step 1: Create user account
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Update user profile with name
+      // Step 2: Update user profile with name
       if (name) {
         await updateProfile(userCredential.user, {
           displayName: name
         });
       }
       
-      // Store password temporarily for auto-login after verification
-      localStorage.setItem('pendingVerificationPassword', btoa(password));
-      localStorage.setItem('pendingVerificationEmail', email);
-      
-      // Wait for Firebase auth token to be ready before creating session
-      // Force token refresh to ensure it's available
-      let sessionId = null;
+      // Step 3: Send email verification using Firebase built-in function
+      // This is the standard way - simple and secure
       let emailSent = false;
-      
       try {
-        // Wait for token to be ready (with retry and force refresh)
-        let tokenReady = false;
-        for (let i = 0; i < 10; i++) {
-          try {
-            // Force refresh token to ensure it's valid
-            const token = await userCredential.user.getIdToken(true);
-            if (token) {
-              tokenReady = true;
-              console.log(`[AuthContext] Token ready after ${i + 1} attempts`);
-              break;
-            }
-          } catch (e) {
-            console.log(`[AuthContext] Waiting for token... (attempt ${i + 1}/10)`, e.message);
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        }
-        
-        if (tokenReady) {
-          const { httpsCallable } = await import('firebase/functions');
-          const { functions } = await import('../config/firebase');
-          const createSession = httpsCallable(functions, 'createVerificationSession');
-          const result = await createSession({});
-          
-          // Check if request was successful
-          if (result && result.data) {
-            sessionId = result.data?.session_id;
-            emailSent = true; // Email was sent if we got a response
-            if (sessionId) {
-              localStorage.setItem('pendingVerificationSessionId', sessionId);
-              console.log('[AuthContext] Verification session created:', sessionId);
-            } else {
-              console.log('[AuthContext] Verification session created but no sessionId returned');
-            }
-          } else {
-            throw new Error('Invalid response from createVerificationSession');
-          }
-        } else {
-          throw new Error('Token not ready after retries');
-        }
-      } catch (sessionError) {
-        console.warn('[AuthContext] Failed to create verification session:', sessionError);
-        
-        // Check if error is about authentication (user might have been signed out)
-        // If so, email might have been sent before the error
-        const isAuthError = sessionError?.code === 'functions/unauthenticated' || 
-                           sessionError?.code === 'unauthenticated' ||
-                           sessionError?.message?.includes('authenticated') ||
-                           sessionError?.message?.includes('User must be authenticated');
-        
-        // If error is NOT about authentication, it means the function was called
-        // Email is sent BEFORE any other errors can occur in createVerificationSession
-        // So if we got past authentication check, email was likely sent
-        if (!isAuthError) {
-          console.log('[AuthContext] Error is not authentication-related - email was likely sent before error');
-          emailSent = true; // Assume email was sent since function was called successfully
-        } else {
-          // Authentication error - email might not have been sent
-          // Try fallback
-          try {
-            // Ensure user is still authenticated
-            const currentUser = auth.currentUser;
-            if (currentUser && currentUser.uid === userCredential.user.uid) {
-              const { httpsCallable } = await import('firebase/functions');
-              const { functions } = await import('../config/firebase');
-              const resendVerification = httpsCallable(functions, 'resendCustomVerification');
-              const fallbackResult = await resendVerification({});
-              
-              // Check if fallback was successful
-              if (fallbackResult && fallbackResult.data) {
-                emailSent = true;
-                console.log('[AuthContext] Fallback: Verification email sent without session');
-              } else {
-                console.error('[AuthContext] Fallback: Invalid response from resendCustomVerification');
-              }
-            } else {
-              // User was signed out - email might have been sent before sign out
-              // In createVerificationSession, email is sent after authentication check
-              // So if we got here, email was likely sent
-              console.log('[AuthContext] User signed out - email was likely sent before sign out');
-              emailSent = true; // Assume email was sent
-            }
-          } catch (emailError) {
-            console.error('[AuthContext] Failed to send verification email (fallback):', emailError);
-            // If fallback also fails with auth error, email might have been sent
-            const isFallbackAuthError = emailError?.code === 'functions/unauthenticated' || 
-                                       emailError?.code === 'unauthenticated' ||
-                                       emailError?.message?.includes('authenticated');
-            if (isFallbackAuthError) {
-              emailSent = true; // Assume email was sent before sign out
-            } else {
-              emailSent = false; // Real error - email not sent
-            }
-          }
-        }
+        const { sendEmailVerification } = await import('firebase/auth');
+        await sendEmailVerification(userCredential.user);
+        emailSent = true;
+        console.log('[AuthContext] Verification email sent');
+      } catch (emailError) {
+        console.error('[AuthContext] Failed to send verification email:', emailError);
+        // If email fails, we still sign out user - they can request resend later
+        emailSent = false;
       }
       
-      // If email wasn't sent, return error info but don't throw
-      // This allows the UI to handle the error gracefully
-      if (!emailSent) {
-        console.error('[AuthContext] Registration completed but verification email was not sent');
-      }
+      // Step 4: Sign out user immediately - they need to verify email first
+      await signOut(auth);
+      console.log('[AuthContext] User signed out after registration');
       
-      // Return result FIRST so AuthModal can set showWaitingScreen before sign out
-      const result = {
+      // Step 5: Return result (user is signed out)
+      return {
         user: null,
         emailSent: emailSent,
-        email: userCredential.user.email,
-        sessionId: sessionId
+        email: userCredential.user.email
       };
-      
-      // Sign out user AFTER returning result (with delay to ensure UI updates)
-      // This ensures AuthModal can set showWaitingScreen before user is signed out
-      // User needs to verify email before they can use the account
-      // Use setTimeout to allow AuthModal to process the result and set showWaitingScreen
-      setTimeout(async () => {
-        try {
-          await signOut(auth);
-          console.log('[AuthContext] User signed out after registration');
-        } catch (signOutError) {
-          console.error('[AuthContext] Error signing out user:', signOutError);
-        }
-      }, 500); // Delay to ensure showWaitingScreen is set in AuthModal
-      
-      return result;
     } catch (error) {
       throw formatAuthError(error);
     }
