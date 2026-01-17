@@ -32,6 +32,26 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
   const { login, register, loginWithGoogle, loginWithFacebook, loginWithTikTok, resetPassword } = useAuth();
   const navigate = useNavigate();
 
+  // Check localStorage for pending verification on mount
+  useEffect(() => {
+    const pendingEmail = localStorage.getItem('pendingVerificationEmail');
+    const pendingSessionId = localStorage.getItem('pendingVerificationSessionId');
+    
+    if (pendingEmail && !showWaitingScreen) {
+      // User is waiting for verification - show modal
+      setVerificationEmail(pendingEmail);
+      if (pendingSessionId) {
+        setVerificationSessionId(pendingSessionId);
+      }
+      setShowWaitingScreen(true);
+      // Force modal to stay open
+      if (!isOpen && onClose) {
+        // Modal is closed but we need to show waiting screen
+        // We'll handle this by making modal always visible when showWaitingScreen is true
+      }
+    }
+  }, []); // Only run on mount
+
   // Reset mode when modal opens/closes or type changes
   useEffect(() => {
     if (isOpen) {
@@ -82,7 +102,10 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
     }
   }, [formData.email, mode]);
 
-  if (!isOpen && !showWaitingScreen) return null;
+  // Always show modal if waiting for verification (even if isOpen is false)
+  const shouldShowModal = isOpen || showWaitingScreen || localStorage.getItem('showVerificationModal') === 'true';
+  
+  if (!shouldShowModal) return null;
 
   const handleLegalNav = (e, page) => {
     e.preventDefault();
@@ -183,6 +206,9 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
             setVerificationSessionId(sessionId);
             localStorage.setItem('pendingVerificationSessionId', sessionId);
           }
+          // Save to localStorage to persist across sign out
+          localStorage.setItem('pendingVerificationEmail', emailToVerify);
+          localStorage.setItem('showVerificationModal', 'true');
           setShowWaitingScreen(true);
           console.log('[AuthModal] Set showWaitingScreen to true');
           // Don't close modal - waiting screen will be shown instead
@@ -293,7 +319,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
             ? 'bg-black/60' 
             : 'bg-[#2C2A26]/40'
         }`}
-        onClick={showWaitingScreen ? undefined : onClose}
+        onClick={showWaitingScreen || localStorage.getItem('showVerificationModal') === 'true' ? undefined : onClose}
       />
 
       {/* Modal Card */}
@@ -304,7 +330,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
       }`}>
         
         {/* Close Button - Hide when waiting for verification */}
-        {!showWaitingScreen && (
+        {!showWaitingScreen && localStorage.getItem('showVerificationModal') !== 'true' && (
           <button 
             onClick={onClose}
             className={`absolute top-4 right-4 transition-colors z-10 ${
@@ -346,6 +372,11 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
               onComplete={() => {
                 setShowWaitingScreen(false);
                 setVerificationSessionId(null);
+                setVerificationEmail('');
+                // Clear localStorage
+                localStorage.removeItem('pendingVerificationEmail');
+                localStorage.removeItem('pendingVerificationSessionId');
+                localStorage.removeItem('showVerificationModal');
                 if (onLogin) onLogin();
                 onClose(); // Close modal after completion
               }}

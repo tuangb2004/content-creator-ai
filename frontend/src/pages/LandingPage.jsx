@@ -46,6 +46,18 @@ function LandingPage() {
     localStorage.removeItem('logging_out');
   }, []);
 
+  // Auto-open auth modal if user is waiting for verification
+  useEffect(() => {
+    const showVerificationModal = localStorage.getItem('showVerificationModal');
+    const pendingEmail = localStorage.getItem('pendingVerificationEmail');
+    
+    if (showVerificationModal === 'true' && pendingEmail && !user) {
+      // User is waiting for verification - open modal
+      setAuthType('signup');
+      setShowAuthModal(true);
+    }
+  }, [user]);
+
   // Handle TikTok OAuth callback
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
