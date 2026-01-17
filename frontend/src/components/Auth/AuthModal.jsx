@@ -195,11 +195,13 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
         
         // Only show waiting screen if email was actually sent
         if (emailToVerify && emailSent) {
+          // Set showWaitingScreen FIRST before any other operations
+          // This ensures modal stays open even if user signs out
+          setShowWaitingScreen(true);
           setVerificationEmail(emailToVerify);
           // Save to localStorage to persist across sign out
           localStorage.setItem('pendingVerificationEmail', emailToVerify);
           localStorage.setItem('showVerificationModal', 'true');
-          setShowWaitingScreen(true);
           console.log('[AuthModal] Set showWaitingScreen to true');
           // Don't close modal - waiting screen will be shown instead
           toast.success(t?.auth?.accountCreated || 'Account created! Please check your email to verify your account.');

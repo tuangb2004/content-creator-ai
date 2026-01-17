@@ -47,7 +47,7 @@ function LandingPage() {
   }, []);
 
   // Auto-open auth modal if user is waiting for verification
-  // Check immediately on mount
+  // Check immediately on mount and whenever user changes (including sign out)
   useEffect(() => {
     const checkVerificationModal = () => {
       const showVerificationModal = localStorage.getItem('showVerificationModal');
@@ -64,8 +64,19 @@ function LandingPage() {
     // Check immediately
     checkVerificationModal();
     
-    // Also check when user or loading changes
+    // Also check when user or loading changes (including when user signs out)
   }, [user, loading]);
+  
+  // Keep modal open if verification is pending, even if user signs out
+  useEffect(() => {
+    const showVerificationModal = localStorage.getItem('showVerificationModal');
+    if (showVerificationModal === 'true' && !showAuthModal) {
+      // Modal should be open but isn't - open it immediately
+      console.log('[LandingPage] Keeping verification modal open');
+      setAuthType('signup');
+      setShowAuthModal(true);
+    }
+  }, [showAuthModal]);
 
   // Handle TikTok OAuth callback
   useEffect(() => {
@@ -378,7 +389,13 @@ function LandingPage() {
       {/* Auth Modal */}
       <AuthModal 
         isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
+        onClose={() => {
+          // Don't close modal if user is waiting for verification
+          const showVerificationModal = localStorage.getItem('showVerificationModal');
+          if (showVerificationModal !== 'true') {
+            setShowAuthModal(false);
+          }
+        }} 
         onLogin={handleLogin}
         onNavigate={handleLegalNav}
         type={authType}
