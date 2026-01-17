@@ -13,11 +13,11 @@ const PAYOS_TEST_MODE = functions.config().payos?.test_mode === 'true' || proces
 // Validate PayOS credentials
 function validatePayOSCredentials(): { valid: boolean; missing: string[] } {
   const missing: string[] = [];
-  
+
   if (!payOSClientId) missing.push('PAYOS_CLIENT_ID');
   if (!payOSApiKey) missing.push('PAYOS_API_KEY');
   if (!payOSChecksumKey) missing.push('PAYOS_CHECKSUM_KEY');
-  
+
   if (missing.length > 0) {
     console.warn(`[PayOS] Missing credentials: ${missing.join(', ')}. PayOS API will not be available.`);
     console.warn('[PayOS] Configure credentials via:');
@@ -25,7 +25,7 @@ function validatePayOSCredentials(): { valid: boolean; missing: string[] } {
     console.warn('  2. Environment variables: PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY');
     console.warn('  3. .env file in functions directory (for local development)');
   }
-  
+
   return { valid: missing.length === 0, missing };
 }
 
@@ -105,11 +105,11 @@ export interface PayOSWebhookData {
 /**
  * Create HMAC SHA256 signature for PayOS
  */
-function createSignature(data: string): string {
+export function createSignature(data: string): string {
   if (!payOSChecksumKey) {
     throw new Error('PAYOS_CHECKSUM_KEY is not configured');
   }
-  
+
   const crypto = require('crypto');
   return crypto
     .createHmac('sha256', payOSChecksumKey)
@@ -138,24 +138,49 @@ export function verifyWebhookSignature(data: PayOSWebhookData): boolean {
   }
 
   try {
-    const { code, desc, data: webhookData } = data;
-    
-    // Create the data string exactly as PayOS does
-    // PayOS uses JSON.stringify with specific order: code, desc, data
-    const dataString = JSON.stringify({ code, desc, data: webhookData });
-    const calculatedSignature = createSignature(dataString);
-    
-    const isValid = calculatedSignature === data.signature;
-    
+    const { data: webhookData, signature } = data;
+
+    if (!webhookData) {
+      console.error('[verifyWebhookSignature] Webhook data object is missing');
+      return false;
+    }
+
+    // PayOS signature calculation logic:
+    // 1. Take the nested 'data' object
+    // 2. Sort keys alphabetically
+    // 3. Create query string format: key=value&key2=value2
+    // 4. HMAC-SHA256
+
+    const sortedKeys = Object.keys(webhookData).sort();
+
+    // Filter out signature field if it exists in data (unlikely but safe to do)
+    // and map to key=value
+    const dataSignParts = sortedKeys
+      .filter(key => key !== 'signature')
+      .map(key => {
+        // Access strictly typed property effectively
+        const value = (webhookData as any)[key];
+        // Ensure we handling null/undefined correctly if needed, 
+        // usually PayOS sends valid values for signed fields.
+        // Convert value to string for signing if it's not null
+        const valueStr = value === null || value === undefined ? '' : String(value);
+        return `${key}=${valueStr}`;
+      });
+
+    const dataSignStr = dataSignParts.join('&');
+    const calculatedSignature = createSignature(dataSignStr);
+
+    const isValid = calculatedSignature === signature;
+
     if (!isValid) {
       console.error('[verifyWebhookSignature] Signature mismatch');
-      console.error('[verifyWebhookSignature] Expected:', data.signature);
+      console.error('[verifyWebhookSignature] Expected:', signature);
       console.error('[verifyWebhookSignature] Calculated:', calculatedSignature);
-      console.error('[verifyWebhookSignature] Data string:', dataString);
+      console.error('[verifyWebhookSignature] Data string used for sign:', dataSignStr);
     } else {
       console.log('[verifyWebhookSignature] Signature verified successfully');
     }
-    
+
     return isValid;
   } catch (error: any) {
     console.error('[verifyWebhookSignature] Error verifying signature:', error);
@@ -193,14 +218,14 @@ export async function createPaymentLink(
   if (PAYOS_TEST_MODE) {
     console.log('[createPaymentLink] ⚠️ TEST MODE: Using mock PayOS response');
     console.log('[createPaymentLink] Mock payment link request:', JSON.stringify(request, null, 2));
-    
+
     // Generate mock payment link ID
     const mockPaymentLinkId = `test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     // In test mode, return a local URL or skip redirect
     // Frontend should handle test mode differently
     const mockCheckoutUrl = `http://localhost:5173/dashboard?payment=test&paymentLinkId=${mockPaymentLinkId}&amount=${request.amount}`;
     const mockQrCode = `https://img.vietqr.io/image/970415-2154048326-compact2.png?amount=${request.amount}&addInfo=${encodeURIComponent(request.description)}`;
-    
+
     const mockResponse: PayOSCreatePaymentLinkResponse = {
       error: 0,
       message: 'Success (TEST MODE)',
@@ -217,7 +242,7 @@ export async function createPaymentLink(
         checkoutUrl: mockCheckoutUrl,
       }
     };
-    
+
     console.log('[createPaymentLink] Mock response:', JSON.stringify(mockResponse, null, 2));
     return mockResponse;
   }
@@ -226,11 +251,11 @@ export async function createPaymentLink(
 
   try {
     console.log('[createPaymentLink] Creating PayOS payment link with request:', JSON.stringify(request, null, 2));
-    
+
     // Add timeout for fetch request (30 seconds)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
-    
+
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -242,94 +267,94 @@ export async function createPaymentLink(
         body: JSON.stringify(request),
         signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
 
-    console.log('[createPaymentLink] PayOS API response status:', response.status, response.statusText);
-    
-    // Log raw response text for debugging
-    const responseText = await response.text();
-    console.log('[createPaymentLink] PayOS API RAW response:', responseText);
+      console.log('[createPaymentLink] PayOS API response status:', response.status, response.statusText);
 
-    if (!response.ok) {
-      console.error('[createPaymentLink] PayOS API error - HTTP', response.status, response.statusText);
-      console.error('[createPaymentLink] PayOS API error - Response:', responseText);
-      
-      let errorData: any;
-      try {
-        errorData = JSON.parse(responseText);
-      } catch (parseError) {
-        throw new Error(`PayOS API error: ${response.status} ${response.statusText} - ${responseText}`);
+      // Log raw response text for debugging
+      const responseText = await response.text();
+      console.log('[createPaymentLink] PayOS API RAW response:', responseText);
+
+      if (!response.ok) {
+        console.error('[createPaymentLink] PayOS API error - HTTP', response.status, response.statusText);
+        console.error('[createPaymentLink] PayOS API error - Response:', responseText);
+
+        let errorData: any;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error(`PayOS API error: ${response.status} ${response.statusText} - ${responseText}`);
+        }
+
+        throw new Error(`PayOS API error: ${response.status} - ${errorData.message || errorData.desc || JSON.stringify(errorData)}`);
       }
-      
-      throw new Error(`PayOS API error: ${response.status} - ${errorData.message || errorData.desc || JSON.stringify(errorData)}`);
-    }
 
-    // Parse response
-    let result: any;
-    try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('[createPaymentLink] Failed to parse PayOS response:', responseText);
-      throw new Error('Invalid JSON response from PayOS');
-    }
-    console.log('[createPaymentLink] PayOS API parsed response:', JSON.stringify(result, null, 2));
-    console.log('[createPaymentLink] Response keys:', Object.keys(result));
-    
-    // Check for error in response (flexible format)
-    const hasError = result.error || result.code === '01' || result.code === 'error';
-    const errorMessage = result.message || result.desc || result.msg;
-    const responseData = result.data;
-    
-    console.log('[createPaymentLink] Error check:', hasError);
-    console.log('[createPaymentLink] Error message:', errorMessage);
-    console.log('[createPaymentLink] Data field:', responseData ? 'EXISTS' : 'MISSING');
-    
-    if (hasError || (result.code && result.code !== '00')) {
-      console.error('[createPaymentLink] PayOS error in response:', result.code, errorMessage);
-      throw new Error(`PayOS error: ${errorMessage || 'Unknown error from PayOS'}`);
-    }
+      // Parse response
+      let result: any;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[createPaymentLink] Failed to parse PayOS response:', responseText);
+        throw new Error('Invalid JSON response from PayOS');
+      }
+      console.log('[createPaymentLink] PayOS API parsed response:', JSON.stringify(result, null, 2));
+      console.log('[createPaymentLink] Response keys:', Object.keys(result));
 
-    if (!responseData) {
-      console.error('[createPaymentLink] PayOS response missing data field');
-      console.error('[createPaymentLink] Full response:', JSON.stringify(result, null, 2));
-      throw new Error(`PayOS response missing data. Full response: ${JSON.stringify(result)}`);
-    }
-    
-    // Validate required fields in data
-    if (!responseData.paymentLinkId) {
-      throw new Error('PayOS response missing paymentLinkId');
-    }
-    if (!responseData.checkoutUrl) {
-      throw new Error('PayOS response missing checkoutUrl');
-    }
+      // Check for error in response (flexible format)
+      const hasError = result.error || result.code === '01' || result.code === 'error';
+      const errorMessage = result.message || result.desc || result.msg;
+      const responseData = result.data;
 
-    console.log(`[createPaymentLink] Successfully created payment link: ${responseData.paymentLinkId}`);
-    
-    // Cast to expected type for return
-    const payosResponse: PayOSCreatePaymentLinkResponse = {
-      error: 0,
-      message: 'Success',
-      data: responseData
-    };
-    
-    return payosResponse;
+      console.log('[createPaymentLink] Error check:', hasError);
+      console.log('[createPaymentLink] Error message:', errorMessage);
+      console.log('[createPaymentLink] Data field:', responseData ? 'EXISTS' : 'MISSING');
+
+      if (hasError || (result.code && result.code !== '00')) {
+        console.error('[createPaymentLink] PayOS error in response:', result.code, errorMessage);
+        throw new Error(`PayOS error: ${errorMessage || 'Unknown error from PayOS'}`);
+      }
+
+      if (!responseData) {
+        console.error('[createPaymentLink] PayOS response missing data field');
+        console.error('[createPaymentLink] Full response:', JSON.stringify(result, null, 2));
+        throw new Error(`PayOS response missing data. Full response: ${JSON.stringify(result)}`);
+      }
+
+      // Validate required fields in data
+      if (!responseData.paymentLinkId) {
+        throw new Error('PayOS response missing paymentLinkId');
+      }
+      if (!responseData.checkoutUrl) {
+        throw new Error('PayOS response missing checkoutUrl');
+      }
+
+      console.log(`[createPaymentLink] Successfully created payment link: ${responseData.paymentLinkId}`);
+
+      // Cast to expected type for return
+      const payosResponse: PayOSCreatePaymentLinkResponse = {
+        error: 0,
+        message: 'Success',
+        data: responseData
+      };
+
+      return payosResponse;
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
-      
+
       // Handle network errors
       if (fetchError.name === 'AbortError') {
         throw new Error('PayOS API request timeout. Please check your internet connection and try again.');
       }
-      
+
       if (fetchError.code === 'ENOTFOUND' || fetchError.cause?.code === 'ENOTFOUND') {
         throw new Error('Cannot connect to PayOS API. Please check your internet connection. Error: DNS lookup failed for api.payos.vn');
       }
-      
+
       if (fetchError.cause) {
         throw fetchError;
       }
-      
+
       throw fetchError;
     }
   } catch (error: any) {
@@ -337,20 +362,20 @@ export async function createPaymentLink(
     console.error('[createPaymentLink] Error stack:', error.stack);
     console.error('[createPaymentLink] Error cause:', error.cause);
     console.error('[createPaymentLink] Error code:', error.code);
-    
+
     // Provide user-friendly error messages
     if (error.name === 'AbortError' || error.message?.includes('timeout')) {
       throw new Error('PayOS API request timeout. Please check your internet connection and try again.');
     }
-    
+
     if (error.code === 'ENOTFOUND' || error.cause?.code === 'ENOTFOUND' || error.message?.includes('ENOTFOUND') || error.message?.includes('DNS')) {
       throw new Error('Cannot connect to PayOS API. Please check your internet connection, VPN, and ensure api-merchant.payos.vn is accessible.');
     }
-    
+
     if (error.message?.includes('fetch failed') || error.cause?.code === 'ECONNREFUSED') {
       throw new Error('Cannot connect to PayOS API. Please check your internet connection and VPN settings.');
     }
-    
+
     // Re-throw with more context if it's not already an Error
     if (error instanceof Error) {
       // Include original error message for debugging
@@ -377,7 +402,7 @@ export async function getPaymentLinkInfo(paymentLinkId: string): Promise<any> {
 
   try {
     console.log(`[getPaymentLinkInfo] Fetching payment link info: ${paymentLinkId}`);
-    
+
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
@@ -397,7 +422,7 @@ export async function getPaymentLinkInfo(paymentLinkId: string): Promise<any> {
         console.error('[getPaymentLinkInfo] PayOS API error - failed to parse response:', text);
         throw new Error(`PayOS API error: ${response.status} ${response.statusText} - ${text}`);
       }
-      
+
       console.error('[getPaymentLinkInfo] PayOS API error response:', JSON.stringify(errorData, null, 2));
       throw new Error(`PayOS API error: ${response.status} - ${errorData.message || JSON.stringify(errorData)}`);
     }
@@ -408,7 +433,7 @@ export async function getPaymentLinkInfo(paymentLinkId: string): Promise<any> {
   } catch (error: any) {
     console.error(`[getPaymentLinkInfo] Failed to get PayOS payment link info for ${paymentLinkId}:`, error);
     console.error('[getPaymentLinkInfo] Error stack:', error.stack);
-    
+
     if (error instanceof Error) {
       throw error;
     }

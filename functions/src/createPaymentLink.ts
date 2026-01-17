@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions';
 import { validateAuth } from './utils/validation';
-import { createPaymentLink } from './utils/payos';
+import { createPaymentLink, createSignature } from './utils/payos';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -136,10 +136,17 @@ export const createPaymentLinkFunction = functions.https.onCall(
 
     // 6. Create payment link
     try {
+      // PayOS requires signature: HMAC SHA256 of sorted params
+      // Format: amount=$amount&cancelUrl=$cancelUrl&description=$description&orderCode=$orderCode&returnUrl=$returnUrl
+      // PayOS description limit: 25 characters max
+      const description = `Nang cap ${planName}`; // e.g., "Nang cap pro_monthly" = 21 chars
+      const signatureData = `amount=${amount}&cancelUrl=${cancelUrl}&description=${description}&orderCode=${orderCode}&returnUrl=${successUrl}`;
+      const signature = createSignature(signatureData);
+
       const paymentRequest = {
         orderCode,
         amount,
-        description: `Nâng cấp gói ${planName} - ${credits} credits`,
+        description,
         cancelUrl,
         returnUrl: successUrl,
         // PayOS requires items array
@@ -150,6 +157,8 @@ export const createPaymentLinkFunction = functions.https.onCall(
             price: amount,
           }
         ],
+        // PayOS requires signature for request verification
+        signature,
       };
 
       console.log(`[createPaymentLink] Creating PayOS payment link with orderCode: ${orderCode}`);

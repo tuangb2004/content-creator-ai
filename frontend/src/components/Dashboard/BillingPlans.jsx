@@ -5,6 +5,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { createPaymentLink, ErrorTypes, isErrorType } from '../../services/firebaseFunctions';
 import toast from '../../utils/toast';
 import PaymentModal from './PaymentModal';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
 const CheckIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
@@ -17,8 +19,47 @@ const BillingPlans = () => {
   const { t } = useLanguage();
   const { userData, refreshUserData } = useAuth();
   const [billingCycle, setBillingCycle] = useState('monthly');
-  const [loading, setLoading] = useState(false);
+  // Fixed: Use string to track WHICH plan is loading, instead of boolean
+  const [loadingPlanId, setLoadingPlanId] = useState(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  const [billingHistory, setBillingHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  // Fetch Billing History
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!userData?.uid) return;
+
+      setHistoryLoading(true);
+      try {
+        const q = query(
+          collection(db, 'payment_links'),
+          where('userId', '==', userData.uid)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const historyData = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          historyData.push({
+            id: doc.id,
+            date: data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('vi-VN') : 'N/A',
+            description: data.description || `Plan Upgrade (${data.planName})`,
+            amount: data.amount ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.amount) : '0 ₫',
+            invoiceId: data.orderCode || doc.id.substring(0, 8)
+          });
+        });
+        setBillingHistory(historyData);
+      } catch (error) {
+        console.error("Error fetching billing history:", error);
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [userData?.uid]);
 
   // Debug: Log modal state changes
   useEffect(() => {
@@ -28,24 +69,22 @@ const BillingPlans = () => {
   // Map plan names to amounts (VND)
   // Exchange rate: 1 USD ≈ 23,800 VND
 
-  // 🧪 TEST MODE: Using reduced amounts for safe testing
-  // PayOS minimum amount: 10,000 VND
-  // TODO: REVERT TO PRODUCTION PRICES AFTER TESTING!
+  /* TEST MODE (Disabled)
   const PLAN_PRICES = {
-    pro_monthly: 10000, // TEST: 10,000 VND (~$0.42) - PRODUCTION: 690,000 VND
-    pro_yearly: 20000, // TEST: 20,000 VND (~$0.84) - PRODUCTION: 6,840,000 VND
-    agency_monthly: 30000, // TEST: 30,000 VND (~$1.26) - PRODUCTION: 2,356,200 VND
-    agency_yearly: 50000, // TEST: 50,000 VND (~$2.10) - PRODUCTION: 22,562,400 VND
+    pro_monthly: 10000,
+    pro_yearly: 20000,
+    agency_monthly: 30000,
+    agency_yearly: 50000,
   };
+  */
 
-  /* PRODUCTION PRICES (uncomment after testing):
+  // PRODUCTION PRICES:
   const PLAN_PRICES = {
     pro_monthly: 690000, // 29 USD * 23,800 VND/USD ≈ 690,000 VND
     pro_yearly: 6840000, // 24 USD/month * 12 months * 23,800 VND/USD ≈ 6,840,000 VND
     agency_monthly: 2356200, // 99 USD * 23,800 VND/USD ≈ 2,356,200 VND
     agency_yearly: 22562400, // 79 USD/month * 12 months * 23,800 VND/USD ≈ 22,562,400 VND
   };
-  */
 
   const currentPlan = userData?.plan || 'free';
   const [cardDetails, setCardDetails] = useState({
@@ -73,14 +112,14 @@ const BillingPlans = () => {
     // TODO: Call API to save payment method to backend
   };
 
-  const handleUpgrade = async (planKey, planName) => {
+  const handleUpgrade = async (planKey, planName, planId) => {
     const amount = PLAN_PRICES[planKey];
     if (!amount) {
       toast.error(t?.billing?.planPriceNotConfigured || 'Plan price not configured. Please contact support.');
       return;
     }
 
-    setLoading(true);
+    setLoadingPlanId(planId); // Set specific plan loading
     try {
       const { checkoutUrl } = await createPaymentLink({
         amount: amount,
@@ -107,7 +146,7 @@ const BillingPlans = () => {
         toast.error(error.message || t?.billing?.failedToCreatePayment || 'Failed to create payment link. Please try again.');
       }
     } finally {
-      setLoading(false);
+      setLoadingPlanId(null); // Clear loading
     }
   };
 
@@ -266,22 +305,34 @@ const BillingPlans = () => {
             </ul>
 
             <button
-              disabled={plan.active || loading}
+              disabled={plan.active || (loadingPlanId !== null)}
               onClick={() => {
                 if (plan.id === 'pro') {
-                  handleUpgrade(billingCycle === 'monthly' ? 'pro_monthly' : 'pro_yearly', 'Pro Studio');
+                  handleUpgrade(billingCycle === 'monthly' ? 'pro_monthly' : 'pro_yearly', 'Pro Studio', plan.id);
                 } else if (plan.id === 'agency') {
-                  handleUpgrade(billingCycle === 'monthly' ? 'agency_monthly' : 'agency_yearly', 'Agency Elite');
+                  handleUpgrade(billingCycle === 'monthly' ? 'agency_monthly' : 'agency_yearly', 'Agency Elite', plan.id);
                 }
               }}
-              className={`w-full py-4 text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-default ${plan.highlight
-                ? 'bg-[#F5F2EB] text-[#2C2A26] hover:bg-white'
-                : (theme === 'dark'
-                  ? 'border border-[#F5F2EB] hover:bg-[#F5F2EB] hover:text-[#2C2A26] disabled:hover:bg-transparent disabled:hover:text-[#F5F2EB]'
-                  : 'border border-[#2C2A26] hover:bg-[#2C2A26] hover:text-[#F5F2EB] disabled:hover:bg-transparent disabled:hover:text-[#2C2A26]')
-                }`}
+              className={`w-full py-4 text-xs font-bold uppercase tracking-widest transition-all duration-300 relative
+                ${plan.active
+                  ? 'bg-emerald-600 text-white border border-emerald-600 shadow-lg scale-[1.02] cursor-default opacity-100'
+                  : (plan.highlight
+                    ? 'bg-[#F5F2EB] text-[#2C2A26] hover:bg-white border-transparent'
+                    : (theme === 'dark'
+                      ? 'border border-[#F5F2EB] hover:bg-[#F5F2EB] hover:text-[#2C2A26]'
+                      : 'border border-[#2C2A26] hover:bg-[#2C2A26] hover:text-[#F5F2EB]')
+                  )
+                }
+                ${(loadingPlanId !== null && !plan.active) ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
             >
-              {loading ? (t?.billing?.processing || 'Processing...') : (plan.active ? (t?.billing?.currentPlan || 'Current Plan') : plan.button)}
+              {loadingPlanId === plan.id ? (t?.billing?.processing || 'Processing...') : (
+                plan.active ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <CheckIcon /> {t?.billing?.currentPlan || 'Current Plan'}
+                  </span>
+                ) : (plan.id === 'starter' ? 'Free Plan' : plan.button)
+              )}
             </button>
           </div>
         ))}
