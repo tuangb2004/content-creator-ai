@@ -62,7 +62,7 @@ export async function sendVerificationEmail(
   
   try {
     // Get site URL from config or environment
-    // Priority: process.env.SITE_URL > functions.config().app.site_url > default
+    // Priority: process.env.SITE_URL > functions.config().app.site_url
     // NEVER use localhost in production - always use actual domain
     let siteUrl = process.env.SITE_URL || functions.config().app?.site_url;
     
@@ -73,11 +73,13 @@ export async function sendVerificationEmail(
       console.log(`   To test on mobile, set SITE_URL to your public URL (e.g., ngrok tunnel or public IP).`);
     }
     
-    // Fallback to production URL if still not set (should not happen in production)
+    // CRITICAL: SITE_URL must be set in production
     if (!siteUrl) {
-      siteUrl = 'https://creatorai.app';
-      console.warn(`⚠️ SITE_URL not configured. Using default: ${siteUrl}`);
-      console.warn(`   Please set SITE_URL in Firebase Functions config: firebase functions:config:set app.site_url="https://your-domain.com"`);
+      const errorMsg = 'SITE_URL is not configured. This will cause email links to fail. Set it using: firebase functions:config:set app.site_url="https://your-domain.com"';
+      console.error(`❌ ${errorMsg}`);
+      // Don't throw - allow email to be sent, but log error
+      siteUrl = 'https://creatorai.app'; // Fallback, but should never reach here
+      throw new Error(errorMsg);
     }
     
     // Normalize SITE_URL: remove trailing slash to avoid double slashes in links

@@ -27,46 +27,30 @@ function VerifyEmailPage() {
       if (!oobCode || mode !== 'verifyEmail') {
         setStatus('error');
         toast.error(t?.auth?.invalidLink || 'Invalid verification link');
-        // Don't redirect on error either - let user close manually
+        setTimeout(() => navigate('/'), 3000);
         return;
       }
 
       try {
-        // Apply action code to verify email
+        // Apply action code to verify email (SOURCE OF TRUTH)
         await applyActionCode(auth, oobCode);
 
-        // If session_id provided, mark session as verified
+        // OPTIONAL: If session_id provided, mark session as verified for faster cross-device sync
+        // This is NOT required - Firebase Auth emailVerified is the source of truth
         if (sessionId) {
           try {
-            // Get user to verify email status
-            const currentUser = auth.currentUser;
-            if (currentUser) {
-              await currentUser.reload();
-            }
-
-            // Mark session as verified via Cloud Function
-            // The session status update will trigger auto-login on desktop
             const markVerified = httpsCallable(functions, 'markSessionVerifiedCallable');
             await markVerified({ session_id: sessionId });
           } catch (sessionError) {
-            console.warn('Failed to mark session verified:', sessionError);
-            // Continue anyway - email is verified
+            console.warn('Failed to mark session verified (optional):', sessionError);
+            // Continue anyway - email is verified, session is just an optimization
           }
         }
 
         setStatus('success');
         
-        // Don't redirect - just show success message and auto-close tab
-        // The original tab will detect verification via polling and auto-login
-        setTimeout(() => {
-          // Close the tab/window if possible (only works if opened via window.open)
-          if (window.opener) {
-            window.close();
-          } else {
-            // If can't close, just stay on success message (no redirect)
-            // User can manually close the tab
-          }
-        }, 1500);
+        // DON'T redirect - let the original tab poll Firebase Auth and auto-login
+        // User can close this tab manually, or it will show success message
       } catch (error) {
         console.error('Verification error:', error);
         setStatus('error');
@@ -79,7 +63,7 @@ function VerifyEmailPage() {
         }
         
         toast.error(errorMessage);
-        // Don't redirect on error - let user close manually
+        setTimeout(() => navigate('/'), 3000);
       }
     };
 
@@ -123,7 +107,7 @@ function VerifyEmailPage() {
             <p className={`text-sm ${
               theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
             }`}>
-              {t?.auth?.youCanCloseThisTab || 'You can close this tab. Your other tab will automatically log you in.'}
+              {t?.auth?.redirecting || 'Redirecting...'}
             </p>
           </div>
         )}

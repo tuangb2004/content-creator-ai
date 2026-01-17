@@ -108,7 +108,7 @@ export const translations = {
         errorOccurred: 'An error occurred',
         failedToSendReset: 'Failed to send reset email',
         emailNotVerified: 'Email not verified',
-        youCanCloseThisTab: 'You can close this tab. Your other tab will automatically log you in.',
+        youCanCloseThisTab: 'You can close this tab. Your original tab will automatically log you in.',
       },
   
       // Landing Page

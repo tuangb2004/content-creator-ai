@@ -18,80 +18,105 @@ function VerificationWaitingScreen({ email, sessionId, onComplete }) {
   const [status, setStatus] = useState('pending');
   const [countdown, setCountdown] = useState(600); // 10 minutes
 
-  useEffect(() => {
+  // Check if email is verified by polling Firebase Auth directly
+  const checkEmailVerified = async () => {
+    try {
+      const password = localStorage.getItem('pendingVerificationPassword');
+      if (!password) {
+        return; // No password stored, cannot check
+      }
+
+      const decodedPassword = atob(password);
+      
+      // Silent sign-in to check emailVerified status
+      const userCredential = await signInWithEmailAndPassword(auth, email, decodedPassword);
+      
+      // Reload to get latest emailVerified status
+      await userCredential.user.reload();
+      
+      if (userCredential.user.emailVerified) {
+        setStatus('verified');
+        
+        // Clean up localStorage
+        localStorage.removeItem('pendingVerificationSessionId');
+        localStorage.removeItem('pendingVerificationEmail');
+        localStorage.removeItem('pendingVerificationPassword');
+        
+        toast.success(t?.auth?.emailVerifiedSuccess || 'Email verified! Logging in...');
+        
+        // Mark session as completed if sessionId exists (optional)
+        if (sessionId) {
+          try {
+            const markCompleted = httpsCallable(functions, 'markSessionCompletedCallable');
+            await markCompleted({ session_id: sessionId });
+          } catch (e) {
+            console.warn('Failed to mark session completed:', e);
+            // Continue anyway - session is optional
+          }
+        }
+        
+        if (onComplete) {
+          onComplete();
+        }
+        
+        // Redirect to dashboard
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
+        
+        return true; // Email is verified
+      }
+      
+      // Email not verified yet - sign out to avoid staying logged in
+      await auth.signOut();
+      return false;
+    } catch (error) {
+      // If login fails (e.g., wrong password or user not found), that's OK
+      // Just means email not verified yet
+      if (error.code !== 'auth/invalid-credential' && error.code !== 'auth/user-not-found') {
+        console.error('Error checking email verified:', error);
+      }
+      return false;
+    }
+  };
+
+  // Optional: Poll session status for faster cross-device detection (only if sessionId exists)
+  const pollSessionStatus = async () => {
     if (!sessionId) {
       return;
     }
 
-    const pollSessionStatus = async () => {
-      try {
-        // Call Cloud Function to get session status
-        const getSessionStatus = httpsCallable(functions, 'getSessionStatusCallable');
-        const result = await getSessionStatus({ session_id: sessionId });
-        
-        const sessionStatus = result.data?.status;
-        
-        if (sessionStatus === 'verified') {
-          setStatus('verified');
-          
-          // Auto-login user
-          try {
-            const password = localStorage.getItem('pendingVerificationPassword');
-            if (password) {
-              const decodedPassword = atob(password);
-              const userCredential = await signInWithEmailAndPassword(auth, email, decodedPassword);
-              
-              // Reload to get latest emailVerified status
-              await userCredential.user.reload();
-              
-              if (userCredential.user.emailVerified) {
-                // Clean up
-                localStorage.removeItem('pendingVerificationSessionId');
-                localStorage.removeItem('pendingVerificationEmail');
-                localStorage.removeItem('pendingVerificationPassword');
-                
-                toast.success(t?.auth?.emailVerifiedSuccess || 'Email verified! Logging in...');
-                
-                // Mark session as completed
-                try {
-                  const markCompleted = httpsCallable(functions, 'markSessionCompletedCallable');
-                  await markCompleted({ session_id: sessionId });
-                } catch (e) {
-                  console.warn('Failed to mark session completed:', e);
-                }
-                
-                if (onComplete) {
-                  onComplete();
-                }
-                
-                // Redirect to dashboard
-                setTimeout(() => {
-                  navigate('/dashboard');
-                }, 1000);
-              }
-            }
-          } catch (loginError) {
-            console.error('Auto-login error:', loginError);
-            toast.error(t?.auth?.autoLoginFailed || 'Failed to auto-login. Please sign in manually.');
-            setStatus('error');
-          }
-        } else if (sessionStatus === 'expired') {
-          setStatus('expired');
-          toast.error(t?.auth?.sessionExpired || 'Verification link expired. Please request a new one.');
-        } else if (sessionStatus === 'completed') {
-          // Already completed, user should be logged in
-          setStatus('completed');
-        }
-      } catch (error) {
-        console.error('Error polling session status:', error);
-        // Don't show error for every poll, only log it
+    try {
+      const getSessionStatus = httpsCallable(functions, 'getSessionStatusCallable');
+      const result = await getSessionStatus({ session_id: sessionId });
+      const sessionStatus = result.data?.status;
+      
+      // If session is verified, trigger email check immediately
+      if (sessionStatus === 'verified') {
+        await checkEmailVerified();
+      } else if (sessionStatus === 'expired') {
+        setStatus('expired');
+        toast.error(t?.auth?.sessionExpired || 'Verification link expired. Please request a new one.');
       }
-    };
+    } catch (error) {
+      // Session poll error is not critical - we still poll Firebase Auth directly
+      console.warn('Error polling session status:', error);
+    }
+  };
 
-    // Poll every 1.5 seconds for faster detection (especially for cross-device)
-    // Start with immediate poll, then regular interval
-    pollSessionStatus();
-    const intervalId = setInterval(pollSessionStatus, 1500);
+  useEffect(() => {
+    // PRIMARY: Poll Firebase Auth directly (source of truth)
+    // This works even without sessionId
+    checkEmailVerified();
+    const authPollInterval = setInterval(checkEmailVerified, 1500);
+
+    // SECONDARY (OPTIONAL): Poll session for faster cross-device detection
+    // Only if sessionId exists - this is an optimization, not required
+    let sessionPollInterval = null;
+    if (sessionId) {
+      pollSessionStatus();
+      sessionPollInterval = setInterval(pollSessionStatus, 1500);
+    }
 
     // Countdown timer
     const countdownInterval = setInterval(() => {
@@ -105,7 +130,10 @@ function VerificationWaitingScreen({ email, sessionId, onComplete }) {
     }, 1000);
 
     return () => {
-      clearInterval(intervalId);
+      clearInterval(authPollInterval);
+      if (sessionPollInterval) {
+        clearInterval(sessionPollInterval);
+      }
       clearInterval(countdownInterval);
     };
   }, [sessionId, email, navigate, onComplete, t]);
