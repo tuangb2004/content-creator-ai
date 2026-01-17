@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import { getPasswordResetTemplate, getProjectCompletedTemplate, getProductUpdatesTemplate } from './utils/emailTemplates';
+import { getProjectCompletedTemplate, getProductUpdatesTemplate } from './utils/emailTemplates';
 
 
 /**
@@ -20,65 +20,10 @@ import { getPasswordResetTemplate, getProjectCompletedTemplate, getProductUpdate
  */
 
 /**
- * Send password reset email với custom template
+ * NOTE: Password reset is now handled by Firebase Auth automatically
+ * Frontend uses sendPasswordResetEmail() from firebase/auth
+ * This function has been removed - no longer needed
  */
-export async function sendPasswordResetEmail(userEmail: string): Promise<void> {
-  try {
-    // Get site URL from config or environment
-    let siteUrl = process.env.SITE_URL || functions.config().app?.site_url || 'https://creatorai.app';
-    
-    // Normalize SITE_URL: remove trailing slash to avoid double slashes in links
-    siteUrl = siteUrl.replace(/\/+$/, '');
-    
-    // Generate password reset link
-    const actionCodeSettings = {
-      url: `${siteUrl}/login`,
-      handleCodeInApp: false,
-    };
-
-    const actionLink = await admin.auth().generatePasswordResetLink(
-      userEmail,
-      actionCodeSettings
-    );
-
-    // Get HTML template
-    const htmlContent = getPasswordResetTemplate(
-      actionLink,
-      siteUrl
-    );
-
-    // SendGrid Email Service
-    const sgMail = require('@sendgrid/mail');
-    const sendgridApiKey = process.env.SENDGRID_API_KEY || functions.config().sendgrid?.api_key;
-    
-    if (!sendgridApiKey) {
-      console.warn('⚠️ SENDGRID_API_KEY not configured. Email will not be sent.');
-      console.log(`📧 Password reset link for ${userEmail}: ${actionLink.substring(0, 50)}...`);
-      return;
-    }
-    
-    sgMail.setApiKey(sendgridApiKey);
-    
-    const fromEmail = process.env.FROM_EMAIL || functions.config().sendgrid?.from_email || 'noreply@creatorai.app';
-    
-    await sgMail.send({
-      to: userEmail,
-      from: {
-        email: fromEmail,
-        name: 'CreatorAI'
-      },
-      subject: 'Reset your password - CreatorAI',
-      html: htmlContent,
-      text: `Reset your password by clicking this link: ${actionLink}`
-    });
-    
-    console.log(`✅ Password reset email sent to ${userEmail} via SendGrid`);
-    
-  } catch (error: any) {
-    console.error(`❌ Error sending password reset email:`, error);
-    throw error;
-  }
-}
 
 /**
  * Send project completed notification email

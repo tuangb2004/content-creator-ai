@@ -4,7 +4,6 @@ import { createPaymentLinkFunction } from './createPaymentLink';
 import { payosWebhook } from './payosWebhook';
 import { onUserCreate } from './authTrigger';
 import { saveProject, getProjects, deleteProject } from './projects';
-import { sendCustomPasswordReset } from './customAuthFunctions';
 import { chat } from './chat';
 import { initializeUserIfNeeded } from './initializeUser';
 import { getTikTokAuthUrl, handleTikTokCallback } from './tiktokAuth';
@@ -46,7 +45,6 @@ export {
   saveProject,
   getProjects,
   deleteProject,
-  sendCustomPasswordReset,
   chat,
   initializeUserIfNeeded,
   getTikTokAuthUrl,

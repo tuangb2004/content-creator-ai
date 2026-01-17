@@ -454,26 +454,23 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Send password reset email using custom function (SendGrid - optional custom template)
+   * Send password reset email using Firebase built-in function
    */
   const resetPassword = async (email) => {
     try {
       console.log('[AuthContext] Requesting password reset for:', email);
-      const sendPasswordReset = httpsCallable(functions, 'sendCustomPasswordReset');
-      const result = await sendPasswordReset({ email });
-      console.log('[AuthContext] Password reset email sent successfully:', result);
+      
+      // Use Firebase built-in sendPasswordResetEmail
+      const { sendPasswordResetEmail } = await import('firebase/auth');
+      await sendPasswordResetEmail(auth, email);
+      
+      console.log('[AuthContext] Password reset email sent successfully');
       return { 
         success: true, 
-        message: result.data?.message || 'Password reset email sent. Please check your inbox.' 
+        message: 'Password reset email sent. Please check your inbox.' 
       };
     } catch (error) {
       console.error('[AuthContext] Failed to send password reset email:', error);
-      // Handle Firebase Functions errors
-      if (error.code === 'functions/invalid-argument') {
-        throw formatAuthError({ code: 'auth/invalid-email', message: error.message });
-      } else if (error.code === 'functions/internal') {
-        throw formatAuthError({ code: 'auth/internal-error', message: error.message });
-      }
       throw formatAuthError(error);
     }
   };
