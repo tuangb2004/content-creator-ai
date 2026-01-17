@@ -1,6 +1,5 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import AuthModal from '../Auth/AuthModal';
 
 /**
  * ProtectedRoute - Route guard với flow chuẩn industry
@@ -29,8 +28,10 @@ function ProtectedRoute({ children }) {
   // Check email verification (only for email/password users, not social login)
   const isEmailPasswordUser = user.providerData[0]?.providerId === 'password';
   if (isEmailPasswordUser && !user.emailVerified) {
-    // Flow chuẩn: Show AuthModal với verify mode, KHÔNG signOut
-    return <AuthModal isOpen={true} onClose={() => {}} forceVerifyMode={true} />;
+    // NEW FLOW: Redirect to landing page
+    // AuthModal will handle verification on landing page (after sign-in check)
+    // This avoids modal on /dashboard route and eliminates page reload on Back
+    return <Navigate to="/" replace />;
   }
 
   return children;

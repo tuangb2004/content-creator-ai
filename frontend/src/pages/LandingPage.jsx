@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import AuthModal from '../components/Auth/AuthModal';
 import LandingNavbar from '../components/Landing/LandingNavbar';
 import Hero from '../components/Landing/Hero';
@@ -23,8 +23,10 @@ function LandingPage() {
   const { theme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authType, setAuthType] = useState('signup'); // 'signin' or 'signup'
+  const [verificationCode, setVerificationCode] = useState(null); // For email verification from link
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState({ type: 'home' });
   const [projects, setProjects] = useState([]);
@@ -33,13 +35,21 @@ function LandingPage() {
   const homeScrollRef = useRef(0);
   const shouldRestoreScrollRef = useRef(false);
 
-  // Redirect logged-in users to dashboard
-  // Flow chuẩn: Nếu user chưa verify, ProtectedRoute sẽ show blocking screen
+  // Handle logged-in users
+  // NEW FLOW: Check email verification status before redirecting to dashboard
   useEffect(() => {
     if (!loading && user && !localStorage.getItem('logging_out')) {
-      // User is logged in - redirect to dashboard
-      // ProtectedRoute will handle email verification check
-      navigate('/dashboard', { replace: true });
+      const isEmailPasswordUser = user.providerData[0]?.providerId === 'password';
+
+      // If user is email/password and not verified, show verify modal on landing page
+      if (isEmailPasswordUser && !user.emailVerified) {
+        setAuthType('signin'); // Set to signin type for proper messaging
+        setShowAuthModal(true);
+        // Modal will auto-switch to verify_email mode via forceVerifyMode effect in AuthModal
+      } else {
+        // User is verified (or social login) - proceed to dashboard
+        navigate('/dashboard', { replace: true });
+      }
     }
   }, [user, loading, navigate]);
 
@@ -48,15 +58,29 @@ function LandingPage() {
     localStorage.removeItem('logging_out');
   }, []);
 
+  // Handle email verification from link
+  useEffect(() => {
+    const oobCode = searchParams.get('oobCode');
+    const mode = searchParams.get('mode');
+
+    if (oobCode && mode === 'verifyEmail') {
+      // Set verification code and open modal
+      setVerificationCode(oobCode);
+      setShowAuthModal(true);
+      // Clean URL after reading params
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
   // Handle TikTok OAuth callback
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tiktokToken = urlParams.get('tiktok_token');
-    
+
     if (tiktokToken && !user && !loading) {
       // Remove token from URL
       window.history.replaceState({}, document.title, window.location.pathname);
-      
+
       // Sign in with custom token
       signInWithCustomTokenAuth(tiktokToken)
         .then(() => {
@@ -118,7 +142,7 @@ function LandingPage() {
       sessionStorage.setItem('will_restore_scroll', 'true');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
+
     if (user) {
       // If logged in, go straight to workspace
       setView({ type: 'workspace', tool });
@@ -140,7 +164,7 @@ function LandingPage() {
 
   const handleNavClick = (e, targetId) => {
     e.preventDefault();
-    
+
     // Check for special pages
     if (targetId === 'terms') {
       if (view.type === 'home') {
@@ -226,11 +250,11 @@ function LandingPage() {
       // Disable smooth scroll for instant restoration
       root.style.scrollBehavior = 'auto';
       document.body.style.scrollBehavior = 'auto';
-      
+
       // Immediate scroll without waiting
       root.scrollTop = savedScroll;
       window.scrollTo(0, savedScroll);
-      
+
       // Use requestAnimationFrame for cleanup
       requestAnimationFrame(() => {
         // Keep flags for a bit longer to ensure all components see them
@@ -252,14 +276,13 @@ function LandingPage() {
   }, [view.type]);
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      theme === 'dark' 
-        ? 'bg-gray-900 text-gray-100' 
-        : 'bg-[#F5F2EB] text-[#2C2A26]'
-    }`}>
+    <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark'
+      ? 'bg-gray-900 text-gray-100'
+      : 'bg-[#F5F2EB] text-[#2C2A26]'
+      }`}>
       {/* Navbar */}
-      <LandingNavbar 
-        onNavClick={handleNavClick} 
+      <LandingNavbar
+        onNavClick={handleNavClick}
         projectCount={projects.length}
         onCartClick={handleCartClick}
         onAuthClick={(type) => {
@@ -276,8 +299,8 @@ function LandingPage() {
             <Hero onGetStarted={() => openAuthModal('register')} />
 
             {/* Product Grid */}
-            <ProductGrid 
-              onProductClick={handleToolClick} 
+            <ProductGrid
+              onProductClick={handleToolClick}
               searchQuery={searchQuery}
             />
 
@@ -285,13 +308,13 @@ function LandingPage() {
             <About />
 
             {/* Journal Section */}
-            <Journal 
+            <Journal
               onArticleClick={(article) => {
-              homeScrollRef.current = window.scrollY || 0;
-              shouldRestoreScrollRef.current = true;
+                homeScrollRef.current = window.scrollY || 0;
+                shouldRestoreScrollRef.current = true;
                 setView({ type: 'journal', article });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-              }} 
+              }}
               searchQuery={searchQuery}
             />
           </>
@@ -299,7 +322,7 @@ function LandingPage() {
 
         {/* Public Tool Preview */}
         {view.type === 'tool_preview' && (
-          <ToolPreview 
+          <ToolPreview
             tool={view.tool}
             onBack={() => {
               setView({ type: 'home' });
@@ -310,8 +333,8 @@ function LandingPage() {
 
         {/* Workspace (for logged in users or as fallback) */}
         {view.type === 'workspace' && (
-          <ProductDetail 
-            tool={view.tool} 
+          <ProductDetail
+            tool={view.tool}
             onBack={() => {
               setView({ type: 'home' });
             }}
@@ -327,8 +350,8 @@ function LandingPage() {
         )}
 
         {view.type === 'journal' && (
-          <JournalDetail 
-            article={view.article} 
+          <JournalDetail
+            article={view.article}
             onBack={() => setView({ type: 'home' })}
           />
         )}
@@ -347,9 +370,9 @@ function LandingPage() {
 
       {/* Assistant */}
       <Assistant />
-      
+
       {/* Cart Drawer */}
-      <CartDrawer 
+      <CartDrawer
         isOpen={isProjectDrawerOpen}
         onClose={() => setIsProjectDrawerOpen(false)}
         items={projects}
@@ -357,17 +380,19 @@ function LandingPage() {
       />
 
       {/* Auth Modal */}
-      <AuthModal 
-        isOpen={showAuthModal} 
+      <AuthModal
+        isOpen={showAuthModal}
         onClose={() => {
           // Flow chuẩn: Modal có thể đóng bình thường
           // Nếu user chưa verify, ProtectedRoute sẽ show blocking screen
           setShowAuthModal(false);
-        }} 
+          setVerificationCode(null); // Clear verification code when closing
+        }}
         onLogin={handleLogin}
         onNavigate={handleLegalNav}
         type={authType}
         onSwitchType={(newType) => setAuthType(newType)}
+        verificationCode={verificationCode}
       />
     </div>
   );
