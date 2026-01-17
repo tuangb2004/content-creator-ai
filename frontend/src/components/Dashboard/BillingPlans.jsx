@@ -27,12 +27,24 @@ const BillingPlans = () => {
 
   // Map plan names to amounts (VND)
   // Exchange rate: 1 USD ≈ 23,800 VND
+
+  // 🧪 TEST MODE: Using small amounts for safe testing
+  // TODO: REVERT TO PRODUCTION PRICES AFTER TESTING!
+  const PLAN_PRICES = {
+    pro_monthly: 1000, // TEST: 1,000 VND (~$0.04) - PRODUCTION: 690,000 VND
+    pro_yearly: 2000, // TEST: 2,000 VND (~$0.08) - PRODUCTION: 6,840,000 VND
+    agency_monthly: 3000, // TEST: 3,000 VND (~$0.13) - PRODUCTION: 2,356,200 VND
+    agency_yearly: 5000, // TEST: 5,000 VND (~$0.21) - PRODUCTION: 22,562,400 VND
+  };
+
+  /* PRODUCTION PRICES (uncomment after testing):
   const PLAN_PRICES = {
     pro_monthly: 690000, // 29 USD * 23,800 VND/USD ≈ 690,000 VND
     pro_yearly: 6840000, // 24 USD/month * 12 months * 23,800 VND/USD ≈ 6,840,000 VND
     agency_monthly: 2356200, // 99 USD * 23,800 VND/USD ≈ 2,356,200 VND
     agency_yearly: 22562400, // 79 USD/month * 12 months * 23,800 VND/USD ≈ 22,562,400 VND
   };
+  */
 
   const currentPlan = userData?.plan || 'free';
   const [cardDetails, setCardDetails] = useState({
@@ -75,7 +87,7 @@ const BillingPlans = () => {
         successUrl: `${window.location.origin}/dashboard?payment=success&plan=${planName}`,
         cancelUrl: `${window.location.origin}/dashboard?payment=cancel`
       });
-      
+
       // Check if this is test mode (local URL)
       if (checkoutUrl.includes('localhost') || checkoutUrl.includes('payment=test')) {
         // Test mode: Simulate payment success
@@ -123,9 +135,9 @@ const BillingPlans = () => {
       priceMonthly: 0,
       priceYearly: 0,
       features: [
-        t?.billing?.starter?.features?.credits || '20 Free Monthly Credits', 
-        t?.billing?.starter?.features?.tools || 'Gemini 3 Flash Access', 
-        t?.billing?.starter?.features?.seo || 'Basic SEO Tools', 
+        t?.billing?.starter?.features?.credits || '20 Free Monthly Credits',
+        t?.billing?.starter?.features?.tools || 'Gemini 3 Flash Access',
+        t?.billing?.starter?.features?.seo || 'Basic SEO Tools',
         t?.billing?.starter?.features?.support || 'Community Support'
       ],
       button: t?.billing?.currentPlan || 'Current Plan',
@@ -140,9 +152,9 @@ const BillingPlans = () => {
       priceMonthly: 29,
       priceYearly: 24,
       features: [
-        t?.billing?.pro?.features?.credits || '2,500 Monthly Credits', 
-        t?.billing?.pro?.features?.reasoning || 'Gemini 3 Pro Reasoning', 
-        t?.billing?.pro?.features?.images || 'Nano Banana Pro Access', 
+        t?.billing?.pro?.features?.credits || '2,500 Monthly Credits',
+        t?.billing?.pro?.features?.reasoning || 'Gemini 3 Pro Reasoning',
+        t?.billing?.pro?.features?.images || 'Nano Banana Pro Access',
         t?.billing?.pro?.features?.support || 'Priority 24/7 Support'
       ],
       button: t?.billing?.upgradeToPro || 'Upgrade to Pro',
@@ -157,9 +169,9 @@ const BillingPlans = () => {
       priceMonthly: 99,
       priceYearly: 79,
       features: [
-        t?.billing?.agency?.features?.credits || '12,000 Monthly Credits', 
-        t?.billing?.agency?.features?.unlimited || 'Unlimited Gemini 3 Pro', 
-        t?.billing?.agency?.features?.api || 'API & Multi-Seat Access', 
+        t?.billing?.agency?.features?.credits || '12,000 Monthly Credits',
+        t?.billing?.agency?.features?.unlimited || 'Unlimited Gemini 3 Pro',
+        t?.billing?.agency?.features?.api || 'API & Multi-Seat Access',
         t?.billing?.agency?.features?.manager || 'Dedicated Account Manager'
       ],
       button: t?.billing?.goUnlimited || 'Go Unlimited',
@@ -171,35 +183,29 @@ const BillingPlans = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-16 pb-24 relative">
       <div className="text-center max-w-2xl mx-auto">
-        <h2 className={`text-4xl font-serif mb-4 transition-colors duration-300 ${
-          theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-        }`}>{t?.billing?.title || 'Choose Your Power'}</h2>
-        <p className={`font-light text-lg transition-colors duration-300 ${
-          theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-        }`}>{t?.billing?.subtitle || 'Scale your creativity with our flexible credit plans.'}</p>
+        <h2 className={`text-4xl font-serif mb-4 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+          }`}>{t?.billing?.title || 'Choose Your Power'}</h2>
+        <p className={`font-light text-lg transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
+          }`}>{t?.billing?.subtitle || 'Scale your creativity with our flexible credit plans.'}</p>
 
         <div className="flex justify-center items-center mt-8 gap-4">
-          <span className={`text-xs uppercase tracking-widest font-bold transition-colors ${
-            billingCycle === 'monthly' 
-              ? (theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]') 
+          <span className={`text-xs uppercase tracking-widest font-bold transition-colors ${billingCycle === 'monthly'
+              ? (theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]')
               : 'text-[#A8A29E]'
-          }`}>{t?.billing?.monthly || 'Monthly'}</span>
-          <button 
+            }`}>{t?.billing?.monthly || 'Monthly'}</span>
+          <button
             onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
-            className={`w-14 h-8 rounded-full relative transition-colors focus:outline-none ${
-              theme === 'dark' ? 'bg-[#F5F2EB]' : 'bg-[#2C2A26]'
-            }`}
+            className={`w-14 h-8 rounded-full relative transition-colors focus:outline-none ${theme === 'dark' ? 'bg-[#F5F2EB]' : 'bg-[#2C2A26]'
+              }`}
           >
-            <div className={`absolute top-1 w-6 h-6 rounded-full transition-all duration-300 shadow-md ${
-              billingCycle === 'yearly' ? 'left-7' : 'left-1'
-            } ${theme === 'dark' ? 'bg-[#2C2A26]' : 'bg-[#F5F2EB]'}`}></div>
+            <div className={`absolute top-1 w-6 h-6 rounded-full transition-all duration-300 shadow-md ${billingCycle === 'yearly' ? 'left-7' : 'left-1'
+              } ${theme === 'dark' ? 'bg-[#2C2A26]' : 'bg-[#F5F2EB]'}`}></div>
           </button>
           <div className="flex items-center gap-2">
-            <span className={`text-xs uppercase tracking-widest font-bold transition-colors ${
-              billingCycle === 'yearly' 
-                ? (theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]') 
+            <span className={`text-xs uppercase tracking-widest font-bold transition-colors ${billingCycle === 'yearly'
+                ? (theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]')
                 : 'text-[#A8A29E]'
-            }`}>{t?.billing?.yearly || 'Yearly'}</span>
+              }`}>{t?.billing?.yearly || 'Yearly'}</span>
             <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full">{t?.billing?.save20 || 'Save 20%'}</span>
           </div>
         </div>
@@ -207,47 +213,42 @@ const BillingPlans = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
         {plans.map((plan) => (
-          <div 
+          <div
             key={plan.id}
-            className={`relative flex flex-col p-8 rounded-sm transition-all duration-300 ${
-              plan.highlight 
-                ? (theme === 'dark' 
-                    ? 'bg-[#433E38] text-[#F5F2EB] shadow-2xl scale-105 border-none z-10' 
-                    : 'bg-[#2C2A26] text-[#F5F2EB] shadow-2xl scale-105 border-none z-10')
+            className={`relative flex flex-col p-8 rounded-sm transition-all duration-300 ${plan.highlight
+                ? (theme === 'dark'
+                  ? 'bg-[#433E38] text-[#F5F2EB] shadow-2xl scale-105 border-none z-10'
+                  : 'bg-[#2C2A26] text-[#F5F2EB] shadow-2xl scale-105 border-none z-10')
                 : (theme === 'dark'
-                    ? 'bg-[#2C2A26] border border-[#433E38] text-[#F5F2EB] hover:shadow-lg'
-                    : 'bg-white border border-[#D6D1C7] text-[#2C2A26] hover:shadow-lg')
-            }`}
+                  ? 'bg-[#2C2A26] border border-[#433E38] text-[#F5F2EB] hover:shadow-lg'
+                  : 'bg-white border border-[#D6D1C7] text-[#2C2A26] hover:shadow-lg')
+              }`}
           >
             {plan.highlight && (
-              <div className={`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm ${
-                theme === 'dark' ? 'bg-amber-500 text-white' : 'bg-amber-500 text-white'
-              }`}>
+              <div className={`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm ${theme === 'dark' ? 'bg-amber-500 text-white' : 'bg-amber-500 text-white'
+                }`}>
                 {t?.billing?.bestValue || 'Best Value'}
               </div>
             )}
 
             <h3 className="font-serif text-2xl mb-2">{plan.name}</h3>
-            <p className={`text-xs mb-8 ${
-              plan.highlight 
-                ? 'text-[#A8A29E]' 
+            <p className={`text-xs mb-8 ${plan.highlight
+                ? 'text-[#A8A29E]'
                 : (theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]')
-            }`}>{plan.desc}</p>
-            
+              }`}>{plan.desc}</p>
+
             <div className="mb-8">
               <div className="flex items-end gap-1">
                 <span className="text-4xl font-serif">
                   ${billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly}
                 </span>
-                <span className={`text-xs mb-1.5 ${
-                  plan.highlight 
-                    ? 'text-[#A8A29E]' 
+                <span className={`text-xs mb-1.5 ${plan.highlight
+                    ? 'text-[#A8A29E]'
                     : (theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]')
-                }`}>/ month</span>
+                  }`}>/ month</span>
               </div>
-              <div className={`mt-2 py-1 px-3 inline-block rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                plan.highlight ? 'bg-white/10' : (theme === 'dark' ? 'bg-black/20' : 'bg-[#F9F8F6]')
-              }`}>
+              <div className={`mt-2 py-1 px-3 inline-block rounded-full text-[10px] font-bold uppercase tracking-widest ${plan.highlight ? 'bg-white/10' : (theme === 'dark' ? 'bg-black/20' : 'bg-[#F9F8F6]')
+                }`}>
                 {plan.credits} Monthly Credits
               </div>
             </div>
@@ -263,7 +264,7 @@ const BillingPlans = () => {
               ))}
             </ul>
 
-            <button 
+            <button
               disabled={plan.active || loading}
               onClick={() => {
                 if (plan.id === 'pro') {
@@ -272,13 +273,12 @@ const BillingPlans = () => {
                   handleUpgrade(billingCycle === 'monthly' ? 'agency_monthly' : 'agency_yearly', 'Agency Elite');
                 }
               }}
-              className={`w-full py-4 text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-default ${
-                plan.highlight
+              className={`w-full py-4 text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-default ${plan.highlight
                   ? 'bg-[#F5F2EB] text-[#2C2A26] hover:bg-white'
                   : (theme === 'dark'
-                      ? 'border border-[#F5F2EB] hover:bg-[#F5F2EB] hover:text-[#2C2A26] disabled:hover:bg-transparent disabled:hover:text-[#F5F2EB]'
-                      : 'border border-[#2C2A26] hover:bg-[#2C2A26] hover:text-[#F5F2EB] disabled:hover:bg-transparent disabled:hover:text-[#2C2A26]')
-              }`}
+                    ? 'border border-[#F5F2EB] hover:bg-[#F5F2EB] hover:text-[#2C2A26] disabled:hover:bg-transparent disabled:hover:text-[#F5F2EB]'
+                    : 'border border-[#2C2A26] hover:bg-[#2C2A26] hover:text-[#F5F2EB] disabled:hover:bg-transparent disabled:hover:text-[#2C2A26]')
+                }`}
             >
               {loading ? (t?.billing?.processing || 'Processing...') : (plan.active ? (t?.billing?.currentPlan || 'Current Plan') : plan.button)}
             </button>
@@ -286,12 +286,10 @@ const BillingPlans = () => {
         ))}
       </div>
 
-      <div className={`border p-8 rounded-sm transition-colors duration-300 ${
-        theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-[#F9F8F6] border-[#D6D1C7]'
-      }`}>
-        <h3 className={`font-serif text-xl mb-8 transition-colors duration-300 ${
-          theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-        }`}>{t?.billing?.consumptionTitle || 'Consumption Logic (Transparent Billing)'}</h3>
+      <div className={`border p-8 rounded-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-[#F9F8F6] border-[#D6D1C7]'
+        }`}>
+        <h3 className={`font-serif text-xl mb-8 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+          }`}>{t?.billing?.consumptionTitle || 'Consumption Logic (Transparent Billing)'}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="space-y-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Text Utility</span>
@@ -317,14 +315,12 @@ const BillingPlans = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className={`border p-8 rounded-sm transition-colors duration-300 ${
-          theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
-        }`}>
+        <div className={`border p-8 rounded-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
+          }`}>
           <div className="flex justify-between items-center mb-6">
-            <h3 className={`font-serif text-lg transition-colors duration-300 ${
-              theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-            }`}>{t?.billing?.paymentMethod || 'Payment Method'}</h3>
-            <button 
+            <h3 className={`font-serif text-lg transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+              }`}>{t?.billing?.paymentMethod || 'Payment Method'}</h3>
+            <button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -332,27 +328,22 @@ const BillingPlans = () => {
                 setIsPaymentModalOpen(true);
               }}
               type="button"
-              className={`text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer hover:opacity-80 ${
-                theme === 'dark' 
-                  ? 'text-[#A8A29E] hover:text-[#F5F2EB]' 
+              className={`text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer hover:opacity-80 ${theme === 'dark'
+                  ? 'text-[#A8A29E] hover:text-[#F5F2EB]'
                   : 'text-[#A8A29E] hover:text-[#2C2A26]'
-              }`}
+                }`}
             >
               {t?.billing?.edit || 'Edit'}
             </button>
           </div>
-          <div className={`flex items-center gap-4 p-4 border rounded-sm transition-colors duration-300 ${
-            theme === 'dark' ? 'bg-[#1C1B19] border-[#433E38]' : 'bg-[#F9F8F6] border-[#F5F2EB]'
-          }`}>
-            <div className={`w-10 h-7 rounded-sm flex items-center justify-center ${
-              theme === 'dark' ? 'bg-[#F5F2EB]' : 'bg-[#2C2A26]'
+          <div className={`flex items-center gap-4 p-4 border rounded-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-[#1C1B19] border-[#433E38]' : 'bg-[#F9F8F6] border-[#F5F2EB]'
             }`}>
-              <div className={`w-6 h-4 border rounded-[1px] relative opacity-50 ${
-                theme === 'dark' ? 'border-[#2C2A26]' : 'border-white'
+            <div className={`w-10 h-7 rounded-sm flex items-center justify-center ${theme === 'dark' ? 'bg-[#F5F2EB]' : 'bg-[#2C2A26]'
               }`}>
-                <div className={`absolute top-1 left-0 w-full h-[1px] ${
-                  theme === 'dark' ? 'bg-[#2C2A26]' : 'bg-white'
-                }`}></div>
+              <div className={`w-6 h-4 border rounded-[1px] relative opacity-50 ${theme === 'dark' ? 'border-[#2C2A26]' : 'border-white'
+                }`}>
+                <div className={`absolute top-1 left-0 w-full h-[1px] ${theme === 'dark' ? 'bg-[#2C2A26]' : 'bg-white'
+                  }`}></div>
               </div>
             </div>
             <div>
@@ -362,19 +353,16 @@ const BillingPlans = () => {
           </div>
         </div>
 
-        <div className={`lg:col-span-2 border rounded-sm overflow-hidden transition-colors duration-300 ${
-          theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
-        }`}>
-          <div className={`p-6 border-b transition-colors duration-300 ${
-            theme === 'dark' ? 'border-[#433E38]' : 'border-[#F5F2EB]'
+        <div className={`lg:col-span-2 border rounded-sm overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
           }`}>
+          <div className={`p-6 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-[#433E38]' : 'border-[#F5F2EB]'
+            }`}>
             <h3 className={`font-serif text-lg ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>{t?.billing?.billingHistory || 'Billing History'}</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className={`text-[10px] uppercase tracking-widest transition-colors duration-300 ${
-                theme === 'dark' ? 'bg-[#1C1B19] text-[#A8A29E]' : 'bg-[#F9F8F6] text-[#A8A29E]'
-              }`}>
+              <thead className={`text-[10px] uppercase tracking-widest transition-colors duration-300 ${theme === 'dark' ? 'bg-[#1C1B19] text-[#A8A29E]' : 'bg-[#F9F8F6] text-[#A8A29E]'
+                }`}>
                 <tr>
                   <th className="p-4 font-bold">{t?.billing?.date || 'Date'}</th>
                   <th className="p-4 font-bold">{t?.billing?.description || 'Plan'}</th>
@@ -382,9 +370,8 @@ const BillingPlans = () => {
                   <th className="p-4 font-bold text-right">{t?.billing?.invoice || 'Invoice'}</th>
                 </tr>
               </thead>
-              <tbody className={`divide-y transition-colors duration-300 ${
-                theme === 'dark' ? 'divide-[#433E38]' : 'divide-[#F5F2EB]'
-              }`}>
+              <tbody className={`divide-y transition-colors duration-300 ${theme === 'dark' ? 'divide-[#433E38]' : 'divide-[#F5F2EB]'
+                }`}>
                 <tr className={`transition-colors ${theme === 'dark' ? 'hover:bg-[#433E38]/30' : 'hover:bg-[#F9F9F9]'}`}>
                   <td className={`p-4 text-sm ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>--</td>
                   <td className={`p-4 text-sm font-medium ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>
@@ -392,9 +379,8 @@ const BillingPlans = () => {
                   </td>
                   <td className={`p-4 text-sm ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>--</td>
                   <td className="p-4 text-right">
-                    <button className={`text-xs font-medium transition-colors duration-300 hover:underline ${
-                      theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                    }`}>--</button>
+                    <button className={`text-xs font-medium transition-colors duration-300 hover:underline ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+                      }`}>--</button>
                   </td>
                 </tr>
               </tbody>
@@ -404,9 +390,9 @@ const BillingPlans = () => {
       </div>
 
       {/* Payment Modal */}
-      <PaymentModal 
-        isOpen={isPaymentModalOpen} 
-        onClose={() => setIsPaymentModalOpen(false)} 
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
         onSave={handlePaymentUpdate}
       />
     </div>

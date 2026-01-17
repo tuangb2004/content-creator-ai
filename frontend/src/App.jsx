@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -10,7 +10,6 @@ import ProtectedRoute from './components/Shared/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import Home from './pages/Home';
 import ProjectsPage from './pages/ProjectsPage';
-import VerifyEmailPage from './pages/VerifyEmailPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 
@@ -34,8 +33,8 @@ function App() {
                   {/* Redirect old register/login routes to landing page */}
                   <Route path="/register" element={<LandingPage />} />
                   <Route path="/login" element={<LandingPage />} />
-                  {/* Email verification page */}
-                  <Route path="/verify-email" element={<VerifyEmailPage />} />
+                  {/* Redirect email verification to landing page (modal will handle it) */}
+                  <Route path="/verify-email" element={<LandingPage />} />
                   {/* Legal pages */}
                   <Route path="/terms" element={<TermsPage />} />
                   <Route path="/privacy" element={<PrivacyPage />} />
