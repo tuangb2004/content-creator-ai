@@ -31,16 +31,18 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
   const { login, register, loginWithGoogle, loginWithFacebook, loginWithTikTok, resetPassword } = useAuth();
   const navigate = useNavigate();
 
-  // Check localStorage for pending verification on mount
+  // Check localStorage for pending verification on mount and whenever isOpen changes
   useEffect(() => {
     const pendingEmail = localStorage.getItem('pendingVerificationEmail');
+    const showVerificationModal = localStorage.getItem('showVerificationModal') === 'true';
     
-    if (pendingEmail && !showWaitingScreen) {
+    if (showVerificationModal && pendingEmail && !showWaitingScreen) {
       // User is waiting for verification - show modal
+      console.log('[AuthModal] Restoring verification state from localStorage');
       setVerificationEmail(pendingEmail);
       setShowWaitingScreen(true);
     }
-  }, []); // Only run on mount
+  }, [isOpen, showWaitingScreen]); // Check when isOpen changes (including when it becomes false)
 
   // Reset mode when modal opens/closes or type changes
   useEffect(() => {
@@ -67,8 +69,12 @@ const AuthModal = ({ isOpen, onClose, onLogin, onNavigate, type = 'signup', onSw
       setEmailError('');
     } else if (!showWaitingScreen) {
       // Only reset waiting screen state if modal is closed AND not waiting for verification
-      setShowWaitingScreen(false);
-      setVerificationEmail('');
+      // BUT: Don't reset if there's a flag in localStorage (user is waiting for verification)
+      const hasVerificationFlag = localStorage.getItem('showVerificationModal') === 'true';
+      if (!hasVerificationFlag) {
+        setShowWaitingScreen(false);
+        setVerificationEmail('');
+      }
     }
   }, [isOpen, type]); // Also reset when type changes
 

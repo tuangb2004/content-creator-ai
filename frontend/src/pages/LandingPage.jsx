@@ -47,16 +47,25 @@ function LandingPage() {
   }, []);
 
   // Auto-open auth modal if user is waiting for verification
+  // Check immediately on mount
   useEffect(() => {
-    const showVerificationModal = localStorage.getItem('showVerificationModal');
-    const pendingEmail = localStorage.getItem('pendingVerificationEmail');
+    const checkVerificationModal = () => {
+      const showVerificationModal = localStorage.getItem('showVerificationModal');
+      const pendingEmail = localStorage.getItem('pendingVerificationEmail');
+      
+      if (showVerificationModal === 'true' && pendingEmail && !user && !loading) {
+        // User is waiting for verification - open modal
+        console.log('[LandingPage] Auto-opening verification modal');
+        setAuthType('signup');
+        setShowAuthModal(true);
+      }
+    };
     
-    if (showVerificationModal === 'true' && pendingEmail && !user) {
-      // User is waiting for verification - open modal
-      setAuthType('signup');
-      setShowAuthModal(true);
-    }
-  }, [user]);
+    // Check immediately
+    checkVerificationModal();
+    
+    // Also check when user or loading changes
+  }, [user, loading]);
 
   // Handle TikTok OAuth callback
   useEffect(() => {
