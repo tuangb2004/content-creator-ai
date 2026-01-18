@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { TOOLS } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useActivityLogs } from '../../hooks/useActivityLogs';
 import toast from '../../utils/toast';
 import EnhancedMetricsCard from './EnhancedMetrics';
 
 
-const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog, onViewProjects, onOpenProject }) => {
+const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog, onViewProjects, onOpenProject, isLoading }) => {
   const { theme } = useTheme();
+  const { t, language } = useLanguage();
   const { userData } = useAuth();
   const navigate = useNavigate();
   const currentHour = new Date().getHours();
@@ -24,7 +26,7 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
   const creditsUsed = Math.max(0, totalCredits - creditsRemaining);
   const isLowCredits = creditsRemaining < 2;
   const contentGenerated = recentProjects.length;
-  const { logs } = useActivityLogs(6);
+  const { logs, loading: loadingLogs } = useActivityLogs(6);
 
   const prevCreditsRef = useRef(creditsRemaining);
 
@@ -64,12 +66,29 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
     const target = date instanceof Date ? date.getTime() : new Date(date).getTime();
     const diffMs = Math.max(0, now - target);
     const diffMinutes = Math.floor(diffMs / 60000);
-    if (diffMinutes < 1) return 'Just now';
-    if (diffMinutes < 60) return `${diffMinutes} min${diffMinutes === 1 ? '' : 's'} ago`;
+
+    if (diffMinutes < 1) return t?.dashboard?.time?.justNow || 'Just now';
+
+    if (diffMinutes < 60) {
+      const unit = diffMinutes === 1
+        ? (t?.dashboard?.time?.minute || 'min')
+        : (t?.dashboard?.time?.minutesAgo || 'mins ago');
+      return `${diffMinutes} ${unit}`;
+    }
+
     const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    if (diffHours < 24) {
+      const unit = diffHours === 1
+        ? (t?.dashboard?.time?.hour || 'hour')
+        : (t?.dashboard?.time?.hoursAgo || 'hours ago');
+      return `${diffHours} ${unit}`;
+    }
+
     const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    const unit = diffDays === 1
+      ? (t?.dashboard?.time?.day || 'day')
+      : (t?.dashboard?.time?.daysAgo || 'days ago');
+    return `${diffDays} ${unit}`;
   };
 
   const activities = useMemo(() => {
@@ -133,7 +152,7 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
 
         if (action === 'generate_content') {
           eventType = 'content';
-          title = 'CONTENT GENERATED';
+          title = t?.dashboard?.studioPulse?.activityTypes?.contentGenerated || 'CONTENT GENERATED';
           // Format: "SEO Editorial: "Future of AI"" or "IMAGE: Tool Name"
           const contentType = metadata.contentType ? String(metadata.contentType).toUpperCase() : 'CONTENT';
           const toolName = metadata.toolName || 'Creative Tool';
@@ -150,17 +169,19 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
         } else if (action === 'credits_updated') {
           // Only credits added (change > 0) pass the filter
           eventType = 'credits';
-          title = 'CREDITS UPDATED';
-          detail = metadata.reason || (metadata.planName ? `Plan upgrade: ${metadata.planName}` : 'Daily allowance added');
+          title = t?.dashboard?.studioPulse?.activityTypes?.creditsUpdated || 'CREDITS UPDATED';
+          detail = metadata.reason || (metadata.planName
+            ? `${t?.dashboard?.studioPulse?.activityDetails?.planUpgrade || 'Plan upgrade'}: ${metadata.planName}`
+            : t?.dashboard?.studioPulse?.activityDetails?.dailyAllowance || 'Daily allowance added');
           circleColor = 'bg-emerald-500'; // green (#2ecc71)
         } else if (action === 'user_login') {
           eventType = 'login';
-          title = 'NEW LOGIN';
-          detail = metadata.platform || 'Chrome on Windows';
+          title = t?.dashboard?.studioPulse?.activityTypes?.newLogin || 'NEW LOGIN';
+          detail = metadata.platform || t?.dashboard?.studioPulse?.activityDetails?.defaultPlatform || 'Chrome on Windows';
           circleColor = 'bg-orange-500'; // orange (#f39c12)
         } else if (action === 'image_exported') {
           eventType = 'export';
-          title = 'IMAGE EXPORTED';
+          title = t?.dashboard?.studioPulse?.activityTypes?.imageExported || 'IMAGE EXPORTED';
           detail = metadata.toolName || metadata.projectId || 'Visual Studio';
           circleColor = 'bg-[#2C2A26] dark:bg-[#F5F2EB]'; // dark grey/black
         }
@@ -174,68 +195,68 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
           circleColor
         };
       });
-  }, [logs]);
+  }, [logs, t]);
 
   return (
     <div className="space-y-12 pb-12">
       <div className="flex justify-between items-end">
         <div>
           <h2 className={`text-4xl font-serif mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-            }`}>{greeting}, Creator.</h2>
+            }`}>{greeting}, {t?.dashboard?.greeting?.creator || 'Creator'}.</h2>
           <p className={`transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-            }`}>Here is what's happening in your studio today.</p>
+            }`}>{t?.dashboard?.subtitle || "Here is what's happening in your studio today."}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <EnhancedMetricsCard
-          label="Content Generated"
+          label={t?.dashboard?.metrics?.contentGenerated?.label || "Content Generated"}
           value={String(contentGenerated)}
           icon={<DocumentIcon />}
           trend={contentGenerated > 0 ? 'up' : undefined}
-          trendValue={contentGenerated > 0 ? `+${contentGenerated} total` : undefined}
+          trendValue={contentGenerated > 0 ? `+${contentGenerated} ${t?.dashboard?.metrics?.contentGenerated?.total || 'total'}` : undefined}
           tooltipData={{
-            title: 'Content Generated',
+            title: t?.dashboard?.metrics?.contentGenerated?.label || 'Content Generated',
             items: [
-              { label: 'This week', value: String(contentGenerated) },
+              { label: t?.dashboard?.metrics?.contentGenerated?.thisWeek || 'This week', value: String(contentGenerated) },
               { label: 'All time', value: String(contentGenerated) }
             ]
           }}
           previousValue="0"
         />
         <EnhancedMetricsCard
-          label="Credits Used"
+          label={t?.dashboard?.metrics?.creditsUsed?.label || "Credits Used"}
           value={String(creditsUsed)}
           icon={<ChartIcon />}
           trend={creditsUsed > 0 ? 'up' : undefined}
-          trendValue={creditsUsed > 0 ? `${Math.round((creditsUsed / totalCredits) * 100)}% used` : undefined}
+          trendValue={creditsUsed > 0 ? `${Math.round((creditsUsed / totalCredits) * 100)}% ${t?.dashboard?.metrics?.creditsUsed?.used || 'used'}` : undefined}
           tooltipData={{
-            title: 'Credit Usage',
+            title: t?.dashboard?.metrics?.creditsUsed?.label || 'Credit Usage',
             items: [
-              { label: 'Used', value: String(creditsUsed) },
-              { label: 'Total', value: String(totalCredits) },
-              { label: 'Avg per content', value: contentGenerated > 0 ? String(Math.round(creditsUsed / contentGenerated)) : '0' }
+              { label: t?.dashboard?.metrics?.creditsUsed?.used || 'Used', value: String(creditsUsed) },
+              { label: t?.dashboard?.metrics?.creditsRemaining?.dailyAllowance || 'Total', value: String(totalCredits) },
+              { label: t?.dashboard?.metrics?.creditsUsed?.avgPerContent || 'Avg per content', value: contentGenerated > 0 ? String(Math.round(creditsUsed / contentGenerated)) : '0' }
             ]
           }}
           previousValue="0"
         />
         <EnhancedMetricsCard
-          label="Success Rate"
+          label={t?.dashboard?.metrics?.successRate?.label || "Success Rate"}
           value={contentGenerated ? '99.8%' : '--'}
           icon={<ShieldIcon />}
           trend={contentGenerated ? 'up' : undefined}
           trendValue={contentGenerated ? '+0.4%' : undefined}
           tooltipData={{
-            title: 'Success Rate',
+            title: t?.dashboard?.metrics?.successRate?.label || 'Success Rate',
             items: [
-              { label: 'Successful', value: contentGenerated ? String(Math.round(contentGenerated * 0.998)) : '0' },
+              { label: t?.dashboard?.metrics?.successRate?.qualityOutput || 'Successful', value: contentGenerated ? String(Math.round(contentGenerated * 0.998)) : '0' },
               { label: 'Failed', value: contentGenerated ? String(Math.round(contentGenerated * 0.002)) : '0' }
             ]
           }}
           previousValue="--"
         />
         <EnhancedMetricsCard
-          label="Credits Remaining"
+          label={t?.dashboard?.metrics?.creditsRemaining?.label || "Credits Remaining"}
           value={String(creditsRemaining)}
           icon={<WalletIcon />}
           highlight={isLowCredits}
@@ -243,10 +264,10 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
           trend={creditsRemaining < (previousCredits || totalCredits) ? 'down' : undefined}
           trendValue={`${Math.round((creditsRemaining / totalCredits) * 100)}% left`}
           tooltipData={{
-            title: 'Credits Overview',
+            title: t?.dashboard?.metrics?.creditsRemaining?.label || 'Credits Overview',
             items: [
-              { label: 'Remaining', value: String(creditsRemaining) },
-              { label: 'Plan total', value: String(totalCredits) },
+              { label: t?.dashboard?.metrics?.creditsRemaining?.tokensLeft || 'Remaining', value: String(creditsRemaining) },
+              { label: t?.dashboard?.metrics?.creditsRemaining?.dailyAllowance || 'Plan total', value: String(totalCredits) },
               { label: 'Plan', value: plan.toUpperCase() }
             ]
           }}
@@ -260,16 +281,46 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
         {/* Recent Projects (Left - 8 cols) */}
         <div className="lg:col-span-8 space-y-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-[#A8A29E]">Recent Activity</h3>
+            <h3 className="text-sm font-bold uppercase tracking-widest text-[#A8A29E]">{t?.dashboard?.recentActivity?.title || 'Recent Activity'}</h3>
             {recentProjects.length > 0 && (
               <button onClick={onViewProjects} className={`text-xs font-bold uppercase tracking-widest hover:underline ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                }`}>View Projects</button>
+                }`}>{t?.dashboard?.recentActivity?.viewProjects || 'View Projects'}</button>
             )}
           </div>
 
           <div className={`border rounded-sm overflow-hidden shadow-sm min-h-[380px] flex flex-col transition-colors ${theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
             }`}>
-            {recentProjects.length === 0 ? (
+            {isLoading ? (
+              <div className="flex-1 w-full">
+                <table className="w-full">
+                  <thead>
+                    <tr className={`border-b text-[10px] uppercase tracking-wider font-bold ${theme === 'dark' ? 'border-[#433E38] text-[#A8A29E]' : 'border-[#F1F0E9] text-[#A8A29E]'}`}>
+                      <th className="text-left p-5 font-medium">{t?.dashboard?.recentActivity?.project || 'Project'}</th>
+                      <th className="text-left p-5 font-medium">{t?.dashboard?.recentActivity?.type || 'Type'}</th>
+                      <th className="text-right p-5 font-medium">{t?.dashboard?.recentActivity?.date || 'Date'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[1, 2, 3, 4].map((i) => (
+                      <tr key={i} className={`border-b border-dashed ${theme === 'dark' ? 'border-[#433E38]' : 'border-[#F1F0E9]'}`}>
+                        <td className="p-5">
+                          <div className="space-y-2">
+                            <div className={`h-4 w-3/4 animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
+                            <div className={`h-3 w-1/4 animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
+                          </div>
+                        </td>
+                        <td className="p-5">
+                          <div className={`h-6 w-16 rounded-full animate-pulse ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
+                        </td>
+                        <td className="p-5 text-right">
+                          <div className={`h-4 w-20 ml-auto animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : recentProjects.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center relative overflow-hidden group">
                 {/* Decorative Background for Empty State */}
                 <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full scale-150 opacity-50 blur-3xl -z-10 group-hover:scale-[2] transition-transform duration-1000 ${theme === 'dark' ? 'bg-[#1C1B19]' : 'bg-[#F5F2EB]'
@@ -296,10 +347,10 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
 
                 {/* Text Content */}
                 <h4 className={`text-2xl font-serif mb-3 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                  }`}>Quiet in the studio</h4>
+                  }`}>{t?.dashboard?.recentActivity?.emptyTitle || 'Quiet in the studio'}</h4>
                 <p className={`text-sm max-w-xs font-light leading-relaxed mb-8 ${theme === 'dark' ? 'text-[#5D5A53]' : 'text-[#A8A29E]'
                   }`}>
-                  Your creative pulse is waiting for its first beat. Launch a tool to begin synthesizing intelligence.
+                  {t?.dashboard?.recentActivity?.emptyDescription || 'Your creative pulse is waiting for its first beat. Launch a tool to begin synthesizing intelligence.'}
                 </p>
 
                 {/* CTA Button */}
@@ -311,7 +362,7 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                   </svg>
-                  Start First Project
+                  {t?.dashboard?.recentActivity?.startProject || 'Start First Project'}
                 </button>
               </div>
             ) : (
@@ -319,9 +370,9 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
                 <thead className={`text-[10px] uppercase tracking-[0.2em] border-b ${theme === 'dark' ? 'bg-[#1C1B19] text-[#A8A29E] border-[#433E38]' : 'bg-[#F5F2EB] text-[#5D5A53] border-[#D6D1C7]'
                   }`}>
                   <tr>
-                    <th className="p-5 font-bold">Project</th>
-                    <th className="p-5 font-bold">Type</th>
-                    <th className="p-5 font-bold text-right">Date</th>
+                    <th className="p-5 font-bold">{t?.dashboard?.recentActivity?.tableHeaders?.project || 'Project'}</th>
+                    <th className="p-5 font-bold">{t?.dashboard?.recentActivity?.tableHeaders?.type || 'Type'}</th>
+                    <th className="p-5 font-bold text-right">{t?.dashboard?.recentActivity?.tableHeaders?.date || 'Date'}</th>
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${theme === 'dark' ? 'divide-[#433E38]' : 'divide-[#D6D1C7]'
@@ -334,23 +385,23 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
                       className={`transition-colors group cursor-pointer ${theme === 'dark' ? 'hover:bg-[#1C1B19]' : 'hover:bg-[#F9F8F6]'
                         }`}
                     >
-                      <td className="p-5">
+                      <td className="p-5 max-w-xs">
                         <div className="flex flex-col">
-                          <span className={`font-medium text-sm truncate max-w-[200px] group-hover:underline decoration-1 underline-offset-4 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+                          <span className={`font-medium text-sm line-clamp-1 group-hover:underline decoration-1 underline-offset-4 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
                             }`}>{project.prompt}</span>
-                          <span className="text-[10px] text-[#A8A29E] uppercase tracking-wider">{project.toolName}</span>
+                          <span className="text-[10px] text-[#A8A29E] uppercase tracking-wider truncate">{project.toolName}</span>
                         </div>
                       </td>
                       <td className="p-5">
                         <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold border ${project.type === 'image'
-                            ? theme === 'dark'
-                              ? 'bg-purple-900/20 text-purple-300 border-purple-800'
-                              : 'bg-purple-50 text-purple-600 border-purple-100'
-                            : theme === 'dark'
-                              ? 'bg-blue-900/20 text-blue-300 border-blue-800'
-                              : 'bg-blue-50 text-blue-600 border-blue-100'
+                          ? theme === 'dark'
+                            ? 'bg-purple-900/20 text-purple-300 border-purple-800'
+                            : 'bg-purple-50 text-purple-600 border-purple-100'
+                          : theme === 'dark'
+                            ? 'bg-blue-900/20 text-blue-300 border-blue-800'
+                            : 'bg-blue-50 text-blue-600 border-blue-100'
                           }`}>
-                          {project.type}
+                          {t?.dashboard?.contentTypes?.[project.type] || project.type}
                         </span>
                       </td>
                       <td className="p-5 text-[#A8A29E] text-xs text-right font-medium font-mono">
@@ -367,13 +418,28 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
 
         {/* Activity Feed (Right - 4 cols) - Editorial Design */}
         <div className="lg:col-span-4 space-y-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-[#A8A29E]">Studio Pulse</h3>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-[#A8A29E]">{t?.dashboard?.studioPulse?.title || 'Studio Pulse'}</h3>
           <div className={`border p-6 rounded-sm shadow-sm transition-colors ${theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
             }`}>
-            {activities.length === 0 ? (
+            {loadingLogs ? (
+              <div className={`space-y-8 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] ${theme === 'dark' ? 'before:bg-[#433E38]' : 'before:bg-[#D6D1C7]'}`}>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="relative pl-8">
+                    <div className={`absolute left-0 top-1.5 w-[23px] h-[23px] rounded-full border-4 z-10 ${theme === 'dark' ? 'border-[#2C2A26] bg-[#433E38]' : 'border-white bg-[#E5E5E5]'} animate-pulse`}></div>
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div className={`h-3 w-24 animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
+                        <div className={`h-2 w-12 animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
+                      </div>
+                      <div className={`h-3 w-32 animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : activities.length === 0 ? (
               <div className="text-center py-8 text-[#A8A29E]">
-                <p className="text-sm font-light">No activity yet</p>
-                <p className="text-xs mt-1">Generate content to see your studio pulse here.</p>
+                <p className="text-sm font-light">{t?.dashboard?.studioPulse?.noActivity || 'No activity yet'}</p>
+                <p className="text-xs mt-1">{t?.dashboard?.studioPulse?.noActivityHint || 'Generate content to see your studio pulse here.'}</p>
               </div>
             ) : (
               <div className={`space-y-8 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] ${theme === 'dark' ? 'before:bg-[#433E38]' : 'before:bg-[#D6D1C7]'
@@ -407,7 +473,7 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
                   : 'border-[#D6D1C7] text-[#2C2A26] hover:bg-[#F5F2EB]'
                   }`}
               >
-                View Full Audit Log
+                {t?.dashboard?.studioPulse?.viewAuditLog || 'View Full Audit Log'}
               </button>
             )}
           </div>
@@ -416,9 +482,9 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
 
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-[#A8A29E]">Launchpad</h3>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-[#A8A29E]">{t?.dashboard?.launchpad?.title || 'Launchpad'}</h3>
           <button onClick={onViewAll} className={`text-xs font-bold uppercase tracking-widest hover:underline ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-            }`}>All Tools</button>
+            }`}>{t?.dashboard?.launchpad?.allTools || 'All Tools'}</button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -440,9 +506,9 @@ const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog
                 </svg>
               </div>
               <h4 className={`font-serif text-lg mb-1 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                }`}>{tool.name}</h4>
+                }`}>{language === 'vi' ? (tool.name_vi || tool.name) : tool.name}</h4>
               <p className={`text-[11px] line-clamp-2 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#A8A29E]'}`}>
-                {tool.description}
+                {language === 'vi' ? (tool.description_vi || tool.description) : tool.description}
               </p>
             </div>
           ))}

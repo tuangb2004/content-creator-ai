@@ -139,10 +139,11 @@ const ProjectList = ({ items = [], onRemoveItem, highlightedProjectId, onClearHi
 
 // Project Card Component
 const ProjectCard = ({ item, onRemove, isHighlighted }) => {
+    const { t } = useLanguage();
     return (
         <div className={`group bg-white border hover:border-[#2C2A26] transition-all duration-500 rounded-sm flex flex-col h-full shadow-sm hover:shadow-xl ${isHighlighted
-                ? 'border-[#2C2A26] bg-[#F9F8F6] shadow-lg'
-                : 'border-[#D6D1C7]'
+            ? 'border-[#2C2A26] bg-[#F9F8F6] shadow-lg'
+            : 'border-[#D6D1C7]'
             }`}>
             {/* Header */}
             <div className="p-5 border-b border-[#F5F2EB] flex justify-between items-center bg-[#F9F8F6]">
@@ -186,10 +187,10 @@ const ProjectCard = ({ item, onRemove, isHighlighted }) => {
                         className="text-[10px] font-bold uppercase tracking-widest text-[#2C2A26] hover:underline"
                         aria-label="Copy content"
                     >
-                        Copy
+                        {t?.projectsPage?.actions?.copy || 'Copy'}
                     </button>
                     <button className="text-[10px] font-bold uppercase tracking-widest text-[#2C2A26] hover:underline">
-                        View
+                        {t?.projectsPage?.actions?.view || 'View'}
                     </button>
                 </div>
             </div>
@@ -199,16 +200,17 @@ const ProjectCard = ({ item, onRemove, isHighlighted }) => {
 
 // Project Table Component
 const ProjectTable = ({ items, onRemoveItem }) => {
+    const { t } = useLanguage();
     return (
         <div className="bg-white border border-[#D6D1C7] rounded-sm shadow-sm overflow-x-auto">
             <table className="w-full text-left border-collapse">
                 <thead className="bg-[#F9F8F6] text-[10px] uppercase tracking-widest text-[#A8A29E] border-b border-[#D6D1C7]">
                     <tr>
-                        <th className="p-5">Project Name / Prompt</th>
-                        <th className="p-5">Tool</th>
-                        <th className="p-5">Type</th>
-                        <th className="p-5">Date</th>
-                        <th className="p-5 text-right">Actions</th>
+                        <th className="p-5">{t?.projectsPage?.tableHeaders?.projectName || 'Project Name / Prompt'}</th>
+                        <th className="p-5">{t?.projectsPage?.tableHeaders?.tool || 'Tool'}</th>
+                        <th className="p-5">{t?.projectsPage?.tableHeaders?.type || 'Type'}</th>
+                        <th className="p-5">{t?.projectsPage?.tableHeaders?.date || 'Date'}</th>
+                        <th className="p-5 text-right">{t?.projectsPage?.tableHeaders?.actions || 'Actions'}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F5F2EB]">

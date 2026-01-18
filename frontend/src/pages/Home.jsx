@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import toast from '../utils/toast';
 import DashboardLayout from '../components/Dashboard/DashboardLayout';
 import DashboardHome from '../components/Dashboard/DashboardHome';
 import ActivityLogs from '../components/Dashboard/ActivityLogs';
@@ -14,11 +16,14 @@ import CartDrawer from '../components/Cart/CartDrawer';
 import Assistant from '../components/Assistant/Assistant';
 import EmailVerificationBanner from '../components/Auth/EmailVerificationBanner';
 import { getProjects, deleteProject as deleteProjectFunction, saveProject as saveProjectFunction } from '../services/firebaseFunctions';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { TOOLS } from '../constants';
 
 function Home() {
   const { user, logout } = useAuth();
   const { theme } = useTheme();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   // Load saved state from localStorage
@@ -62,6 +67,7 @@ function Home() {
   const [isProjectDrawerOpen, setIsProjectDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
 
   const filteredTools = TOOLS.filter((tool) => {
     const matchesSearch = !searchQuery.trim() ||
@@ -110,11 +116,26 @@ function Home() {
     };
   }, [savedState]);
 
-  // Load projects from Firestore via Firebase Functions
-  const loadProjects = useCallback(async () => {
-    try {
-      const result = await getProjects();
-      const projectsData = result.projects || [];
+  // Real-time listener for projects
+  useEffect(() => {
+    if (!user) {
+      setProjects([]);
+      setIsLoadingProjects(false);
+      return;
+    }
+
+    setIsLoadingProjects(true);
+
+    // Firestore path: projects (root collection) where userId matches
+    const projectsRef = collection(db, 'projects');
+    const q = query(projectsRef, where('userId', '==', user.uid));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const projectsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        projectId: doc.id
+      }));
 
       // Transform Firestore response to match GeneratedContent format
       const transformedProjects = projectsData.map(project => {
@@ -132,20 +153,19 @@ function Home() {
           timestamp: createdAt
         };
       });
-      setProjects(transformedProjects);
-    } catch (error) {
-      console.error('Failed to load projects:', error);
-      // Set empty array on error to prevent crashes
-      setProjects([]);
-    }
-  }, []);
 
-  useEffect(() => {
-    if (user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      loadProjects();
-    }
-  }, [user, loadProjects]);
+      // Sort client-side (Newest first)
+      transformedProjects.sort((a, b) => b.timestamp - a.timestamp);
+
+      setProjects(transformedProjects);
+      setIsLoadingProjects(false);
+    }, (error) => {
+      console.error("Error listening to projects:", error);
+      setIsLoadingProjects(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   // Handle tool query parameter from URL (e.g., ?tool=t1)
   useEffect(() => {
@@ -221,9 +241,6 @@ function Home() {
       // Save to Firestore via Firebase Function
       await saveProjectFunction(projectData);
 
-      // Reload projects to get the saved project with proper ID
-      await loadProjects();
-
       setIsProjectDrawerOpen(true);
       return true;
     } catch (error) {
@@ -233,15 +250,32 @@ function Home() {
   };
 
   const removeProject = async (id) => {
+    // 1. Confirmation
+    const confirmMessage = language === 'vi'
+      ? 'Bạn có chắc chắn muốn xóa dự án này không?'
+      : 'Are you sure you want to delete this project?';
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    // 2. Optimistic Update (Delete immediately from UI)
+    const previousProjects = [...projects];
+    setProjects(prev => prev.filter(p => p.id !== id));
+
     try {
-      // Call Firebase Function to delete project
+      // 3. Call Firebase Function to delete project
       await deleteProjectFunction(id);
-      // Reload projects from Firestore to ensure data is real-time and consistent
-      await loadProjects();
+      // Success - show toast
+      const successMessage = language === 'vi' ? 'Đã xóa dự án thành công' : 'Project deleted successfully';
+      toast.success(successMessage);
     } catch (error) {
       console.error('Failed to delete project:', error);
-      // If delete fails, still remove from local state for items that were only in memory
-      setProjects(prev => prev.filter(p => p.id !== id));
+      // 4. Revert if failed
+      setProjects(previousProjects);
+      // Show error toast
+      const errorMessage = language === 'vi' ? 'Xóa thất bại. Vui lòng thử lại.' : 'Failed to delete. Please try again.';
+      toast.error(errorMessage);
     }
   };
 
@@ -313,27 +347,28 @@ function Home() {
               onViewAuditLog={() => setView({ type: 'activity' })}
               onViewProjects={() => setDashboardTab('projects')}
               onOpenProject={openProjectFromActivity}
+              isLoading={isLoadingProjects}
             />
           )}
           {dashboardTab === 'dashboard' && view.type === 'activity' && (
             <ActivityLogs onBack={() => setView({ type: 'home' })} />
           )}
           {(dashboardTab === 'tools' || dashboardTab === 'inspiration') && (
-            <div className="py-12 animate-fade-in-up">
+            <div className="py-1 animate-fade-in-up">
               {dashboardTab === 'tools' ? (
                 <>
                   {/* Command Center Header */}
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-12">
                     <div>
                       <h2 className={`text-4xl font-serif mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                        }`}>Command Center</h2>
+                        }`}>{t?.commandCenter?.title || 'Command Center'}</h2>
                       <p className={`transition-colors duration-300 ${theme === 'dark' ? 'text-[#5D5A53]' : 'text-[#A8A29E]'
-                        }`}>Access the full depth of CreatorAI tools.</p>
+                        }`}>{t?.commandCenter?.subtitle || 'Access the full depth of CreatorAI tools.'}</p>
                     </div>
                     <div className="relative w-full md:w-80">
                       <input
                         type="text"
-                        placeholder="Search tools, capabilities..."
+                        placeholder={t?.commandCenter?.searchPlaceholder || "Search tools, capabilities..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className={`w-full border pl-10 pr-4 py-3 text-sm outline-none rounded-sm transition-all ${theme === 'dark'
@@ -363,7 +398,7 @@ function Home() {
                             : 'bg-white text-[#A8A29E] border-[#D6D1C7] hover:border-[#2C2A26]'
                           }`}
                       >
-                        {cat}
+                        {t?.commandCenter?.filters?.[cat.toLowerCase()] || cat}
                       </button>
                     ))}
                   </div>
@@ -400,7 +435,7 @@ function Home() {
                           <div className="p-6 flex-1 flex flex-col">
                             <div className="flex justify-between items-start mb-4">
                               <h4 className={`text-xl font-serif transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                                }`}>{tool.name}</h4>
+                                }`}>{language === 'vi' ? (tool.name_vi || tool.name) : tool.name}</h4>
                               <div className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${theme === 'dark'
                                 ? 'border-[#433E38] group-hover:bg-[#F5F2EB] group-hover:text-[#2C2A26]'
                                 : 'border-[#D6D1C7] group-hover:bg-[#2C2A26] group-hover:text-white'
@@ -412,7 +447,7 @@ function Home() {
                             </div>
 
                             <p className={`text-sm font-light leading-relaxed mb-6 flex-1 transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-                              }`}>{tool.description}</p>
+                              }`}>{language === 'vi' ? (tool.description_vi || tool.description) : tool.description}</p>
 
                             {/* Key Features */}
                             <div className={`flex flex-wrap gap-2 pt-6 border-t transition-colors duration-300 ${theme === 'dark' ? 'border-[#433E38]' : 'border-[#F5F2EB]'
@@ -435,14 +470,14 @@ function Home() {
                         </svg>
                       </div>
                       <h3 className={`text-2xl font-serif mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                        }`}>No matching tools found</h3>
-                      <p className="text-[#A8A29E] max-w-xs font-light">Try adjusting your keywords or clearing the category filter.</p>
+                        }`}>{t?.commandCenter?.emptyState?.title || 'No matching tools found'}</h3>
+                      <p className="text-[#A8A29E] max-w-xs font-light">{t?.commandCenter?.emptyState?.description || 'Try adjusting your keywords or clearing the category filter.'}</p>
                       <button
                         onClick={() => { setSearchQuery(''); setActiveCategory('All'); }}
                         className={`mt-8 text-[10px] font-bold uppercase tracking-[0.2em] border-b border-current pb-1 hover:opacity-60 transition-opacity ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
                           }`}
                       >
-                        Clear All Filters
+                        {t?.commandCenter?.emptyState?.clearFilters || 'Clear All Filters'}
                       </button>
                     </div>
                   )}
@@ -457,12 +492,12 @@ function Home() {
               <div className="flex justify-between items-end mb-8">
                 <div>
                   <h2 className={`text-4xl font-serif mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                    }`}>Your Projects</h2>
+                    }`}>{t?.projectsPage?.title || 'Your Projects'}</h2>
                   <p className={`transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#A8A29E]'
-                    }`}>Manage and organize your generated content.</p>
+                    }`}>{t?.projectsPage?.subtitle || 'Manage and organize your generated content.'}</p>
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest text-[#2C2A26] border border-[#D6D1C7] px-3 py-1 rounded-full">
-                  {projects.length} Items
+                  {projects.length} {t?.projectsPage?.itemCount || 'Items'}
                 </span>
               </div>
 
