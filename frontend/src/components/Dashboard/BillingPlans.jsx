@@ -17,7 +17,7 @@ const CheckIcon = () => (
 const BillingPlans = () => {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { userData, refreshUserData } = useAuth();
+  const { user, userData, refreshUserData } = useAuth(); // Add user to destructure
   const [billingCycle, setBillingCycle] = useState('monthly');
   // Fixed: Use string to track WHICH plan is loading, instead of boolean
   const [loadingPlanId, setLoadingPlanId] = useState(null);
@@ -25,41 +25,58 @@ const BillingPlans = () => {
 
   const [billingHistory, setBillingHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Fetch Billing History
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!userData?.uid) return;
+      console.log('🔍 [Billing History] user:', user);
+      console.log('🔍 [Billing History] userData:', userData);
 
+      if (!user?.uid) {
+        console.log('⚠️ [Billing History] No user.uid found. user:', user);
+        return;
+      }
+
+      console.log('🔍 [Billing History] Starting fetch for userId:', user.uid);
       setHistoryLoading(true);
       try {
         const q = query(
           collection(db, 'payment_links'),
-          where('userId', '==', userData.uid)
+          where('userId', '==', user.uid),
+          where('status', '==', 'success') // Only show successful payments
         );
 
         const querySnapshot = await getDocs(q);
+        console.log('📊 [Billing History] Query returned', querySnapshot.size, 'successful transactions');
+
         const historyData = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
+          console.log('📄 [Billing History] Document:', doc.id, data);
           historyData.push({
             id: doc.id,
             date: data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('vi-VN') : 'N/A',
             description: data.description || `Plan Upgrade (${data.planName})`,
             amount: data.amount ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.amount) : '0 ₫',
-            invoiceId: data.orderCode || doc.id.substring(0, 8)
+            invoiceId: data.orderCode || doc.id.substring(0, 8),
+            status: data.status
           });
         });
+
+        console.log('✅ [Billing History] Processed history:', historyData);
         setBillingHistory(historyData);
+        setCurrentPage(1); // Reset to first page on new data
       } catch (error) {
-        console.error("Error fetching billing history:", error);
+        console.error("❌ [Billing History] Error:", error);
       } finally {
         setHistoryLoading(false);
       }
     };
 
     fetchHistory();
-  }, [userData?.uid]);
+  }, [user]); // Changed to user to get uid from Firebase Auth
 
   // Debug: Log modal state changes
   useEffect(() => {
@@ -84,6 +101,8 @@ const BillingPlans = () => {
     pro_yearly: 6840000, // 24 USD/month * 12 months * 23,800 VND/USD ≈ 6,840,000 VND
     agency_monthly: 2356200, // 99 USD * 23,800 VND/USD ≈ 2,356,200 VND
     agency_yearly: 22562400, // 79 USD/month * 12 months * 23,800 VND/USD ≈ 22,562,400 VND
+    business_monthly: 4900000, // 206 USD * 23,800 VND/USD ≈ 4,900,000 VND
+    business_yearly: 49000000, // 172 USD/month * 12 months * 23,800 VND/USD ≈ 49,000,000 VND
   };
 
   const currentPlan = userData?.plan || 'free';
@@ -150,6 +169,30 @@ const BillingPlans = () => {
     }
   };
 
+  const handleBuyCredits = async (pkg) => {
+    setLoadingPlanId(pkg.id);
+    try {
+      const { checkoutUrl } = await createPaymentLink({
+        amount: pkg.price,
+        planName: `credit_${pkg.id}`, // e.g., credit_starter, credit_popular
+        creditAmount: pkg.credits, // Pass credit amount for backend processing
+        successUrl: `${window.location.origin}/dashboard?payment=success&type=credits&amount=${pkg.credits}`,
+        cancelUrl: `${window.location.origin}/dashboard?payment=cancel`
+      });
+
+      // Redirect to PayOS checkout
+      window.location.href = checkoutUrl;
+    } catch (error) {
+      console.error('Credit purchase error:', error);
+      if (isErrorType(error, ErrorTypes.UNAUTHENTICATED)) {
+        toast.error(t?.billing?.pleaseLogin || 'Please log in to buy credits.');
+      } else {
+        toast.error(error.message || 'Failed to create payment link. Please try again.');
+      }
+    } finally {
+      setLoadingPlanId(null);
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -217,6 +260,25 @@ const BillingPlans = () => {
       button: t?.billing?.goUnlimited || 'Go Unlimited',
       active: currentPlan === 'agency',
       highlight: false
+    },
+    {
+      id: 'business',
+      name: 'Business',
+      desc: 'Enterprise-grade for large teams.',
+      credits: billingCycle === 'monthly' ? '25,000' : '300,000',
+      priceMonthly: 206,
+      priceYearly: 172,
+      features: [
+        billingCycle === 'monthly' ? '25,000 Monthly Credits' : '300,000 Yearly Credits',
+        'Unlimited team members',
+        'Priority support 24/7',
+        'Custom integrations',
+        'Dedicated account manager',
+        'White-label options'
+      ],
+      button: 'Contact Sales',
+      active: currentPlan === 'business',
+      highlight: false
     }
   ];
 
@@ -251,7 +313,7 @@ const BillingPlans = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
         {plans.map((plan) => (
           <div
             key={plan.id}
@@ -311,11 +373,13 @@ const BillingPlans = () => {
                   handleUpgrade(billingCycle === 'monthly' ? 'pro_monthly' : 'pro_yearly', 'Pro Studio', plan.id);
                 } else if (plan.id === 'agency') {
                   handleUpgrade(billingCycle === 'monthly' ? 'agency_monthly' : 'agency_yearly', 'Agency Elite', plan.id);
+                } else if (plan.id === 'business') {
+                  handleUpgrade(billingCycle === 'monthly' ? 'business_monthly' : 'business_yearly', 'Business', plan.id);
                 }
               }}
               className={`w-full py-4 text-xs font-bold uppercase tracking-widest transition-all duration-300 relative
                 ${plan.active
-                  ? 'bg-emerald-600 text-white border border-emerald-600 shadow-lg scale-[1.02] cursor-default opacity-100'
+                  ? 'bg-slate-600 text-white border border-slate-600 shadow-lg scale-[1.02] cursor-default opacity-100'
                   : (plan.highlight
                     ? 'bg-[#F5F2EB] text-[#2C2A26] hover:bg-white border-transparent'
                     : (theme === 'dark'
@@ -338,70 +402,77 @@ const BillingPlans = () => {
         ))}
       </div>
 
-      <div className={`border p-8 rounded-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-[#F9F8F6] border-[#D6D1C7]'
-        }`}>
-        <h3 className={`font-serif text-xl mb-8 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-          }`}>{t?.billing?.consumptionTitle || 'Consumption Logic (Transparent Billing)'}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Text Utility</span>
-            <p className={`text-sm font-bold ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>1 Cr / 500 chars</p>
-            <p className={`text-xs ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>Applies to Social, Outreach, and Polisher. Based on total input + output length.</p>
-          </div>
-          <div className="space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600">Editorial Pro</span>
-            <p className={`text-sm font-bold ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>1 Cr / 250 chars</p>
-            <p className={`text-xs ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>Deep reasoning for long-form SEO articles. High intelligence mode.</p>
-          </div>
-          <div className={`space-y-2 border-dashed pl-8 ${theme === 'dark' ? 'border-[#433E38]' : 'border-[#D6D1C7]'} border-l`}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-purple-600">Visual Studio</span>
-            <p className={`text-sm font-bold ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>6 Cr / generation</p>
-            <p className={`text-xs ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>Standard high-quality creative imagery for ads and banners.</p>
-          </div>
-          <div className="space-y-2 bg-[#2C2A26] text-white p-6 -m-6 rounded-sm shadow-xl">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">Nano Banana Pro</span>
-            <p className="text-lg font-bold">10 Cr / generation</p>
-            <p className="text-xs opacity-80 font-light">Gemini Pro image. Hyper-intelligence with complex prompt adherence.</p>
-          </div>
-        </div>
-      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Buy Credits Section */}
         <div className={`border p-8 rounded-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
           }`}>
-          <div className="flex justify-between items-center mb-6">
+          <div className="mb-6">
             <h3 className={`font-serif text-lg transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-              }`}>{t?.billing?.paymentMethod || 'Payment Method'}</h3>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Edit button clicked, opening modal...');
-                setIsPaymentModalOpen(true);
-              }}
-              type="button"
-              className={`text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 cursor-pointer hover:opacity-80 ${theme === 'dark'
-                ? 'text-[#A8A29E] hover:text-[#F5F2EB]'
-                : 'text-[#A8A29E] hover:text-[#2C2A26]'
-                }`}
-            >
-              {t?.billing?.edit || 'Edit'}
-            </button>
+              }`}>Buy Credits</h3>
+            <p className={`text-xs mt-1 transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
+              }`}>Top up your account with additional credits</p>
           </div>
-          <div className={`flex items-center gap-4 p-4 border rounded-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-[#1C1B19] border-[#433E38]' : 'bg-[#F9F8F6] border-[#F5F2EB]'
-            }`}>
-            <div className={`w-10 h-7 rounded-sm flex items-center justify-center ${theme === 'dark' ? 'bg-[#F5F2EB]' : 'bg-[#2C2A26]'
-              }`}>
-              <div className={`w-6 h-4 border rounded-[1px] relative opacity-50 ${theme === 'dark' ? 'border-[#2C2A26]' : 'border-white'
-                }`}>
-                <div className={`absolute top-1 left-0 w-full h-[1px] ${theme === 'dark' ? 'bg-[#2C2A26]' : 'bg-white'
-                  }`}></div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { id: 'starter', credits: 500, price: 55000, discount: null },
+              { id: 'popular', credits: 1000, price: 100000, discount: '5%', popular: true },
+              { id: 'pro', credits: 2500, price: 240000, discount: '10%' },
+              { id: 'business', credits: 5000, price: 450000, discount: '15%' }
+            ].map((pkg) => (
+              <div
+                key={pkg.id}
+                className={`relative border rounded-sm p-4 transition-all duration-300 ${theme === 'dark'
+                  ? 'bg-[#1C1B19] border-[#433E38] hover:border-[#F5F2EB]'
+                  : 'bg-[#F9F8F6] border-[#F5F2EB] hover:border-[#2C2A26]'
+                  }`}
+              >
+                {pkg.popular && (
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+                    <span className="bg-[#F5F2EB] text-[#2C2A26] text-[8px] font-bold uppercase tracking-widest px-2 py-1 rounded-sm">
+                      Popular
+                    </span>
+                  </div>
+                )}
+
+                {pkg.discount && (
+                  <div className="absolute -top-2 -right-2">
+                    <span className="bg-emerald-600 text-white text-[8px] font-bold px-2 py-1 rounded-sm">
+                      Save {pkg.discount}
+                    </span>
+                  </div>
+                )}
+
+                <div className="text-center mb-3">
+                  <p className={`text-2xl font-bold transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+                    }`}>{pkg.credits.toLocaleString()}</p>
+                  <p className={`text-[10px] uppercase tracking-wider transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
+                    }`}>Credits</p>
+                </div>
+
+                <div className="text-center mb-3">
+                  <p className={`text-lg font-bold transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+                    }`}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.price)}</p>
+                  <p className={`text-[9px] transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
+                    }`}>({(pkg.price / pkg.credits).toFixed(0)} ₫/credit)</p>
+                </div>
+
+                <button
+                  onClick={() => handleBuyCredits(pkg)}
+                  disabled={loadingPlanId === pkg.id}
+                  className={`w-full py-3 text-xs font-bold uppercase tracking-widest transition-all duration-300 rounded-sm ${loadingPlanId === pkg.id
+                    ? 'opacity-50 cursor-not-allowed'
+                    : (theme === 'dark'
+                      ? 'border border-[#F5F2EB] hover:bg-[#F5F2EB] hover:text-[#2C2A26] text-[#F5F2EB]'
+                      : 'border border-[#2C2A26] hover:bg-[#2C2A26] hover:text-[#F5F2EB] text-[#2C2A26]')
+                    }`}
+                >
+                  {loadingPlanId === pkg.id ? 'Processing...' : 'Buy Now'}
+                </button>
               </div>
-            </div>
-            <div>
-              <p className={`text-sm font-bold ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>•••• {cardDetails.last4}</p>
-              <p className={`text-xs ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>Exp {cardDetails.expiry}</p>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -424,19 +495,75 @@ const BillingPlans = () => {
               </thead>
               <tbody className={`divide-y transition-colors duration-300 ${theme === 'dark' ? 'divide-[#433E38]' : 'divide-[#F5F2EB]'
                 }`}>
-                <tr className={`transition-colors ${theme === 'dark' ? 'hover:bg-[#433E38]/30' : 'hover:bg-[#F9F9F9]'}`}>
-                  <td className={`p-4 text-sm ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>--</td>
-                  <td className={`p-4 text-sm font-medium ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>
-                    {t?.billing?.noBillingHistory || 'No billing history yet'}
-                  </td>
-                  <td className={`p-4 text-sm ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>--</td>
-                  <td className="p-4 text-right">
-                    <button className={`text-xs font-medium transition-colors duration-300 hover:underline ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                      }`}>--</button>
-                  </td>
-                </tr>
+                {historyLoading ? (
+                  <tr>
+                    <td colSpan="4" className="p-8 text-center text-sm opacity-50">Loading history...</td>
+                  </tr>
+                ) : billingHistory.length > 0 ? (
+                  billingHistory
+                    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                    .map((item) => (
+                      <tr key={item.id} className={`transition-colors ${theme === 'dark' ? 'hover:bg-[#433E38]/30' : 'hover:bg-[#F9F9F9]'}`}>
+                        <td className={`p-4 text-sm ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>{item.date}</td>
+                        <td className={`p-4 text-sm font-medium ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>{item.description}</td>
+                        <td className={`p-4 text-sm font-medium text-emerald-600`}>{item.amount}</td>
+                        <td className="p-4 text-right">
+                          <span className={`text-xs font-mono opacity-70 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>#{item.invoiceId}</span>
+                        </td>
+                      </tr>
+                    ))
+                ) : (
+                  <tr className={`transition-colors ${theme === 'dark' ? 'hover:bg-[#433E38]/30' : 'hover:bg-[#F9F9F9]'}`}>
+                    <td className={`p-4 text-sm ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>--</td>
+                    <td className={`p-4 text-sm font-medium ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>
+                      {t?.billing?.noBillingHistory || 'No billing history yet'}
+                    </td>
+                    <td className={`p-4 text-sm ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>--</td>
+                    <td className="p-4 text-right">--</td>
+                  </tr>
+                )}
               </tbody>
             </table>
+
+            {/* Pagination Controls */}
+            {billingHistory.length > itemsPerPage && (
+              <div className={`flex items-center justify-center gap-2 p-4 border-t ${theme === 'dark' ? 'border-[#433E38]' : 'border-[#F5F2EB]'}`}>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 text-xs font-medium rounded transition-colors ${currentPage === 1
+                    ? 'opacity-30 cursor-not-allowed'
+                    : (theme === 'dark' ? 'hover:bg-[#433E38] text-[#F5F2EB]' : 'hover:bg-[#F5F2EB] text-[#2C2A26]')
+                    }`}
+                >
+                  &lt;
+                </button>
+
+                {Array.from({ length: Math.ceil(billingHistory.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 text-xs font-medium rounded transition-colors ${currentPage === page
+                      ? (theme === 'dark' ? 'bg-[#F5F2EB] text-[#2C2A26]' : 'bg-[#2C2A26] text-[#F5F2EB]')
+                      : (theme === 'dark' ? 'hover:bg-[#433E38] text-[#F5F2EB]' : 'hover:bg-[#F5F2EB] text-[#2C2A26]')
+                      }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(billingHistory.length / itemsPerPage)))}
+                  disabled={currentPage === Math.ceil(billingHistory.length / itemsPerPage)}
+                  className={`px-3 py-1 text-xs font-medium rounded transition-colors ${currentPage === Math.ceil(billingHistory.length / itemsPerPage)
+                    ? 'opacity-30 cursor-not-allowed'
+                    : (theme === 'dark' ? 'hover:bg-[#433E38] text-[#F5F2EB]' : 'hover:bg-[#F5F2EB] text-[#2C2A26]')
+                    }`}
+                >
+                  &gt;
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

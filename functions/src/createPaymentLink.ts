@@ -14,6 +14,7 @@ interface CreatePaymentLinkRequest {
   planName: string;
   successUrl: string;
   cancelUrl: string;
+  creditAmount?: number; // For credit purchases
 }
 
 /**
@@ -25,6 +26,8 @@ const PLAN_CREDITS: Record<string, number> = {
   pro_yearly: 30000,        // 2,500 * 12 months = 30,000 credits
   agency_monthly: 12000,    // 12,000 credits/month
   agency_yearly: 144000,    // 12,000 * 12 months = 144,000 credits
+  business_monthly: 25000,  // 25,000 credits/month
+  business_yearly: 300000,  // 25,000 * 12 months = 300,000 credits
 };
 
 /**
@@ -64,7 +67,7 @@ export const createPaymentLinkFunction = functions.https.onCall(
       throw new functions.https.HttpsError('invalid-argument', 'successUrl and cancelUrl are required');
     }
 
-    const { amount, planName, successUrl, cancelUrl } = data;
+    const { amount, planName, successUrl, cancelUrl, creditAmount } = data;
 
     // 3. Get user email
     const db = getDb();
@@ -139,7 +142,9 @@ export const createPaymentLinkFunction = functions.https.onCall(
       // PayOS requires signature: HMAC SHA256 of sorted params
       // Format: amount=$amount&cancelUrl=$cancelUrl&description=$description&orderCode=$orderCode&returnUrl=$returnUrl
       // PayOS description limit: 25 characters max
-      const description = `Nang cap ${planName}`; // e.g., "Nang cap pro_monthly" = 21 chars
+      const description = creditAmount
+        ? `Mua ${creditAmount} credits` // e.g., "Mua 500 credits" = 16 chars
+        : `Nang cap ${planName}`; // e.g., "Nang cap pro_monthly" = 21 chars
       const signatureData = `amount=${amount}&cancelUrl=${cancelUrl}&description=${description}&orderCode=${orderCode}&returnUrl=${successUrl}`;
       const signature = createSignature(signatureData);
 
@@ -152,7 +157,7 @@ export const createPaymentLinkFunction = functions.https.onCall(
         // PayOS requires items array
         items: [
           {
-            name: `Gói ${planName}`,
+            name: creditAmount ? `${creditAmount} Credits` : `Gói ${planName}`,
             quantity: 1,
             price: amount,
           }
@@ -178,7 +183,9 @@ export const createPaymentLinkFunction = functions.https.onCall(
           orderCode,
           amount,
           planName,
-          credits,
+          credits: creditAmount || credits, // Use creditAmount for credit purchases, otherwise plan credits
+          creditAmount: creditAmount || null, // Track if this is a credit purchase
+          description,
           status: 'pending',
           createdAt: FieldValue.serverTimestamp(),
           paymentLinkId: result.data.paymentLinkId,

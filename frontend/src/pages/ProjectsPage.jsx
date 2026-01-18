@@ -3,8 +3,8 @@ import { getProjects, deleteProject as deleteProjectFunction } from '../services
 import toast from '../utils/toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Trash2, Search, Filter } from 'lucide-react';
-import Sidebar from '../components/Shared/Sidebar';
 import PageHeader from '../components/Shared/PageHeader';
+import EmptyState from '../components/Projects/EmptyState';
 
 function ProjectsPage() {
   const { t } = useLanguage();
@@ -66,7 +66,6 @@ function ProjectsPage() {
   if (loading) {
     return (
       <div className="flex h-screen bg-white">
-        <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-600"></div>
         </main>
@@ -76,7 +75,6 @@ function ProjectsPage() {
 
   return (
     <div className="flex h-screen bg-white">
-      <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <PageHeader title={t('projects.title')} />
         <div className="px-10 py-8">
@@ -86,63 +84,53 @@ function ProjectsPage() {
 
           {/* Filters */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('projects.searchPlaceholder')}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('projects.searchPlaceholder')}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
-            {/* Filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-gray-400" />
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">{t('projects.allTypes')}</option>
-                <option value="blog">{t('projects.blogPosts')}</option>
-                <option value="caption">{t('projects.captions')}</option>
-                <option value="email">{t('projects.emails')}</option>
-                <option value="product">{t('projects.products')}</option>
-                <option value="image">{t('projects.images')}</option>
-              </select>
+              {/* Filter */}
+              <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-gray-400" />
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">{t('projects.allTypes')}</option>
+                  <option value="blog">{t('projects.blogPosts')}</option>
+                  <option value="caption">{t('projects.captions')}</option>
+                  <option value="email">{t('projects.emails')}</option>
+                  <option value="product">{t('projects.products')}</option>
+                  <option value="image">{t('projects.images')}</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
           {/* Projects Grid */}
           {filteredProjects.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-            <div className="text-6xl mb-4">📭</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {searchQuery || filter !== 'all' ? t('projects.noProjects') : t('projects.noProjectsYet')}
-            </h3>
-            <p className="text-gray-600 mb-6">
-              {searchQuery || filter !== 'all'
-                ? t('projects.tryAdjusting')
-                : t('dashboard.startCreating')}
-            </p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
-              <ProjectCard
-                key={project._id}
-                project={project}
-                onDelete={deleteProject}
-                typeIcons={typeIcons}
-                t={t}
-              />
-            ))}
-          </div>
+            <EmptyState hasFilters={searchQuery || filter !== 'all'} />
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProjects.map((project) => (
+                <ProjectCard
+                  key={project._id}
+                  project={project}
+                  onDelete={deleteProject}
+                  typeIcons={typeIcons}
+                  t={t}
+                />
+              ))}
+            </div>
           )}
         </div>
       </main>

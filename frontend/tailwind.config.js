@@ -36,6 +36,18 @@ export default {
           700: '#1d4ed8',
           800: '#1e40af',
           900: '#1e3a8a',
+        },
+        // Editorial Design System Colors
+        editorial: {
+          cream: '#F5F2EB',
+          'cream-dark': '#EBE7DE',
+          charcoal: '#2C2A26',
+          'charcoal-light': '#5D5A53',
+          border: '#D6D1C7',
+          muted: '#A8A29E',
+          'bg-light': '#F9F8F6',
+          'bg-dark': '#1C1B19',
+          'border-dark': '#433E38',
         }
       }
     },
