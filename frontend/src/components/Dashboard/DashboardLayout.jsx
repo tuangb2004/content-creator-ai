@@ -1,200 +1,288 @@
-import { useState } from 'react';
-import { BRAND_NAME } from '../../constants';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { Icons } from '../Icons';
+import Logo from '../../assets/svg/Logo.svg';
 
-const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail }) => {
+const navItems = [
+  { id: 'dashboard', label: 'Home', icon: 'Home' },
+  { id: 'video-generator', label: 'Video generator', icon: 'Clapperboard', section: 'creation' },
+  { id: 'image-studio', label: 'Image studio', icon: 'Image', section: 'creation' },
+  { id: 'inspiration', label: 'Inspiration', icon: 'Lightbulb', section: 'creation' },
+  { id: 'avatars', label: 'Avatars and voices', icon: 'Users', section: 'creation' },
+  { id: 'analytics', label: 'Analytics', icon: 'BarChart2', section: 'management' },
+  { id: 'publisher', label: 'Publisher', icon: 'Calendar', section: 'management' },
+  { id: 'smart-creation', label: 'Smart creation', icon: 'Wand2', section: 'space' },
+  { id: 'assets', label: 'Assets', icon: 'Cloud', section: 'space' },
+];
+
+const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail, isSidebarCollapsed: controlledCollapsed, onSidebarToggle, hideHeader = false }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const { t } = useLanguage();
+  const [isSidebarProfileOpen, setIsSidebarProfileOpen] = useState(false);
+
+  // Internal state for backward compatibility or independent usage
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+
+  const isSidebarCollapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
+  const setIsSidebarCollapsed = (value) => {
+    if (onSidebarToggle) {
+      onSidebarToggle(value);
+    } else {
+      setInternalCollapsed(value);
+    }
+  };
+
+  const profileRef = useRef(null);
+  const sidebarProfileRef = useRef(null);
+
   const { user, userData } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  // eslint-disable-next-line no-unused-vars
+  const { t } = useLanguage();
 
-  // Get user email and plan from auth context
+  const isDarkMode = theme === 'dark';
+
+  // User info
   const displayEmail = userEmail || user?.email || "creator@demo.com";
-  const plan = userData?.plan || 'free';
-  const planDisplayNames = {
-    free: t?.dashboard?.profile?.freePlan || 'Free Plan',
-    pro: t?.dashboard?.profile?.proPlan || 'Pro Plan',
-    agency: t?.dashboard?.profile?.agencyPlan || 'Agency Plan'
-  };
+  // Ensure we only retrieve the first name to avoid long names
+  const fullDisplayName = userData?.firstName || user?.displayName || displayEmail.split('@')[0];
+  const userDisplayName = fullDisplayName.split(' ')[0];
+  const userHandle = `@${userDisplayName.toLowerCase().replace(/\s+/g, '')}`;
 
-  // Get user avatar and display name
-  const userAvatar = user?.photoURL || userData?.avatarUrl || null;
-  const userDisplayName = userData?.firstName
-    ? `${userData.firstName}${userData.lastName ? ' ' + userData.lastName : ''}`.trim()
-    : user?.displayName || displayEmail.split('@')[0];
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+      if (sidebarProfileRef.current && !sidebarProfileRef.current.contains(event.target)) {
+        setIsSidebarProfileOpen(false);
+      }
+    };
 
-  // Get initial for avatar fallback
-  const getInitial = () => {
-    if (userData?.firstName) {
-      return userData.firstName[0].toUpperCase();
-    }
-    if (userData?.lastName) {
-      return userData.lastName[0].toUpperCase();
-    }
-    if (user?.displayName) {
-      return user.displayName[0].toUpperCase();
-    }
-    return displayEmail[0]?.toUpperCase() || 'U';
-  };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-  const handleProfileNav = (tab) => {
-    onTabChange(tab);
-    setIsProfileOpen(false);
-    setMobileSidebarOpen(false);
-  };
-
-  const handleNavClick = (tab) => {
-    onTabChange(tab);
-    setMobileSidebarOpen(false);
+  const renderNavItem = (item) => {
+    const Icon = Icons[item.icon] || Icons.HelpCircle;
+    const isActive = activeTab === item.id;
+    return (
+      <button
+        key={item.label}
+        onClick={() => {
+          onTabChange(item.id);
+          setMobileMenuOpen(false);
+        }}
+        className={`w-full flex items-center group ${isSidebarCollapsed ? 'justify-center px-2' : 'space-x-3 px-3'} py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+          ? 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white'
+          : 'text-black dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white'
+          }`}
+        title={isSidebarCollapsed ? item.label : ''}
+      >
+        <Icon size={20} className={`transition-all duration-200 ${isActive ? 'stroke-[2.5]' : 'stroke-[2] group-hover:stroke-[2.5]'}`} />
+        {!isSidebarCollapsed && <span>{item.label}</span>}
+      </button>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F2EB] flex font-sans">
-
-      {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#2C2A26] text-[#F5F2EB] z-40 flex items-center px-4 justify-between">
-        <button onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)} className="p-2">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-        </button>
-        <span className="font-serif font-medium">{BRAND_NAME}</span>
-        <div className="w-8"></div>
-      </div>
-
-      {/* Backdrop for mobile sidebar */}
-      {mobileSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setMobileSidebarOpen(false)}
-        />
-      )}
-
+    <div className="flex h-screen overflow-hidden bg-white dark:bg-[#0f172a] font-sans">
       {/* Sidebar */}
-      <aside className={`w-64 bg-[#2C2A26] text-[#F5F2EB] flex flex-col fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-        {/* Logo Area */}
-        <div className="p-8 hidden md:block">
-          <h1 className="text-2xl font-serif tracking-tight">{BRAND_NAME}</h1>
-          <span className="text-[10px] uppercase tracking-[0.2em] text-[#A8A29E]">Studio</span>
+      <aside className={`fixed inset-y-0 left-0 z-50 ${isSidebarCollapsed ? 'w-[70px]' : 'w-56'} bg-white dark:bg-[#1e293b] border-r border-gray-100 dark:border-gray-800 transform transition-all duration-300 ease-in-out md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative flex flex-col`}>
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute top-1/2 -right-3 z-50 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white shadow-sm transition-colors hover:shadow-md"
+        >
+          {isSidebarCollapsed ? <Icons.ChevronRight size={14} /> : <Icons.ChevronLeft size={14} />}
+        </button>
+
+        <div className={`flex items-center h-[52px] ${isSidebarCollapsed ? 'justify-center' : ''}`}>
+          <div className="flex items-center shrink-0">
+            <img src={Logo} alt="Logo" className="h-8 w-auto object-contain dark:invert pl-2" />
+            {!isSidebarCollapsed && (
+              <span className="text-x font-brand font-semibold tracking-tight text-black dark:text-white">CreatorAI</span>
+            )}
+          </div>
         </div>
 
-        {/* Mobile Sidebar Header */}
-        <div className="p-4 md:hidden flex justify-between items-center border-b border-[#433E38]">
-          <span className="font-serif text-xl">{t?.dashboard?.menu || 'Menu'}</span>
-          <button onClick={() => setMobileSidebarOpen(false)}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        <nav className="flex-1 overflow-y-auto px-4 space-y-6 no-scrollbar pt-4">
+          <div className="space-y-1">
+            {navItems.filter(i => !i.section).map(renderNavItem)}
+          </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-4 space-y-2 mt-4">
-          <NavItem
-            icon={<HomeIcon />}
-            label={t?.dashboard?.nav?.dashboard || 'Dashboard'}
-            isActive={activeTab === 'dashboard'}
-            onClick={() => handleNavClick('dashboard')}
-          />
-          <NavItem
-            icon={<GridIcon />}
-            label={t?.dashboard?.nav?.tools || 'All Tools'}
-            isActive={activeTab === 'tools'}
-            onClick={() => handleNavClick('tools')}
-          />
-          <NavItem
-            icon={<FolderIcon />}
-            label={t?.dashboard?.nav?.projects || 'Projects'}
-            isActive={activeTab === 'projects'}
-            onClick={() => handleNavClick('projects')}
-          />
-          <NavItem
-            icon={<SparklesIcon />}
-            label={t?.dashboard?.nav?.inspiration || 'Inspiration'}
-            isActive={activeTab === 'inspiration'}
-            onClick={() => handleNavClick('inspiration')}
-          />
+          <div>
+            {!isSidebarCollapsed && <h3 className="px-3 text-xs font-medium text-black dark:text-gray-400 mb-2">Creation</h3>}
+            {isSidebarCollapsed && <div className="h-px bg-gray-100 dark:bg-gray-700 my-4 mx-2"></div>}
+            <div className="space-y-1">
+              {navItems.filter(i => i.section === 'creation').map(renderNavItem)}
+            </div>
+          </div>
+
+          <div>
+            {!isSidebarCollapsed && <h3 className="px-3 text-xs font-medium text-black dark:text-gray-400 mb-2">Management</h3>}
+            {isSidebarCollapsed && <div className="h-px bg-gray-100 dark:bg-gray-700 my-4 mx-2"></div>}
+            <div className="space-y-1">
+              {navItems.filter(i => i.section === 'management').map(renderNavItem)}
+            </div>
+          </div>
+
+          <div>
+            {!isSidebarCollapsed && <h3 className="px-3 text-xs font-medium text-black dark:text-gray-400 mb-2">Space</h3>}
+            {isSidebarCollapsed && <div className="h-px bg-gray-100 dark:bg-gray-700 my-4 mx-2"></div>}
+            <div className="space-y-1">
+              {navItems.filter(i => i.section === 'space').map(renderNavItem)}
+            </div>
+          </div>
         </nav>
 
-        {/* User / Footer Profile Menu */}
-        <div className="p-4 border-t border-[#433E38] relative">
+        <div className="p-2 border-t border-gray-100 dark:border-gray-800 relative" ref={sidebarProfileRef}>
+          {isSidebarProfileOpen && (
+            <div className={`absolute z-50 bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden animate-in fade-in duration-200 w-56 ${isSidebarCollapsed
+              ? 'bottom-full left-0 mb-2 slide-in-from-bottom-2'
+              : 'bottom-full -left-2 mb-2 slide-in-from-bottom-2'
+              }`}>
+              <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 dark:text-purple-300 font-bold text-sm shrink-0">
+                  {user?.photoURL ? (
+                    <img src={user.photoURL} alt="User" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    <span>{userDisplayName.charAt(0)}</span>
+                  )}
+                </div>
+                <div className="overflow-hidden">
+                  <div className="font-bold text-sm text-black dark:text-white truncate">{userDisplayName}</div>
+                  <div className="text-xs text-black dark:text-gray-400 truncate">{userHandle}</div>
+                </div>
+              </div>
 
-          {isProfileOpen && (
+              <div className="p-2 space-y-0.5">
+                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
+                  <Icons.Bell size={18} className="text-black dark:text-gray-400" />
+                  Notifications
+                </button>
+                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
+                  <Icons.Folder size={18} className="text-black dark:text-gray-400" />
+                  Projects
+                </button>
+                <button
+                  onClick={toggleTheme}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left"
+                >
+                  <Icons.Globe size={18} className="text-black dark:text-gray-400" />
+                  Language: EN
+                </button>
+                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
+                  <Icons.Sparkles size={18} className="text-black dark:text-gray-400" />
+                  Upgrade plan
+                </button>
+                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
+                  <Icons.Brush size={18} className="text-black dark:text-gray-400" />
+                  Personalization
+                </button>
+                <button onClick={() => onTabChange('settings')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
+                  <Icons.Settings size={18} className="text-black dark:text-gray-400" />
+                  Settings
+                </button>
+              </div>
+
+              <div className="h-px bg-gray-100 dark:bg-gray-700 mx-2"></div>
+
+              <div className="p-2 space-y-0.5">
+                <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
+                  <div className="flex items-center gap-3">
+                    <Icons.HelpCircle size={18} className="text-black dark:text-gray-400" />
+                    Help
+                  </div>
+                  <Icons.ChevronRight size={14} className="text-black dark:text-gray-400" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (onLogout) onLogout();
+                    setIsSidebarProfileOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left"
+                >
+                  <Icons.LogOut size={18} className="text-black dark:text-gray-400" />
+                  Log out
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!isSidebarCollapsed ? (
             <div
-              className="fixed inset-0 z-30 cursor-default"
-              onClick={() => setIsProfileOpen(false)}
-            />
-          )}
-
-          {isProfileOpen && (
-            <div className="absolute bottom-[calc(100%+10px)] left-4 w-56 bg-white rounded-sm shadow-xl border border-[#D6D1C7] py-2 z-40 text-[#2C2A26] animate-fade-in-up origin-bottom-left">
-              <div className="px-4 py-2 border-b border-gray-100 mb-1">
-                <p className="font-bold text-sm">{t?.dashboard?.profile?.account || 'My Account'}</p>
-                <p className="text-xs text-gray-500 truncate">{displayEmail}</p>
+              onClick={() => setIsSidebarProfileOpen(!isSidebarProfileOpen)}
+              className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group w-full"
+            >
+              <div className="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 dark:text-purple-300 font-bold text-sm shrink-0">
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="User" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  <span>{userDisplayName.charAt(0)}</span>
+                )}
               </div>
-
-              <button
-                onClick={() => handleProfileNav('settings')}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-[#F5F2EB] transition-colors flex items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-[#A8A29E]">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {t?.dashboard?.profile?.settings || 'Profile Settings'}
-              </button>
-              <button
-                onClick={() => handleProfileNav('billing')}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-[#F5F2EB] transition-colors flex items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-[#A8A29E]">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-                </svg>
-                {t?.dashboard?.profile?.billing || 'Billing & Plans'}
-              </button>
-
-              <div className="h-px bg-gray-100 my-1"></div>
-
-              <button
-                onClick={onLogout}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
-              >
-                <LogoutIcon />
-                {t?.dashboard?.profile?.signout || 'Sign Out'}
+              <div className="flex-1 min-w-0 text-left overflow-hidden">
+                <div className="font-semibold text-sm text-black dark:text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                  {userDisplayName}
+                </div>
+                <div className="text-xs text-black dark:text-gray-400 truncate">Miễn phí</div>
+              </div>
+              <button className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-black dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
+                Upgrade
               </button>
             </div>
-          )}
-
-          <button
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className={`flex items-center gap-3 w-full p-2 rounded-md transition-colors text-left group ${isProfileOpen ? 'bg-[#433E38]' : 'hover:bg-[#433E38]'
-              }`}
-          >
-            {userAvatar ? (
-              <img
-                src={userAvatar}
-                alt={userDisplayName}
-                className="w-9 h-9 rounded-full object-cover ring-2 ring-[#433E38] group-hover:ring-[#A8A29E] transition-all"
-              />
-            ) : (
-              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#A8A29E] to-[#F5F2EB] flex items-center justify-center text-[#2C2A26] font-bold text-xs ring-2 ring-[#433E38] group-hover:ring-[#A8A29E] transition-all">
-                {getInitial()}
+          ) : (
+            <div
+              onClick={() => setIsSidebarProfileOpen(!isSidebarProfileOpen)}
+              className="flex justify-center"
+            >
+              <div className="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 dark:text-purple-300 font-bold text-sm shrink-0 cursor-pointer">
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="User" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  <span>{userDisplayName.charAt(0)}</span>
+                )}
               </div>
-            )}
-            <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate text-[#F5F2EB]">{userDisplayName}</p>
-              <p className="text-[10px] text-[#A8A29E] uppercase tracking-wider">{planDisplayNames[plan] || 'Free Plan'}</p>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-4 h-4 text-[#A8A29E] transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-            </svg>
-          </button>
+          )}
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 md:ml-64 p-8 md:p-12 mt-16 md:mt-0 w-full">
-        <div className="max-w-[1600px] mx-auto">
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white dark:bg-[#0f172a]">
+        {/* Header */}
+        {!hideHeader && (
+          <header className="flex items-center justify-between px-6 py-3 border-b border-transparent relative z-40">
+            <div className="flex items-center md:hidden">
+              <button onClick={() => setMobileMenuOpen(true)} className="p-2 -ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400">
+                <Icons.Menu size={24} />
+              </button>
+            </div>
+
+            {/* Breadcrumb or Title spacer */}
+            <div className="hidden md:block"></div>
+
+            <div className="flex items-center space-x-3 ml-auto">
+              <div className="hidden md:flex items-center bg-teal-50 dark:bg-teal-900/20 px-3 py-1.5 rounded-lg">
+                <Icons.Wand2 size={14} className="text-teal-600 dark:text-teal-400 mr-2" />
+                <span className="text-teal-700 dark:text-teal-300 text-sm font-bold">200</span>
+                <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
+                <button className="text-teal-600 dark:text-teal-400 text-sm font-medium hover:underline">Try for $0</button>
+              </div>
+
+              <button className="hidden md:flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-lg hover:bg-orange-100 transition-colors">
+                <Icons.Store size={16} />
+                <span className="text-sm font-bold">Earn credits</span>
+              </button>
+            </div>
+          </header>
+        )}
+
+        <div className="flex-1 overflow-y-auto">
           {children}
         </div>
       </main>
@@ -202,45 +290,4 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
   );
 };
 
-const NavItem = ({ icon, label, isActive, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-md transition-all duration-300 ${isActive
-        ? 'bg-[#F5F2EB] text-[#2C2A26]'
-        : 'text-[#A8A29E] hover:bg-[#433E38] hover:text-[#F5F2EB]'
-      }`}
-  >
-    {icon}
-    {label}
-  </button>
-);
-
-// Icons
-const HomeIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-  </svg>
-);
-const GridIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3.75h3.75M12 7.5a2.25 2.25 0 012.25-2.25h2.25A2.25 2.25 0 0120.25 7.5v2.25a2.25 2.25 0 01-2.25 2.25h-2.25A2.25 2.25 0 0112 9.75V7.5z" />
-  </svg>
-);
-const FolderIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
-  </svg>
-);
-const SparklesIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-  </svg>
-);
-const LogoutIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-  </svg>
-);
-
 export default DashboardLayout;
-

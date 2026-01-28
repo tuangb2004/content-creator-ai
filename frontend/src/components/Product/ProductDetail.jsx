@@ -129,7 +129,8 @@ const ProductDetail = ({ tool, onBack, onSave }) => {
 
     if (safeTool.inputType === 'image_prompt') {
       if (currentModelDetails.id === 'gemini') return 8;
-      return 0;
+      if (currentModelDetails.id === 'stability') return 4;
+      return 4; // Default to 4 for images if not Gemini
     }
 
     if (currentModelDetails.id === 'groq') return 0;

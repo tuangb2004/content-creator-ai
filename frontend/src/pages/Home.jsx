@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -8,10 +8,8 @@ import DashboardLayout from '../components/Dashboard/DashboardLayout';
 import DashboardHome from '../components/Dashboard/DashboardHome';
 import ActivityLogs from '../components/Dashboard/ActivityLogs';
 import ProductDetail from '../components/Product/ProductDetail';
-import ProjectList from '../components/Dashboard/ProjectList';
 import ProfileSettings from '../components/Dashboard/ProfileSettings';
 import BillingPlans from '../components/Dashboard/BillingPlans';
-import InspirationGallery from '../components/Dashboard/InspirationGallery';
 import CartDrawer from '../components/Cart/CartDrawer';
 import Assistant from '../components/Assistant/Assistant';
 import EmailVerificationBanner from '../components/Auth/EmailVerificationBanner';
@@ -19,6 +17,14 @@ import { getProjects, deleteProject as deleteProjectFunction, saveProject as sav
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { TOOLS } from '../constants';
+import VideoGenerator from '../components/Dashboard/VideoGenerator';
+import ImageStudio from '../components/Dashboard/ImageStudio';
+import Inspiration from '../components/Dashboard/Inspiration';
+import Avatars from '../components/Dashboard/Avatars';
+import Analytics from '../components/Dashboard/Analytics';
+import Publisher from '../components/Dashboard/Publisher';
+import SmartCreation from '../components/Dashboard/SmartCreation';
+import Assets from '../components/Dashboard/Assets';
 
 function Home() {
   const { user, logout } = useAuth();
@@ -60,23 +66,21 @@ function Home() {
 
   const savedState = loadSavedViewState();
 
+  /* eslint-disable no-unused-vars */
   const [dashboardTab, setDashboardTab] = useState(savedState?.dashboardTab || 'dashboard');
   const [view, setView] = useState(savedState?.view || { type: 'home' });
+
+  // Get location for navigation state
+  const location = useLocation();
+  const initialPrompt = location.state?.initialPrompt;
+
   const [projects, setProjects] = useState([]);
   const [highlightedProjectId, setHighlightedProjectId] = useState(null);
   const [isProjectDrawerOpen, setIsProjectDrawerOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-
-  const filteredTools = TOOLS.filter((tool) => {
-    const matchesSearch = !searchQuery.trim() ||
-      (tool.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (tool.name_vi || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (tool.description || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = activeCategory === 'All' || tool.category === activeCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isChatActive, setIsChatActive] = useState(false);
+  /* eslint-enable no-unused-vars */
 
   // Save view state to localStorage
   useEffect(() => {
@@ -319,200 +323,64 @@ function Home() {
         setDashboardTab(tab);
         if (view.type === 'workspace' && (tab === 'dashboard' || tab === 'tools' || tab === 'projects' || tab === 'inspiration')) {
           setView({ type: 'home' });
+          setIsChatActive(false);
         }
         if (tab === 'settings' || tab === 'billing') {
           setView({ type: 'home' });
+          setIsChatActive(false);
         }
       }}
       onLogout={handleLogout}
       userEmail={user?.email || 'creator@demo.com'}
+      isSidebarCollapsed={isSidebarCollapsed}
+      onSidebarToggle={setIsSidebarCollapsed}
+      hideHeader={isChatActive}
     >
       {/* If user is in workspace mode (tool selected), show workspace */}
-      {view.type === 'workspace' && view.tool && dashboardTab !== 'settings' && dashboardTab !== 'billing' && (
-        <ProductDetail
-          tool={view.tool}
-          onBack={() => setView({ type: 'home' })}
-          onSave={saveProject}
-        />
-      )}
+      {
+        view.type === 'workspace' && view.tool && dashboardTab !== 'settings' && dashboardTab !== 'billing' && (
+          <ProductDetail
+            tool={view.tool}
+            onBack={() => {
+              setView({ type: 'home' });
+              setIsChatActive(false);
+            }}
+            onSave={saveProject}
+          />
+        )
+      }
 
       {/* If user is NOT in workspace, show dashboard tabs */}
-      {(view.type === 'home' || view.type === 'activity') && (
-        <>
-          {dashboardTab === 'dashboard' && view.type === 'home' && (
-            <DashboardHome
-              onToolSelect={(t) => setView({ type: 'workspace', tool: t })}
-              recentProjects={projects.slice(0, 5)}
-              onViewAll={() => setDashboardTab('tools')}
-              onViewAuditLog={() => setView({ type: 'activity' })}
-              onViewProjects={() => setDashboardTab('projects')}
-              onOpenProject={openProjectFromActivity}
-              isLoading={isLoadingProjects}
-            />
-          )}
-          {dashboardTab === 'dashboard' && view.type === 'activity' && (
-            <ActivityLogs onBack={() => setView({ type: 'home' })} />
-          )}
-          {(dashboardTab === 'tools' || dashboardTab === 'inspiration') && (
-            <div className="py-1 animate-fade-in-up">
-              {dashboardTab === 'tools' ? (
-                <>
-                  {/* Command Center Header */}
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-12">
-                    <div>
-                      <h2 className={`text-4xl font-serif mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                        }`}>{t?.commandCenter?.title || 'Command Center'}</h2>
-                      <p className={`transition-colors duration-300 ${theme === 'dark' ? 'text-[#5D5A53]' : 'text-[#A8A29E]'
-                        }`}>{t?.commandCenter?.subtitle || 'Access the full depth of CreatorAI tools.'}</p>
-                    </div>
-                    <div className="relative w-full md:w-80">
-                      <input
-                        type="text"
-                        placeholder={t?.commandCenter?.searchPlaceholder || "Search tools, capabilities..."}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className={`w-full border pl-10 pr-4 py-3 text-sm outline-none rounded-sm transition-all ${theme === 'dark'
-                          ? 'bg-[#1C1B19] border-[#433E38] text-[#F5F2EB] placeholder-[#5D5A53] focus:border-[#F5F2EB]'
-                          : 'bg-white border-[#D6D1C7] text-[#2C2A26] placeholder-[#A8A29E] focus:border-[#2C2A26]'
-                          }`}
-                      />
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E]">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Category Filters */}
-                  <div className={`flex flex-wrap gap-4 mb-12 pb-4 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-[#433E38]' : 'border-[#D6D1C7]'
-                    }`}>
-                    {['All', 'Text', 'Image', 'Social', 'Strategy'].map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
-                        className={`px-6 py-2 text-[10px] font-bold uppercase tracking-widest transition-all rounded-full border ${activeCategory === cat
-                          ? theme === 'dark'
-                            ? 'bg-[#F5F2EB] text-[#2C2A26] border-[#F5F2EB] shadow-md'
-                            : 'bg-[#2C2A26] text-white border-[#2C2A26] shadow-md'
-                          : theme === 'dark'
-                            ? 'bg-[#2C2A26] text-[#A8A29E] border-[#433E38] hover:border-[#F5F2EB]'
-                            : 'bg-white text-[#A8A29E] border-[#D6D1C7] hover:border-[#2C2A26]'
-                          }`}
-                      >
-                        {t?.commandCenter?.filters?.[cat.toLowerCase()] || cat}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Tools Grid or Empty State */}
-                  {filteredTools.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {filteredTools.map(tool => (
-                        <div
-                          key={tool.id}
-                          onClick={() => setView({ type: 'workspace', tool })}
-                          className={`group border transition-all cursor-pointer flex flex-col h-full rounded-sm shadow-sm hover:shadow-xl overflow-hidden ${theme === 'dark'
-                            ? 'bg-[#2C2A26] border-[#433E38] hover:border-[#F5F2EB]'
-                            : 'bg-white border-[#D6D1C7] hover:border-[#2C2A26]'
-                            }`}
-                        >
-                          {/* Tool Image with Category Badge */}
-                          <div className={`relative h-48 overflow-hidden ${theme === 'dark' ? 'bg-[#1C1B19]' : 'bg-[#F5F2EB]'
-                            }`}>
-                            <img
-                              src={tool.imageUrl}
-                              alt=""
-                              className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110 opacity-80 group-hover:opacity-100"
-                            />
-                            <div className="absolute top-4 left-4">
-                              <span className={`backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm ${theme === 'dark' ? 'bg-black/80' : 'bg-white/90'
-                                }`}>
-                                {tool.category}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Tool Content */}
-                          <div className="p-6 flex-1 flex flex-col">
-                            <div className="flex justify-between items-start mb-4">
-                              <h4 className={`text-xl font-serif transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                                }`}>{language === 'vi' ? (tool.name_vi || tool.name) : tool.name}</h4>
-                              <div className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${theme === 'dark'
-                                ? 'border-[#433E38] group-hover:bg-[#F5F2EB] group-hover:text-[#2C2A26]'
-                                : 'border-[#D6D1C7] group-hover:bg-[#2C2A26] group-hover:text-white'
-                                }`}>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                                </svg>
-                              </div>
-                            </div>
-
-                            <p className={`text-sm font-light leading-relaxed mb-6 flex-1 transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-                              }`}>{language === 'vi' ? (tool.description_vi || tool.description) : tool.description}</p>
-
-                            {/* Key Features */}
-                            <div className={`flex flex-wrap gap-2 pt-6 border-t transition-colors duration-300 ${theme === 'dark' ? 'border-[#433E38]' : 'border-[#F5F2EB]'
-                              }`}>
-                              {tool.features.slice(0, 3).map((feat, i) => (
-                                <span key={i} className="text-[9px] font-bold uppercase tracking-tighter text-[#A8A29E]">#{feat}</span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    /* Beautiful Empty State */
-                    <div className="py-32 flex flex-col items-center justify-center text-center animate-fade-in-up">
-                      <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 text-[#A8A29E] ${theme === 'dark' ? 'bg-[#2C2A26]' : 'bg-[#F5F2EB]'
-                        }`}>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-8 h-8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                        </svg>
-                      </div>
-                      <h3 className={`text-2xl font-serif mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                        }`}>{t?.commandCenter?.emptyState?.title || 'No matching tools found'}</h3>
-                      <p className="text-[#A8A29E] max-w-xs font-light">{t?.commandCenter?.emptyState?.description || 'Try adjusting your keywords or clearing the category filter.'}</p>
-                      <button
-                        onClick={() => { setSearchQuery(''); setActiveCategory('All'); }}
-                        className={`mt-8 text-[10px] font-bold uppercase tracking-[0.2em] border-b border-current pb-1 hover:opacity-60 transition-opacity ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                          }`}
-                      >
-                        {t?.commandCenter?.emptyState?.clearFilters || 'Clear All Filters'}
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <InspirationGallery onTryTool={handleTryToolFromInspiration} />
-              )}
-            </div>
-          )}
-          {dashboardTab === 'projects' && (
-            <div>
-              <div className="flex justify-between items-end mb-8">
-                <div>
-                  <h2 className={`text-4xl font-serif mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                    }`}>{t?.projectsPage?.title || 'Your Projects'}</h2>
-                  <p className={`transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#A8A29E]'
-                    }`}>{t?.projectsPage?.subtitle || 'Manage and organize your generated content.'}</p>
-                </div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#2C2A26] border border-[#D6D1C7] px-3 py-1 rounded-full">
-                  {projects.length} {t?.projectsPage?.itemCount || 'Items'}
-                </span>
-              </div>
-
-              <ProjectList
-                items={projects}
-                onRemoveItem={removeProject}
-                highlightedProjectId={highlightedProjectId}
-                onClearHighlight={clearHighlight}
+      {
+        (view.type === 'home' || view.type === 'activity') && (
+          <>
+            {dashboardTab === 'dashboard' && view.type === 'home' && (
+              <DashboardHome
+                onCollapseSidebar={setIsSidebarCollapsed}
+                initialPrompt={initialPrompt}
+                onChatToggle={setIsChatActive}
               />
-            </div>
-          )}
-          {dashboardTab === 'settings' && <ProfileSettings />}
-          {dashboardTab === 'billing' && <BillingPlans />}
-        </>
-      )}
+            )}
+
+            {dashboardTab === 'dashboard' && view.type === 'activity' && (
+              <ActivityLogs onBack={() => setView({ type: 'home' })} />
+            )}
+
+            {/* New Sidebar Pages */}
+            {dashboardTab === 'video-generator' && <VideoGenerator />}
+            {dashboardTab === 'image-studio' && <ImageStudio />}
+            {dashboardTab === 'inspiration' && <Inspiration />}
+            {dashboardTab === 'avatars' && <Avatars />}
+            {dashboardTab === 'analytics' && <Analytics />}
+            {dashboardTab === 'publisher' && <Publisher />}
+            {dashboardTab === 'smart-creation' && <SmartCreation />}
+            {dashboardTab === 'assets' && <Assets />}
+
+            {dashboardTab === 'settings' && <ProfileSettings />}
+            {dashboardTab === 'billing' && <BillingPlans />}
+          </>
+        )
+      }
 
       <CartDrawer
         isOpen={isProjectDrawerOpen}

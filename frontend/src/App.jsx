@@ -12,6 +12,7 @@ import Home from './pages/Home';
 import ProjectsPage from './pages/ProjectsPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import PricingPage from './pages/PricingPage';
 
 function App() {
   useEffect(() => {
@@ -35,6 +36,8 @@ function App() {
                   <Route path="/login" element={<LandingPage />} />
                   {/* Redirect email verification to landing page (modal will handle it) */}
                   <Route path="/verify-email" element={<LandingPage />} />
+                  {/* Pricing page */}
+                  <Route path="/pricing" element={<PricingPage />} />
                   {/* Legal pages */}
                   <Route path="/terms" element={<TermsPage />} />
                   <Route path="/privacy" element={<PrivacyPage />} />

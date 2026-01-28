@@ -1,546 +1,705 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { TOOLS } from '../../constants';
-import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useActivityLogs } from '../../hooks/useActivityLogs';
-import toast from '../../utils/toast';
-import EnhancedMetricsCard from './EnhancedMetrics';
+import { useState, useRef, useEffect } from 'react';
+import { Icons } from '../Icons';
+import { AgentChat } from './AgentChat';
+import { getProjects } from '../../services/firebaseFunctions';
 
+const MODELS = {
+  image: [
+    { id: 'nano-pro', name: 'Nano Banana Pro', desc: 'Pro image quality', icon: Icons.Aperture },
+    { id: 'nano', name: 'Nano Banana', desc: 'Fast & efficient', icon: Icons.Aperture },
+    { id: 'sdxl', name: 'SDXL 1.0', desc: 'High quality stable diffusion', icon: Icons.Image },
+  ],
+  text: [
+    { id: 'groq', name: 'Groq Llama 3', desc: 'Siêu nhanh & thông minh', icon: Icons.Zap },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: 'Fastest & smartest model', icon: Icons.Sparkles },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Next-gen performance', icon: Icons.Zap },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Reasoning & complexity', icon: Icons.Cpu },
+  ],
+  video: [
+    { id: 'nano-video', name: 'Nano Video', desc: 'Smooth generation', icon: Icons.Video },
+    { id: 'runway', name: 'Runway Gen-2', desc: 'Cinematic realism', icon: Icons.Film },
+  ]
+};
 
-const DashboardHome = ({ onToolSelect, recentProjects, onViewAll, onViewAuditLog, onViewProjects, onOpenProject, isLoading }) => {
-  const { theme } = useTheme();
-  const { t, language } = useLanguage();
-  const { userData } = useAuth();
-  const navigate = useNavigate();
-  const currentHour = new Date().getHours();
-  const [previousCredits, setPreviousCredits] = useState(null);
-  let greeting = 'Good Morning';
-  if (currentHour >= 12) greeting = 'Good Afternoon';
-  if (currentHour >= 18) greeting = 'Good Evening';
+const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatToggle }) => {
+  const [inputType, setInputType] = useState('image');
 
-  const creditsRemaining = userData?.credits ?? 0;
-  const plan = userData?.plan || 'free';
-  const totalCredits = plan === 'pro' ? 2000 : plan === 'agency' ? 10000 : 10;
-  const creditsUsed = Math.max(0, totalCredits - creditsRemaining);
-  const isLowCredits = creditsRemaining < 2;
-  const contentGenerated = recentProjects.length;
-  const { logs, loading: loadingLogs } = useActivityLogs(6);
-
-  const prevCreditsRef = useRef(creditsRemaining);
-
-  // Track previous values for counter animation
+  // Auto-switch to chat if initialPrompt is present
   useEffect(() => {
-    if (previousCredits === null) {
-      setPreviousCredits(creditsRemaining);
+    if (initialPrompt) {
+      setPromptForChat(initialPrompt);
+      setIsChatMode(true);
+      if (onChatToggle) onChatToggle(true);
+      if (onCollapseSidebar) onCollapseSidebar(true);
     }
-  }, [creditsRemaining, previousCredits]);
+  }, [initialPrompt, onCollapseSidebar, onChatToggle, onCollapseSidebar]); // Added dependencies to fix potential lint warning too
+
+  const [recentProjects, setRecentProjects] = useState([]);
 
   useEffect(() => {
-    const prevCredits = prevCreditsRef.current;
-    const notificationKey = 'low-credits-notification-shown';
-    const notificationShown = sessionStorage.getItem(notificationKey) === 'true';
-    const creditsDecreased = creditsRemaining < prevCredits;
-    const isVeryLow = creditsRemaining === 0 || (creditsRemaining > 0 && creditsRemaining <= 5);
+    const fetchProjects = async () => {
+      try {
+        // Fetch real history
+        const result = await getProjects();
+        if (result.success) {
+          // Map raw projects to UI format
+          const mapped = result.projects.slice(0, 5).map(p => {
+            // Extract a clean title
+            let cleanTitle = p.title || 'Sáng tạo mới';
+            if (cleanTitle.trim().startsWith('{') || cleanTitle.trim().startsWith('"')) {
+              try {
+                const parsed = JSON.parse(cleanTitle);
+                if (typeof parsed === 'string') {
+                  cleanTitle = parsed;
+                } else if (typeof parsed === 'object' && parsed !== null) {
+                  cleanTitle = parsed.prompt || parsed.text || parsed.title || Object.values(parsed).find(v => typeof v === 'string') || 'Sáng tạo mới';
+                }
+              } catch (e) {
+                // ignore parse error for malformed titles
+              }
+            }
 
-    if (isVeryLow && creditsDecreased && !notificationShown) {
-      toast.error(
-        creditsRemaining === 0
-          ? 'No credits remaining! Please upgrade your plan to continue creating content.'
-          : `Low credits! You have ${creditsRemaining} credits remaining. Consider upgrading your plan.`,
-        { duration: 5000 }
-      );
-      sessionStorage.setItem(notificationKey, 'true');
+            return {
+              id: p.id,
+              title: cleanTitle.length > 50 ? cleanTitle.substring(0, 50) + '...' : cleanTitle,
+              type: p.type || 'text',
+              date: new Date(p.createdAt?._seconds * 1000 || Date.now()).toLocaleDateString(),
+              imageUrl: p.content?.imageUrl || p.content?.previewUrl
+            };
+          });
+          setRecentProjects(mapped);
+        }
+      } catch (error) {
+        console.error("Failed to fetch history:", error);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  const currentModels = MODELS[inputType] || MODELS.image;
+  const [selectedModel, setSelectedModel] = useState(currentModels[0]);
+
+  // Update selected model when input type changes
+  useEffect(() => {
+    setSelectedModel(MODELS[inputType]?.[0] || MODELS.image[0]);
+  }, [inputType]);
+
+  const [inputValue, setInputValue] = useState('');
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
+  const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
+  const [isRatioMenuOpen, setIsRatioMenuOpen] = useState(false);
+  const [selectedRatio, setSelectedRatio] = useState('1:1');
+  const [isAutoRatio, setIsAutoRatio] = useState(true);
+  const [showBanner, setShowBanner] = useState(true);
+
+  // Animation States
+  const [isChatMode, setIsChatMode] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isReturning, setIsReturning] = useState(false);
+  const [translateY, setTranslateY] = useState(0);
+  const [promptForChat, setPromptForChat] = useState('');
+
+  // Refs
+  const menuRef = useRef(null);
+  const modelMenuRef = useRef(null);
+  const ratioMenuRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsPlusMenuOpen(false);
+      }
+      if (modelMenuRef.current && !modelMenuRef.current.contains(event.target)) {
+        setIsModelMenuOpen(false);
+      }
+      if (ratioMenuRef.current && !ratioMenuRef.current.contains(event.target)) {
+        setIsRatioMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Handle Back Navigation Animation
+  useEffect(() => {
+    if (isReturning) {
+      // Use double rAF to ensure browser paints the initial transformed state
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsTransitioning(false);
+        });
+      });
+
+      // Reset returning state after animation completes
+      const timer = setTimeout(() => {
+        setIsReturning(false);
+      }, 300);
+
+      return () => clearTimeout(timer);
     }
+  }, [isReturning]);
 
-    if (creditsRemaining > 5) {
-      sessionStorage.removeItem(notificationKey);
+  const handleSend = () => {
+    if (inputValue.trim()) {
+      // Calculate precise position to bottom
+      if (inputRef.current) {
+        const rect = inputRef.current.getBoundingClientRect();
+        // AgentChat padding is p-6 (24px) or md:p-8 (32px).
+        const paddingBottom = window.innerWidth >= 768 ? 32 : 24;
+        const targetTop = window.innerHeight - rect.height - paddingBottom;
+        const distance = targetTop - rect.top;
+        setTranslateY(distance);
+      }
+
+      setIsTransitioning(true);
+      if (onChatToggle) onChatToggle(true);
+      if (onCollapseSidebar) onCollapseSidebar(true);
+
+      // Wait for animation (700ms) before switching components
+      setTimeout(() => {
+        setPromptForChat(inputValue);
+        setIsChatMode(true);
+      }, 700);
     }
-
-    prevCreditsRef.current = creditsRemaining;
-  }, [creditsRemaining]);
-
-  const formatRelativeTime = (date) => {
-    const now = Date.now();
-    const target = date instanceof Date ? date.getTime() : new Date(date).getTime();
-    const diffMs = Math.max(0, now - target);
-    const diffMinutes = Math.floor(diffMs / 60000);
-
-    if (diffMinutes < 1) return t?.dashboard?.time?.justNow || 'Just now';
-
-    if (diffMinutes < 60) {
-      const unit = diffMinutes === 1
-        ? (t?.dashboard?.time?.minute || 'min')
-        : (t?.dashboard?.time?.minutesAgo || 'mins ago');
-      return `${diffMinutes} ${unit}`;
-    }
-
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) {
-      const unit = diffHours === 1
-        ? (t?.dashboard?.time?.hour || 'hour')
-        : (t?.dashboard?.time?.hoursAgo || 'hours ago');
-      return `${diffHours} ${unit}`;
-    }
-
-    const diffDays = Math.floor(diffHours / 24);
-    const unit = diffDays === 1
-      ? (t?.dashboard?.time?.day || 'day')
-      : (t?.dashboard?.time?.daysAgo || 'days ago');
-    return `${diffDays} ${unit}`;
   };
 
-  const activities = useMemo(() => {
-    if (!logs || logs.length === 0) {
-      return [];
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
+  };
 
-    // Debug: Log all actions to see what's being filtered
-    console.log('🔍 Activity logs received:', logs.length, 'logs');
-    logs.forEach((log, index) => {
-      console.log(`  [${index}] ID: ${log.id}, Action: "${log.action}", Timestamp: ${log.timestamp}, Metadata:`, log.metadata);
-    });
+  const handleBackToDashboard = () => {
+    setIsReturning(true);
+    setIsTransitioning(true); // Start at "chat position" (translateY)
+    setIsChatMode(false);
+    setInputValue('');
+    if (onChatToggle) onChatToggle(false);
+    if (onCollapseSidebar) onCollapseSidebar(false);
+  };
 
-    const filtered = logs
-      .filter((log) => {
-        // Only show specific activity types
-        const action = String(log.action || '').toLowerCase();
+  if (isChatMode) {
+    return (
+      <AgentChat
+        initialPrompt={promptForChat}
+        initialInputType={inputType} // Pass selected type
+        initialModel={selectedModel} // Pass selected model
+        onBack={handleBackToDashboard}
+      />
+    );
+  }
 
-        // Debug: Check each action
-        console.log(`🔎 Filtering log [${log.id}]: action="${log.action}" -> lowercase="${action}"`);
 
-        // For credits_updated, only show when credits are added (change > 0)
-        if (action === 'credits_updated') {
-          const metadata = log.metadata || {};
-          const change = metadata.change || 0;
-          const included = change > 0;
-          console.log(`  📊 Credits updated: change=${change}, included=${included}`);
-          return included;
-        }
 
-        const isAllowed = action === 'generate_content' ||
-          action === 'user_login' ||
-          action === 'image_exported';
 
-        // Debug: Log why logs are filtered out
-        if (!isAllowed && action) {
-          console.log(`  🚫 Filtered out: action="${action}" is not in allowed list [generate_content, user_login, image_exported]`);
-        } else if (isAllowed) {
-          console.log(`  ✅ Included: action="${action}"`);
-        }
-
-        return isAllowed;
-      });
-
-    // Debug: Log filtered results
-    console.log('✅ Filtered activity logs:', filtered.length, 'logs');
-    filtered.forEach((log, index) => {
-      console.log(`  [${index}] ID: ${log.id}, Action: "${log.action}", Timestamp: ${log.timestamp}`);
-    });
-
-    return filtered
-      .map((log) => {
-        const action = String(log.action || '').toLowerCase();
-        const metadata = log.metadata || {};
-
-        // Determine event type and styling
-        let eventType = 'content'; // default
-        let title = '';
-        let detail = '';
-        let circleColor = 'bg-[#2C2A26] dark:bg-[#F5F2EB]'; // dark grey/black
-
-        if (action === 'generate_content') {
-          eventType = 'content';
-          title = t?.dashboard?.studioPulse?.activityTypes?.contentGenerated || 'CONTENT GENERATED';
-          // Format: "SEO Editorial: "Future of AI"" or "IMAGE: Tool Name"
-          const contentType = metadata.contentType ? String(metadata.contentType).toUpperCase() : 'CONTENT';
-          const toolName = metadata.toolName || 'Creative Tool';
-          // For text content, show format like "SEO Editorial: "Title""
-          if (contentType === 'TEXT' || contentType === 'CONTENT') {
-            // Try to extract title from prompt or use tool name
-            const prompt = metadata.prompt || '';
-            const shortPrompt = prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt;
-            detail = `${toolName}: "${shortPrompt}"`;
-          } else {
-            detail = `${contentType}: ${toolName}`;
-          }
-          circleColor = 'bg-[#2C2A26] dark:bg-[#F5F2EB]'; // dark grey/black
-        } else if (action === 'credits_updated') {
-          // Only credits added (change > 0) pass the filter
-          eventType = 'credits';
-          title = t?.dashboard?.studioPulse?.activityTypes?.creditsUpdated || 'CREDITS UPDATED';
-          detail = metadata.reason || (metadata.planName
-            ? `${t?.dashboard?.studioPulse?.activityDetails?.planUpgrade || 'Plan upgrade'}: ${metadata.planName}`
-            : t?.dashboard?.studioPulse?.activityDetails?.dailyAllowance || 'Daily allowance added');
-          circleColor = 'bg-emerald-500'; // green (#2ecc71)
-        } else if (action === 'user_login') {
-          eventType = 'login';
-          title = t?.dashboard?.studioPulse?.activityTypes?.newLogin || 'NEW LOGIN';
-          detail = metadata.platform || t?.dashboard?.studioPulse?.activityDetails?.defaultPlatform || 'Chrome on Windows';
-          circleColor = 'bg-orange-500'; // orange (#f39c12)
-        } else if (action === 'image_exported') {
-          eventType = 'export';
-          title = t?.dashboard?.studioPulse?.activityTypes?.imageExported || 'IMAGE EXPORTED';
-          detail = metadata.toolName || metadata.projectId || 'Visual Studio';
-          circleColor = 'bg-[#2C2A26] dark:bg-[#F5F2EB]'; // dark grey/black
-        }
-
-        return {
-          id: log.id,
-          eventType,
-          title,
-          detail,
-          time: formatRelativeTime(log.timestamp),
-          circleColor
-        };
-      });
-  }, [logs, t]);
+  const ratios = [
+    { label: '9:16', width: 'w-3', height: 'h-5' },
+    { label: '2:3', width: 'w-3.5', height: 'h-5' },
+    { label: '3:4', width: 'w-4', height: 'h-5' },
+    { label: '1:1', width: 'w-4', height: 'h-4' },
+    { label: '4:3', width: 'w-5', height: 'h-4' },
+    { label: '3:2', width: 'w-5', height: 'h-3.5' },
+    { label: '16:9', width: 'w-6', height: 'h-3.5' },
+  ];
 
   return (
-    <div className="space-y-12 pb-12">
-      <div className="flex justify-between items-end">
-        <div>
-          <h2 className={`text-4xl font-serif mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-            }`}>{greeting}, {t?.dashboard?.greeting?.creator || 'Creator'}.</h2>
-          <p className={`transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-            }`}>{t?.dashboard?.subtitle || "Here is what's happening in your studio today."}</p>
-        </div>
-      </div>
+    <div className="p-6 md:p-8 max-w-[1200px] mx-auto min-h-screen pb-32 font-sans overflow-hidden">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <EnhancedMetricsCard
-          label={t?.dashboard?.metrics?.contentGenerated?.label || "Content Generated"}
-          value={String(contentGenerated)}
-          icon={<DocumentIcon />}
-          trend={contentGenerated > 0 ? 'up' : undefined}
-          trendValue={contentGenerated > 0 ? `+${contentGenerated} ${t?.dashboard?.metrics?.contentGenerated?.total || 'total'}` : undefined}
-          tooltipData={{
-            title: t?.dashboard?.metrics?.contentGenerated?.label || 'Content Generated',
-            items: [
-              { label: t?.dashboard?.metrics?.contentGenerated?.thisWeek || 'This week', value: String(contentGenerated) },
-              { label: 'All time', value: String(contentGenerated) }
-            ]
-          }}
-          previousValue="0"
-        />
-        <EnhancedMetricsCard
-          label={t?.dashboard?.metrics?.creditsUsed?.label || "Credits Used"}
-          value={String(creditsUsed)}
-          icon={<ChartIcon />}
-          trend={creditsUsed > 0 ? 'up' : undefined}
-          trendValue={creditsUsed > 0 ? `${Math.round((creditsUsed / totalCredits) * 100)}% ${t?.dashboard?.metrics?.creditsUsed?.used || 'used'}` : undefined}
-          tooltipData={{
-            title: t?.dashboard?.metrics?.creditsUsed?.label || 'Credit Usage',
-            items: [
-              { label: t?.dashboard?.metrics?.creditsUsed?.used || 'Used', value: String(creditsUsed) },
-              { label: t?.dashboard?.metrics?.creditsRemaining?.dailyAllowance || 'Total', value: String(totalCredits) },
-              { label: t?.dashboard?.metrics?.creditsUsed?.avgPerContent || 'Avg per content', value: contentGenerated > 0 ? String(Math.round(creditsUsed / contentGenerated)) : '0' }
-            ]
-          }}
-          previousValue="0"
-        />
-        <EnhancedMetricsCard
-          label={t?.dashboard?.metrics?.successRate?.label || "Success Rate"}
-          value={contentGenerated ? '99.8%' : '--'}
-          icon={<ShieldIcon />}
-          trend={contentGenerated ? 'up' : undefined}
-          trendValue={contentGenerated ? '+0.4%' : undefined}
-          tooltipData={{
-            title: t?.dashboard?.metrics?.successRate?.label || 'Success Rate',
-            items: [
-              { label: t?.dashboard?.metrics?.successRate?.qualityOutput || 'Successful', value: contentGenerated ? String(Math.round(contentGenerated * 0.998)) : '0' },
-              { label: 'Failed', value: contentGenerated ? String(Math.round(contentGenerated * 0.002)) : '0' }
-            ]
-          }}
-          previousValue="--"
-        />
-        <EnhancedMetricsCard
-          label={t?.dashboard?.metrics?.creditsRemaining?.label || "Credits Remaining"}
-          value={String(creditsRemaining)}
-          icon={<WalletIcon />}
-          highlight={isLowCredits}
-          actionLabel={isLowCredits ? 'Top Up' : undefined}
-          trend={creditsRemaining < (previousCredits || totalCredits) ? 'down' : undefined}
-          trendValue={`${Math.round((creditsRemaining / totalCredits) * 100)}% left`}
-          tooltipData={{
-            title: t?.dashboard?.metrics?.creditsRemaining?.label || 'Credits Overview',
-            items: [
-              { label: t?.dashboard?.metrics?.creditsRemaining?.tokensLeft || 'Remaining', value: String(creditsRemaining) },
-              { label: t?.dashboard?.metrics?.creditsRemaining?.dailyAllowance || 'Plan total', value: String(totalCredits) },
-              { label: 'Plan', value: plan.toUpperCase() }
-            ]
-          }}
-          previousValue={String(previousCredits || creditsRemaining)}
-        />
-      </div>
-
-      {/* Main Grid: Projects & Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-
-        {/* Recent Projects (Left - 8 cols) */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-[#A8A29E]">{t?.dashboard?.recentActivity?.title || 'Recent Activity'}</h3>
-            {recentProjects.length > 0 && (
-              <button onClick={onViewProjects} className={`text-xs font-bold uppercase tracking-widest hover:underline ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                }`}>{t?.dashboard?.recentActivity?.viewProjects || 'View Projects'}</button>
-            )}
-          </div>
-
-          <div className={`border rounded-sm overflow-hidden shadow-sm min-h-[380px] flex flex-col transition-colors ${theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
-            }`}>
-            {isLoading ? (
-              <div className="flex-1 w-full">
-                <table className="w-full">
-                  <thead>
-                    <tr className={`border-b text-[10px] uppercase tracking-wider font-bold ${theme === 'dark' ? 'border-[#433E38] text-[#A8A29E]' : 'border-[#F1F0E9] text-[#A8A29E]'}`}>
-                      <th className="text-left p-5 font-medium">{t?.dashboard?.recentActivity?.project || 'Project'}</th>
-                      <th className="text-left p-5 font-medium">{t?.dashboard?.recentActivity?.type || 'Type'}</th>
-                      <th className="text-right p-5 font-medium">{t?.dashboard?.recentActivity?.date || 'Date'}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[1, 2, 3, 4].map((i) => (
-                      <tr key={i} className={`border-b border-dashed ${theme === 'dark' ? 'border-[#433E38]' : 'border-[#F1F0E9]'}`}>
-                        <td className="p-5">
-                          <div className="space-y-2">
-                            <div className={`h-4 w-3/4 animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
-                            <div className={`h-3 w-1/4 animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
-                          </div>
-                        </td>
-                        <td className="p-5">
-                          <div className={`h-6 w-16 rounded-full animate-pulse ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
-                        </td>
-                        <td className="p-5 text-right">
-                          <div className={`h-4 w-20 ml-auto animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : recentProjects.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center relative overflow-hidden group">
-                {/* Decorative Background for Empty State */}
-                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full scale-150 opacity-50 blur-3xl -z-10 group-hover:scale-[2] transition-transform duration-1000 ${theme === 'dark' ? 'bg-[#1C1B19]' : 'bg-[#F5F2EB]'
-                  }`}></div>
-
-                {/* Abstract Canvas Illustration */}
-                <div className="mb-8 relative">
-                  <div className={`w-20 h-24 border rounded-sm transform -rotate-6 transition-transform group-hover:rotate-0 duration-500 flex flex-col p-3 shadow-md ${theme === 'dark' ? 'bg-[#1C1B19] border-[#433E38]' : 'bg-[#F9F8F6] border-[#D6D1C7]'
-                    }`}>
-                    <div className={`w-full h-1.5 rounded-full mb-2 ${theme === 'dark' ? 'bg-[#2C2A26]' : 'bg-[#EBE7DE]'
-                      }`}></div>
-                    <div className={`w-3/4 h-1.5 rounded-full mb-4 ${theme === 'dark' ? 'bg-[#2C2A26]' : 'bg-[#EBE7DE]'
-                      }`}></div>
-                    <div className={`flex-1 border border-dashed rounded-sm flex items-center justify-center ${theme === 'dark' ? 'border-[#433E38]' : 'border-[#D6D1C7]'
-                      }`}>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-6 h-6 text-[#A8A29E] animate-pulse">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className={`absolute inset-0 opacity-[0.02] rounded-sm transform rotate-3 -z-10 ${theme === 'dark' ? 'bg-[#F5F2EB]' : 'bg-[#2C2A26]'
-                    }`}></div>
-                </div>
-
-                {/* Text Content */}
-                <h4 className={`text-2xl font-serif mb-3 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                  }`}>{t?.dashboard?.recentActivity?.emptyTitle || 'Quiet in the studio'}</h4>
-                <p className={`text-sm max-w-xs font-light leading-relaxed mb-8 ${theme === 'dark' ? 'text-[#5D5A53]' : 'text-[#A8A29E]'
-                  }`}>
-                  {t?.dashboard?.recentActivity?.emptyDescription || 'Your creative pulse is waiting for its first beat. Launch a tool to begin synthesizing intelligence.'}
-                </p>
-
-                {/* CTA Button */}
-                <button
-                  onClick={onViewAll}
-                  className={`inline-flex items-center gap-2 px-8 py-3 text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all rounded-sm shadow-lg ${theme === 'dark' ? 'bg-[#F5F2EB] text-[#2C2A26]' : 'bg-[#2C2A26] text-[#F5F2EB]'
-                    }`}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                  </svg>
-                  {t?.dashboard?.recentActivity?.startProject || 'Start First Project'}
-                </button>
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse">
-                <thead className={`text-[10px] uppercase tracking-[0.2em] border-b ${theme === 'dark' ? 'bg-[#1C1B19] text-[#A8A29E] border-[#433E38]' : 'bg-[#F5F2EB] text-[#5D5A53] border-[#D6D1C7]'
-                  }`}>
-                  <tr>
-                    <th className="p-5 font-bold">{t?.dashboard?.recentActivity?.tableHeaders?.project || 'Project'}</th>
-                    <th className="p-5 font-bold">{t?.dashboard?.recentActivity?.tableHeaders?.type || 'Type'}</th>
-                    <th className="p-5 font-bold text-right">{t?.dashboard?.recentActivity?.tableHeaders?.date || 'Date'}</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${theme === 'dark' ? 'divide-[#433E38]' : 'divide-[#D6D1C7]'
-                  }`}>
-                  {/* Display only 4 most recent projects */}
-                  {recentProjects.slice(0, 4).map((project) => (
-                    <tr
-                      key={project.id}
-                      onClick={() => onOpenProject?.(project)}
-                      className={`transition-colors group cursor-pointer ${theme === 'dark' ? 'hover:bg-[#1C1B19]' : 'hover:bg-[#F9F8F6]'
-                        }`}
-                    >
-                      <td className="p-5 max-w-xs">
-                        <div className="flex flex-col">
-                          <span className={`font-medium text-sm line-clamp-1 group-hover:underline decoration-1 underline-offset-4 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                            }`}>{project.prompt}</span>
-                          <span className="text-[10px] text-[#A8A29E] uppercase tracking-wider truncate">{project.toolName}</span>
-                        </div>
-                      </td>
-                      <td className="p-5">
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold border ${project.type === 'image'
-                          ? theme === 'dark'
-                            ? 'bg-purple-900/20 text-purple-300 border-purple-800'
-                            : 'bg-purple-50 text-purple-600 border-purple-100'
-                          : theme === 'dark'
-                            ? 'bg-blue-900/20 text-blue-300 border-blue-800'
-                            : 'bg-blue-50 text-blue-600 border-blue-100'
-                          }`}>
-                          {t?.dashboard?.contentTypes?.[project.type] || project.type}
-                        </span>
-                      </td>
-                      <td className="p-5 text-[#A8A29E] text-xs text-right font-medium font-mono">
-                        {new Date(project.timestamp).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-
-
-        {/* Activity Feed (Right - 4 cols) - Editorial Design */}
-        <div className="lg:col-span-4 space-y-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-[#A8A29E]">{t?.dashboard?.studioPulse?.title || 'Studio Pulse'}</h3>
-          <div className={`border p-6 rounded-sm shadow-sm transition-colors ${theme === 'dark' ? 'bg-[#2C2A26] border-[#433E38]' : 'bg-white border-[#D6D1C7]'
-            }`}>
-            {loadingLogs ? (
-              <div className={`space-y-8 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] ${theme === 'dark' ? 'before:bg-[#433E38]' : 'before:bg-[#D6D1C7]'}`}>
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="relative pl-8">
-                    <div className={`absolute left-0 top-1.5 w-[23px] h-[23px] rounded-full border-4 z-10 ${theme === 'dark' ? 'border-[#2C2A26] bg-[#433E38]' : 'border-white bg-[#E5E5E5]'} animate-pulse`}></div>
-                    <div className="flex flex-col space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className={`h-3 w-24 animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
-                        <div className={`h-2 w-12 animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
-                      </div>
-                      <div className={`h-3 w-32 animate-pulse rounded ${theme === 'dark' ? 'bg-[#433E38]' : 'bg-[#E5E5E5]'}`} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : activities.length === 0 ? (
-              <div className="text-center py-8 text-[#A8A29E]">
-                <p className="text-sm font-light">{t?.dashboard?.studioPulse?.noActivity || 'No activity yet'}</p>
-                <p className="text-xs mt-1">{t?.dashboard?.studioPulse?.noActivityHint || 'Generate content to see your studio pulse here.'}</p>
-              </div>
-            ) : (
-              <div className={`space-y-8 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] ${theme === 'dark' ? 'before:bg-[#433E38]' : 'before:bg-[#D6D1C7]'
-                }`}>
-                {/* Display only 4 most recent activities */}
-                {activities.slice(0, 4).map((act) => (
-                  <div key={act.id} className="relative pl-8 group">
-                    {/* Activity Circle with hover effect */}
-                    <div className={`absolute left-0 top-1.5 w-[23px] h-[23px] rounded-full border-4 z-10 transition-all group-hover:scale-110 ${theme === 'dark' ? 'border-[#2C2A26]' : 'border-white'
-                      } ${act.circleColor}`}></div>
-
-                    <div className="flex flex-col">
-                      <div className="flex justify-between items-center mb-0.5">
-                        <span className={`text-xs font-bold text-[#2C2A26] dark:text-[#F5F2EB] uppercase tracking-wider group-hover:opacity-70 transition-opacity ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                          }`}>{act.title}</span>
-                        <span className="text-[10px] text-[#A8A29E] italic">{act.time}</span>
-                      </div>
-                      <p className={`text-xs font-light leading-relaxed ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-                        }`}>{act.detail}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {activities.length > 0 && (
+      {/* Banner */}
+      {/* Banner */}
+      {/* Banner */}
+      <div className={`transition-opacity duration-300 ${isTransitioning || isReturning ? 'opacity-0' : 'opacity-100'}`}>
+        {showBanner && (
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-full px-4 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
+              <Icons.Sparkles size={14} className="text-purple-600 dark:text-purple-400" />
+              <span>Nano Banana Pro và các mô hình Seedream mới nhất đã sẵn sàng</span>
               <button
-                onClick={onViewAuditLog}
-                className={`w-full mt-8 py-3 border text-[10px] font-bold uppercase tracking-widest transition-colors rounded-sm ${theme === 'dark'
-                  ? 'border-[#433E38] text-[#F5F2EB] hover:bg-[#1C1B19]'
-                  : 'border-[#D6D1C7] text-[#2C2A26] hover:bg-[#F5F2EB]'
+                onClick={() => setShowBanner(false)}
+                className="ml-2 hover:text-black dark:hover:text-white"
+              >
+                <Icons.X size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Heading */}
+      <div className={`text-center mb-14 transition-opacity duration-300 ${isTransitioning || isReturning ? 'opacity-0' : 'opacity-100'}`}>
+        <h1 className="font-serif text-3xl md:text-4xl text-gray-900 dark:text-white mb-2 tracking-tight">
+          Hãy biến trí tưởng tượng của bạn thành hiện thực.
+        </h1>
+      </div>
+
+      {/* Input Area */}
+      <div
+        ref={inputRef}
+        className={`max-w-3xl mx-auto mb-8 relative z-20 transition-transform cubic-bezier(0.4, 0, 0.2, 1) ${isReturning ? 'duration-300' : 'duration-700'}`}
+        style={{ transform: isTransitioning ? `translateY(${translateY}px)` : 'none' }}
+      >
+
+        {/* Toggle Tabs - Minimalist Style */}
+        <div className={`absolute -top-12 left-1/2 -translate-x-1/2 z-10 flex gap-8 transition-opacity duration-300 ${isTransitioning || isReturning ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          {[
+            { id: 'video', label: 'Video', icon: Icons.ClapperboardPlay },
+            { id: 'image', label: 'Image', icon: Icons.Gallery },
+            { id: 'text', label: 'Văn bản', icon: Icons.Notebook },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = inputType === item.id;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => setInputType(item.id)}
+                className={`flex items-center gap-2 px-1 py-2 transition-all duration-300 whitespace-nowrap relative group
+                  ${isActive
+                    ? 'text-gray-900 dark:text-white font-bold'
+                    : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 font-medium'
                   }`}
               >
-                {t?.dashboard?.studioPulse?.viewAuditLog || 'View Full Audit Log'}
+                <Icon size={18} className={`transition-colors duration-300 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`} />
+                <span className="text-sm tracking-tight capitalize">
+                  {item.label}
+                </span>
+
+                {/* Minimalist Bottom Indicator */}
+                <span className={`absolute bottom-0 left-0 h-0.5 bg-gray-900 dark:bg-white transition-all duration-300 rounded-full
+                  ${isActive ? 'w-full opacity-100' : 'w-0 opacity-0 group-hover:w-1/2 group-hover:opacity-30'}
+                `}></span>
               </button>
-            )}
+            );
+          })}
+        </div>
+
+        <div className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-[2.5rem] p-6 shadow-lg hover:shadow-xl transition-shadow relative z-20">
+          <textarea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="w-full h-16 bg-transparent border-0 focus:border-0 focus:ring-0 ring-0 focus:outline-none outline-none appearance-none text-lg text-gray-600 dark:text-gray-300 placeholder-gray-400 resize-none leading-relaxed shadow-none"
+            placeholder={
+              inputType === 'video'
+                ? "Hãy mô tả video bạn muốn tạo. Thêm liên kết, hình ảnh hoặc tài liệu để có kết quả chính xác hơn."
+                : inputType === 'image'
+                  ? 'Mô tả hình ảnh bạn muốn thiết kế và sử dụng "/" để đánh dấu văn bản cần thêm'
+                  : 'Mô tả nội dung bạn muốn viết hoặc chỉnh sửa...'
+            }
+          />
+
+          <div className="flex items-center justify-between mt-4 px-1 transition-opacity duration-100">
+            <div className="flex items-center gap-2 relative">
+              {/* Plus Button with Menu (Shared) */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
+                  className={`w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 flex items-center justify-center transition-all ${isPlusMenuOpen ? 'bg-gray-100 dark:bg-gray-700 rotate-45' : ''}`}
+                >
+                  <Icons.Plus size={16} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {isPlusMenuOpen && (
+                  <div className="absolute top-14 left-0 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                      <Icons.Monitor size={18} className="text-black/60" />
+                      Tải lên từ máy tính
+                    </button>
+                    <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                      <Icons.Folder size={18} className="text-black/60" />
+                      Chọn từ Tài nguyên
+                    </button>
+
+                    {/* Nested Menu Item */}
+                    <div className="relative group">
+                      <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <Icons.MoreHorizontal size={18} className="text-black/60" />
+                          Thêm
+                        </div>
+                        <Icons.ChevronRight size={14} className="text-black/40" />
+                      </button>
+
+                      {/* Nested Menu */}
+                      <div className="absolute top-0 left-full ml-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 translate-x-[-10px] group-hover:translate-x-0">
+                        <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                          <Icons.Link size={18} className="text-black/60" />
+                          Nhập từ liên kết sản phẩm
+                        </button>
+                        <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                          <Icons.Box size={18} className="text-black/60" />
+                          Tải lên từ Dropbox
+                        </button>
+
+                        {/* QR Code Hover Item */}
+                        <div className="relative group/qr">
+                          <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                            <div className="flex items-center gap-3">
+                              <Icons.Smartphone size={18} className="text-black/60" />
+                              Tải lên từ điện thoại
+                            </div>
+                            <Icons.ChevronRight size={14} className="text-black/40" />
+                          </button>
+
+                          {/* QR Code Popup */}
+                          <div className="absolute top-0 left-full ml-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-6 invisible opacity-0 group-hover/qr:visible group-hover/qr:opacity-100 transition-all duration-200 translate-x-[-10px] group-hover/qr:translate-x-0 flex flex-col items-center text-center">
+                            <h3 className="font-bold text-black dark:text-white mb-4">Quét mã QR để tải lên</h3>
+                            <div className="bg-white p-2 rounded-lg shadow-inner mb-4">
+                              <Icons.QrCode size={120} className="text-black" />
+                            </div>
+                            <p className="text-xs text-black/60 dark:text-gray-400">Sử dụng camera điện thoại để quét mã và tải ảnh lên</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Context Specific Toolbar Buttons */}
+              {inputType === 'video' && (
+                <>
+                  <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 flex items-center justify-center transition-colors">
+                    <Icons.Box size={16} />
+                  </button>
+                  <div className="relative">
+                    <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 flex items-center justify-center transition-colors">
+                      <Icons.Lightbulb size={16} />
+                    </button>
+                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1e293b]"></span>
+                  </div>
+
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
+                    <Icons.Sliders size={14} />
+                    <span>9:16</span>
+                    <span className="text-gray-400 dark:text-gray-600 mx-1">|</span>
+                    <span className="text-black/60">EN</span>
+                  </button>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
+                    <Icons.Clock size={14} />
+                    <span>Schedule</span>
+                  </button>
+                </>
+              )}
+
+              {(inputType === 'image' || inputType === 'text') && (
+                <div className="relative" ref={modelMenuRef}>
+                  <button
+                    onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors ${isModelMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                  >
+                    {inputType === 'text' ? <Icons.Cpu size={14} /> : <Icons.Box size={14} />}
+                    <span>{selectedModel.name}</span>
+                  </button>
+
+                  {isModelMenuOpen && (
+                    <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                      {currentModels.map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => {
+                            setSelectedModel(model);
+                            setIsModelMenuOpen(false);
+                          }}
+                          className={`flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer text-left transition-colors group ${selectedModel.id === model.id ? 'bg-gray-50 dark:bg-gray-700/50' : ''}`}
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-white transition-colors">
+                            <model.icon size={20} />
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm text-black dark:text-white mb-0.5">{model.name}</div>
+                            <div className="text-[11px] text-black dark:text-gray-400 leading-tight">{model.desc}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {inputType === 'image' && (
+                <>
+                  {/* Feature Pills - Ratio */}
+                  <div className="relative" ref={ratioMenuRef}>
+                    <button
+                      onClick={() => setIsRatioMenuOpen(!isRatioMenuOpen)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors ${isRatioMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                    >
+                      <Icons.Ratio size={14} />
+                      <span>{isAutoRatio ? 'Tỉ lệ' : selectedRatio}</span>
+                    </button>
+
+                    {/* Ratio Dropdown Menu */}
+                    {isRatioMenuOpen && (
+                      <div className="absolute bottom-full left-0 mb-2 w-72 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div className="flex items-center justify-between mb-5">
+                          <span className="font-bold text-sm text-gray-900 dark:text-white tracking-tight">Tỉ lệ khung hình</span>
+                          <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-full border border-gray-100 dark:border-gray-700">
+                            <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Auto</span>
+                            <button
+                              onClick={() => setIsAutoRatio(!isAutoRatio)}
+                              className={`w-8 h-4.5 rounded-full p-0.5 transition-colors ${isAutoRatio ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                            >
+                              <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm transform transition-transform ${isAutoRatio ? 'translate-x-3.5' : 'translate-x-0'}`}></div>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className={`grid grid-cols-4 gap-2 transition-opacity duration-200 ${isAutoRatio ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                          {ratios.map((ratio) => (
+                            <button
+                              key={ratio.label}
+                              onClick={() => {
+                                setSelectedRatio(ratio.label);
+                                setIsRatioMenuOpen(false);
+                              }}
+                              className={`flex flex-col items-center justify-center gap-2 p-2 rounded-xl transition-all border ${selectedRatio === ratio.label
+                                ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+                                : 'bg-white dark:bg-gray-800/40 border-gray-100 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                                }`}
+                            >
+                              <div className="h-8 flex items-center justify-center">
+                                <div className={`${ratio.width} ${ratio.height} border-[1.5px] rounded-sm transition-colors ${selectedRatio === ratio.label
+                                  ? 'border-purple-600 dark:border-purple-400 bg-purple-100/50 dark:bg-purple-400/20'
+                                  : 'border-gray-400 dark:border-gray-500'
+                                  }`}></div>
+                              </div>
+                              <span className={`text-[10px] font-bold ${selectedRatio === ratio.label
+                                ? 'text-purple-600 dark:text-purple-400'
+                                : 'text-gray-500 dark:text-gray-400'
+                                }`}>{ratio.label}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        {isAutoRatio && (
+                          <div className="mt-4 p-2.5 bg-purple-50/50 dark:bg-purple-900/10 rounded-xl border border-purple-100/50 dark:border-purple-800/30">
+                            <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium leading-relaxed">
+                              Chế độ tự động sẽ chọn tỉ lệ tối ưu dựa trên nội dung bạn mô tả.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
+                    <Icons.Square size={14} />
+                    <span>Canvas</span>
+                  </button>
+                </>
+              )}
+
+              {inputType === 'text' && (
+                <>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
+                    <Icons.LayoutGrid size={14} />
+                    <span>Mẫu</span>
+                  </button>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
+                    <Icons.Sliders size={14} />
+                    <span>Độ dài</span>
+                  </button>
+                </>
+              )}
+            </div>
+
+            <button
+              onClick={handleSend}
+              className={`w-8 h-8 rounded-full transition-colors flex items-center justify-center ${inputValue.trim() ? 'bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'}`}
+              disabled={!inputValue.trim()}
+            >
+              <Icons.ArrowUp size={16} />
+            </button>
           </div>
+        </div>
+
+        {/* History Links */}
+        <div className={`flex justify-center gap-6 mt-6 text-xs text-black/50 dark:text-gray-400 font-medium transition-opacity duration-100 ${isTransitioning || isReturning ? 'opacity-0' : ''}`}>
+          <div className="flex items-center gap-2">
+            <span>Lịch sử</span>
+            <div className="h-3 w-px bg-gray-300 dark:bg-gray-700"></div>
+          </div>
+          <button className="hover:text-black dark:hover:text-gray-300 flex items-center gap-1 transition-colors">Wool-felt winter village <Icons.ArrowRight size={10} className="-rotate-45" /></button>
+          <button className="hover:text-black dark:hover:text-gray-300 flex items-center gap-1 transition-colors">Multiple poster editing <Icons.ArrowRight size={10} className="-rotate-45" /></button>
         </div>
       </div>
 
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-[#A8A29E]">{t?.dashboard?.launchpad?.title || 'Launchpad'}</h3>
-          <button onClick={onViewAll} className={`text-xs font-bold uppercase tracking-widest hover:underline ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-            }`}>{t?.dashboard?.launchpad?.allTools || 'All Tools'}</button>
+      <div className={`transition-opacity duration-300 delay-100 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+
+        {/* Popular Features Section */}
+        <div className="mb-10">
+          <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 mb-4 tracking-tight">Tính năng phổ biến</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Feature Card 1 */}
+            <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl flex items-center gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
+              <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 relative shadow-sm">
+                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" className="w-full h-full object-cover" alt="AI Talking Photo" />
+                <div className="absolute bottom-1 right-1 w-4 h-4 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white">
+                  <Icons.MoreHorizontal size={10} />
+                </div>
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">AI talking photo</h3>
+                <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
+                  Sử dụng ngay <Icons.ArrowUp size={8} className="rotate-45" />
+                </div>
+              </div>
+            </div>
+
+            {/* Feature Card 2 */}
+            <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl flex items-center gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
+              <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 relative shadow-sm">
+                <img src="https://images.unsplash.com/photo-1635805737707-575885ab0820?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" className="w-full h-full object-cover" alt="Avatar Video" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-5 h-5 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
+                    <div className="w-0 h-0 border-t-[3px] border-t-transparent border-l-[5px] border-l-white border-b-[3px] border-b-transparent ml-0.5"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">Avatar video</h3>
+                <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
+                  Sử dụng ngay <Icons.ArrowUp size={8} className="rotate-45" />
+                </div>
+              </div>
+            </div>
+
+            {/* Feature Card 3 */}
+            <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl flex items-center gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
+              <div className="w-16 h-16 rounded-xl bg-gray-200 overflow-hidden shrink-0 relative shadow-sm group-hover:scale-105 transition-transform duration-500">
+                <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" className="w-full h-full object-cover" alt="Product photo" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">Product photo</h3>
+                <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
+                  Sử dụng ngay <Icons.ArrowUp size={8} className="rotate-45" />
+                </div>
+              </div>
+            </div>
+
+            {/* Feature Card 4 */}
+            <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl flex items-center gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
+              <div className="w-16 h-16 rounded-xl bg-orange-100 overflow-hidden shrink-0 relative shadow-sm">
+                <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" className="w-full h-full object-cover" alt="Vibe marketing" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex justify-between items-start mb-0.5">
+                  <h3 className="text-[13px] font-bold text-gray-900 dark:text-white truncate">Vibe marketing</h3>
+                  <span className="text-[8px] bg-purple-100 text-purple-700 px-1 py-0.5 rounded font-bold ml-1">Beta</span>
+                </div>
+                <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
+                  Sử dụng ngay <Icons.ArrowUp size={8} className="rotate-45" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {TOOLS.slice(0, 4).map((tool) => (
-            <div
-              key={tool.id}
-              onClick={() => onToolSelect(tool)}
-              className={`p-6 rounded-sm border transition-all cursor-pointer group ${theme === 'dark'
-                ? 'bg-[#2C2A26] border-[#433E38] hover:shadow-md'
-                : 'bg-white border-[#D6D1C7] hover:shadow-md'
-                }`}
-            >
-              <div className={`w-10 h-10 rounded-full mb-4 flex items-center justify-center transition-colors ${theme === 'dark'
-                ? 'bg-[#433E38] text-[#F5F2EB] group-hover:bg-[#F5F2EB] group-hover:text-[#2C2A26]'
-                : 'bg-[#F5F2EB] text-[#2C2A26] group-hover:bg-[#2C2A26] group-hover:text-[#F5F2EB]'
-                }`}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                </svg>
+        {/* Recent Chats Section */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 tracking-tight">Sáng tạo gần đây</h2>
+            <button className="text-[13px] text-purple-600 font-semibold hover:underline">Xem tất cả</button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2">
+            {recentProjects.length > 0 ? (
+              recentProjects.map((item) => (
+                <div
+                  key={item.id}
+                  className="group flex-shrink-0 w-[240px] bg-white dark:bg-gray-800/40 hover:bg-white dark:hover:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 cursor-pointer p-2.5 flex items-center gap-3"
+                >
+                  <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm ${item.type === 'image' ? 'bg-purple-50 text-purple-600' :
+                    item.type === 'video' ? 'bg-blue-50 text-blue-600' :
+                      'bg-green-50 text-green-600'
+                    }`}>
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        {item.type === 'image' && <Icons.Image size={18} />}
+                        {item.type === 'video' && <Icons.Video size={18} />}
+                        {(!item.type || item.type === 'text') && <Icons.FileText size={18} />}
+                      </>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-[13px] font-bold text-gray-800 dark:text-white truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                      {item.title}
+                    </h3>
+                    <div className="flex items-center gap-1 opacity-40">
+                      <span className="text-[9px] font-bold uppercase tracking-wider">{item.type || 'text'}</span>
+                      <span className="text-[9px] whitespace-nowrap">• {item.date}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="w-full bg-gray-50 dark:bg-gray-800/40 rounded-3xl py-10 flex flex-col items-center justify-center border border-dashed border-gray-200 dark:border-gray-700">
+                <Icons.Inbox className="text-gray-300 dark:text-gray-600 mb-2" size={28} />
+                <p className="text-sm text-gray-400 font-medium">Chưa có lịch sử hoạt động</p>
               </div>
-              <h4 className={`font-serif text-lg mb-1 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                }`}>{language === 'vi' ? (tool.name_vi || tool.name) : tool.name}</h4>
-              <p className={`text-[11px] line-clamp-2 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#A8A29E]'}`}>
-                {language === 'vi' ? (tool.description_vi || tool.description) : tool.description}
-              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Trending Section */}
+        <div>
+          <div className="flex gap-8 border-b border-gray-200 dark:border-gray-800 mb-6">
+            <button className="pb-3 text-sm font-bold text-black dark:text-white border-b-2 border-black dark:border-white">
+              Thịnh hành trên TikTok
+            </button>
+            <button className="pb-3 text-sm font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+              Cảm hứng hình ảnh
+            </button>
+            <div className="ml-auto">
+              <button className="text-xs text-purple-600 font-medium hover:underline flex items-center gap-1">
+                Xem thêm <Icons.ChevronRight size={12} />
+              </button>
             </div>
-          ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { color: 'bg-orange-50', image: 'https://images.unsplash.com/photo-1549488344-cbb6c34cf08b?auto=format&fit=crop&w=400&q=80', title: 'Trưng bày sản phẩm' },
+              { color: 'bg-gray-50', image: 'https://images.unsplash.com/photo-1512413914633-b5043f4041ea?auto=format&fit=crop&w=400&q=80', title: 'Tối giản' },
+              { color: 'bg-yellow-50', image: 'https://images.unsplash.com/photo-1534067783865-9594047a240d?auto=format&fit=crop&w=400&q=80', title: 'Thiên nhiên' },
+              { color: 'bg-blue-50', image: 'https://images.unsplash.com/photo-1512341689857-198e7e2f3ca8?auto=format&fit=crop&w=400&q=80', title: 'Đô thị' }
+            ].map((item, i) => (
+              <div key={i} className={`aspect-[3/4] rounded-2xl overflow-hidden relative group cursor-pointer ${item.color}`}>
+                {item.image && <img src={item.image} alt="Trending" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />}
+                <div className="absolute top-3 left-3">
+                  <span className="bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 border border-white/10">
+                    <Icons.Wand2 size={10} />
+                    {item.title}
+                  </span>
+                </div>
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/40">
+                    <Icons.Play size={24} fill="currentColor" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Help Bubble */}
+        <div className="fixed bottom-8 right-8">
+          <button className="w-12 h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-full flex items-center justify-center shadow-lg transition-colors hover:scale-105 active:scale-95">
+            <Icons.HelpCircle size={24} />
+          </button>
         </div>
       </div>
     </div>
   );
 };
-
-// Icon Components
-const DocumentIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-  </svg>
-);
-
-const ChartIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-  </svg>
-);
-
-const ShieldIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-  </svg>
-);
-
-const WalletIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
-  </svg>
-);
 
 export default DashboardHome;

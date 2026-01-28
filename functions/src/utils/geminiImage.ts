@@ -26,7 +26,7 @@ export async function callGeminiImageAPI(
   prompt: string,
   options: GeminiImageOptions = {}
 ): Promise<string> {
-  const { retries = 2, timeout = 30000, model = 'gemini-2.5-flash-image', systemInstruction } = options;
+  const { retries = 2, timeout = 30000, model = 'gemini-1.5-flash', systemInstruction } = options;
 
   const ai = getGenAI();
   let lastError: Error | null = null;

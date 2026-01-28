@@ -21,7 +21,7 @@ export const generateContent = async (data) => {
   try {
     const generateContentFunction = httpsCallable(functions, 'generateContent');
     const result = await generateContentFunction(data);
-    
+
     return {
       content: result.data.content,
       contentType: result.data.contentType || 'text',
@@ -48,7 +48,7 @@ export const createPaymentLink = async (data) => {
   try {
     const createPaymentLinkFunction = httpsCallable(functions, 'createPaymentLink');
     const result = await createPaymentLinkFunction(data);
-    
+
     return {
       paymentLinkId: result.data.paymentLinkId,
       checkoutUrl: result.data.checkoutUrl,
@@ -76,7 +76,7 @@ export const saveProject = async (data) => {
   try {
     const saveProjectFunction = httpsCallable(functions, 'saveProject');
     const result = await saveProjectFunction(data);
-    
+
     return {
       success: result.data.success,
       projectId: result.data.projectId,
@@ -95,7 +95,7 @@ export const getProjects = async () => {
   try {
     const getProjectsFunction = httpsCallable(functions, 'getProjects');
     const result = await getProjectsFunction({});
-    
+
     return {
       success: result.data.success,
       projects: result.data.projects || [],
@@ -115,7 +115,7 @@ export const deleteProject = async (projectId) => {
   try {
     const deleteProjectFunction = httpsCallable(functions, 'deleteProject');
     const result = await deleteProjectFunction({ projectId });
-    
+
     return {
       success: result.data.success,
       message: result.data.message
@@ -132,7 +132,7 @@ const formatFunctionError = (error) => {
   // Firebase Functions errors have code in error.code
   const errorCode = error.code;
   const errorDetails = error.details;
-  
+
   const errorMessages = {
     'unauthenticated': 'Bạn cần đăng nhập để sử dụng tính năng này.',
     'permission-denied': 'Bạn không có quyền thực hiện thao tác này.',
@@ -161,7 +161,7 @@ const formatFunctionError = (error) => {
 
   // Check for specific error messages
   const errorMessage = error.message || '';
-  
+
   if (errorMessage.includes('Insufficient credits')) {
     return {
       code: 'insufficient-credits',
@@ -205,5 +205,74 @@ export const ErrorTypes = {
   INTERNAL: 'internal',
   FAILED_PRECONDITION: 'failed-precondition',
   INVALID_ARGUMENT: 'invalid-argument',
+};
+
+/**
+ * Save a template to Firestore (Client-side)
+ */
+export const saveTemplate = async (data) => {
+  try {
+    const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+    const { db } = await import('../config/firebase');
+
+    const templateData = {
+      ...data,
+      likes: 0,
+      usageCount: 0,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    const docRef = await addDoc(collection(db, 'templates'), templateData);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error saving template:', error);
+    throw { code: 'internal', message: 'Không thể lưu mẫu. Vui lòng thử lại.' };
+  }
+};
+
+/**
+ * Get templates (Client-side)
+ */
+export const getTemplates = async ({ userId, isPublic, category } = {}) => {
+  try {
+    const { collection, query, where, orderBy, getDocs } = await import('firebase/firestore');
+    const { db } = await import('../config/firebase');
+
+    let q = collection(db, 'templates');
+    const constraints = [];
+
+    if (userId) {
+      constraints.push(where('authorId', '==', userId));
+    } else if (isPublic) {
+      constraints.push(where('isPublic', '==', true));
+    }
+
+    if (category && category !== 'all') {
+      constraints.push(where('category', '==', category));
+    }
+
+    // Sort by newest
+    // Note: Firestore requires composite index for query with equality filter + sort by different field
+    // If index missing, it will throw error with link to create index.
+    // For now, let's keep it simple or handle index error.
+    try {
+      constraints.push(orderBy('createdAt', 'desc'));
+    } catch (e) {
+      // Fallback if no index
+    }
+
+    const qFinal = query(q, ...constraints);
+    const snapshot = await getDocs(qFinal);
+
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toMillis?.() || Date.now()
+    }));
+  } catch (error) {
+    console.error('Error getting templates:', error);
+    return [];
+  }
 };
 

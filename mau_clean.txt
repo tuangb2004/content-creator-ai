@@ -1,0 +1,2544 @@
+﻿TRƯỜNG ĐẠI HỌC TÀI NGUYÊN VÀ MÔI TRƯỜNG HÀ NỘI
+
+__KHOA CÔNG NGHỆ THÔNG TIN__
+
+[HÌNH ẢNH]
+
+__XÂY DỰNG PHẦN MỀM QUẢN LÝ   
+CỬA HÀNG ĐỒNG HỒ__
+
+__VƯƠNG HUY THUẬN__
+
+__Hà Nội – Năm 2025__
+
+TRƯỜNG ĐẠI HỌC TÀI NGUYÊN VÀ MÔI TRƯỜNG HÀ NỘI
+
+__KHOA CÔNG NGHỆ THÔNG TIN__
+
+[HÌNH ẢNH]
+
+__XÂY DỰNG PHẦN MỀM QUẢN LÝ   
+CỬA HÀNG ĐỒNG HỒ__
+
+__Họ tên sinh viên	: Vương Huy Thuận__
+
+__Ngành đào tạo	: Công nghệ thông tin__
+
+__NGƯỜI HƯỚNG DẪN: NCS\. NGUYỄN THỊ HỒNG LOAN__
+
+__Hà Nội – Năm 2025__
+
+<a id="_Toc194939624"></a>__CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM__
+
+__Độc lập \- Tự do \- Hạnh phúc__
+
+__LỜI CAM ĐOAN__
+
+	Em xin cam đoan khóa luận tốt nghiệp với đề tài “Xây dựng phần mềm quản lý cửa hàng đồng hồ” là nghiên cứu độc lập của riêng tôi\. Các số liệu được cung cấp từ báo cáo của công ty và kết quả nghiên cứu hoàn toàn trung thực, không đạo nhái hay sao chép từ bất kỳ một công trình nghiên cứu nào khác\. Tất cả tài liệu trích dẫn đều được ghi rõ nguồn gốc\.
+
+Em xin hoàn toàn chịu trách nhiệm trước nhà trường nếu phát hiện bất cứ sự sai phạm hay sao chép trong đề tài này\!
+
+__Giảng viên hướng dẫn__
+
+__NCS\. Nguyễn Thị Hồng Loan__
+
+__Sinh viên thực hiện__
+
+__Vương Huy Thuận__
+
+<a id="_Toc194939625"></a>__LỜI CẢM ƠN__
+
+Để hoàn thành khóa luận này, trước hết, em xin gửi lời cảm ơn chân thành đến các cán bộ, giảng viên Khoa Công nghệ Thông tin cùng toàn thể giảng viên Trường Đại học Tài nguyên và Môi trường Hà Nội, những người đã tận tình giảng dạy và truyền đạt kiến thức cho em trong suốt thời gian học tập\.
+
+Đặc biệt, em xin bày tỏ lòng biết ơn sâu sắc đến NCS\. Nguyễn Thị Hồng Loan, người đã tận tâm hướng dẫn, chỉ dạy và hỗ trợ em trong quá trình thực hiện khóa luận này\.
+
+Do kiến thức còn hạn chế, bài báo cáo của em chắc chắn không tránh khỏi những thiếu sót\. Em rất mong nhận được những góp ý quý báu từ quý thầy cô để khóa luận được hoàn thiện hơn, đồng thời giúp em tích lũy thêm kinh nghiệm cho chặng đường phía trước\.
+
+Cuối cùng, em xin kính chúc các thầy cô Trường Đại học Tài nguyên và Môi trường Hà Nội nói chung, đặc biệt là các thầy cô Khoa Công nghệ Thông tin, luôn dồi dào sức khỏe và gặt hái nhiều thành công trong sự nghiệp giảng dạy\.
+
+Trân trọng\!
+
+<a id="_Toc194939626"></a>__MỤC LỤC__
+
+__[LỜI CAM ĐOAN	i](#_Toc194939624)__
+
+__[LỜI CẢM ƠN	ii](#_Toc194939625)__
+
+__[MỤC LỤC	iii](#_Toc194939626)__
+
+__[DANH MỤC BẢNG BIỂU	v](#_Toc194939627)__
+
+__[DANH MỤC HÌNH ẢNH	vi](#_Toc194939628)__
+
+__[MỞ ĐẦU	1](#_Toc194939629)__
+
+__[CHƯƠNG 1: CƠ SỞ LÝ THUYẾT](#_Toc194939643)__[	5](#_Toc194939643)
+
+[1\.1\. Tổng quan về ngôn ngữ lập trình	5](#_Toc194939644)
+
+[1\.1\.1\. Giới thiệu ngôn ngữ Java	5](#_Toc194939645)
+
+[1\.1\.2\. Giới thiệu ngôn ngữ Javascript	5](#_Toc194939647)
+
+[1\.1\.3 Giới thiệu ngôn ngữ JSX	6](#_Toc194939649)
+
+[1\.2\. Tổng quan về các công nghệ và thư viện hỗ trợ	7](#_Toc194939651)
+
+[1\.2\.1\. Giới thiệu Framework Spring Boot	7](#_Toc194939652)
+
+[1\.2\.2\. Tổng quan về ReactJS	7](#_Toc194939654)
+
+[1\.2\.3\. Tổng quan về RESTful API	8](#_Toc194939655)
+
+[1\.2\.4\. Cơ sở dữ liệu MySQL	8](#_Toc194939656)
+
+[1\.3\. Các công cụ hỗ trợ phát triển hệ thống	9](#_Toc194939657)
+
+[1\.3\.1\. Visual Studio Code \(VS Code\)	9](#_Toc194939658)
+
+[1\.3\.2\. IntelliJ IDEA	9](#_Toc194939659)
+
+[1\.3\.3\. MySQL Workbench	9](#_Toc194939660)
+
+[1\.3\.4\. Postman	10](#_Toc194939661)
+
+__[CHƯƠNG 2\. PHÂN TÍCH THIẾT KẾ HỆ THỐNG](#_Toc194939663)__[	10](#_Toc194939663)
+
+[2\.1\. Khảo sát hiện trạng và phân tích bài toán quản lý bán hàng	10](#_Toc194939664)
+
+[2\.1\.3\. Đánh giá thực trạng hoạt động của hệ thống	11](#_Toc194939667)
+
+[2\.2\. Xác định Use Case của hệ thống	12](#_Toc194939670)
+
+[2\.2\.1\. Đối tượng sử dụng hệ thống	12](#_Toc194939671)
+
+[2\.2\.2\. Các chức năng chính của hệ thống	12](#_Toc194939672)
+
+[2\.4\. Biểu đồ use case tổng quát	15](#_Toc194939676)
+
+[2\.5\. Phân tích chức năng quản lý danh mục	16](#_Toc194939678)
+
+[2\.5\.1\. Sơ đồ use case phân rã chức năng quản lý danh mục	16](#_Toc194939679)
+
+[2\.5\.2\. Kịch bản chức năng quản lý danh mục	16](#_Toc194939682)
+
+[2\.5\.3\. Sơ đồ hoạt động và tuần tự chức năng quản lý danh mục	19](#_Toc194939684)
+
+[2\.6\. Phân tích chức năng quản lý sản phẩm	27](#_Toc194939693)
+
+[2\.6\.1\. Biểu đồ Use case phân rã chức năng quản lý sản phẩm	27](#_Toc194939694)
+
+[2\.6\.2\. Kịch bản chức năng quản lý sản phẩm	27](#_Toc194939696)
+
+[2\.6\.3\. Sơ đồ hoạt động và tuần tự chức năng quản lý sản phẩm	30](#_Toc194939698)
+
+[2\.7\. Phân tích chức năng quản lý đơn hàng	38](#_Toc194939707)
+
+[2\.7\.1](#_Toc194939708)*[\. ](#_Toc194939708)*[Biểu đồ Use case phân rã chức năng quản lý đơn hàng	38](#_Toc194939708)
+
+[2\.7\.2\. Kịch bản chức năng quản lý đơn hàng	38](#_Toc194939710)
+
+[2\.7\.3\. Sơ đồ hoạt động và tuần tự chức năng quản lý đơn hàng	41](#_Toc194939712)
+
+[2\.8\. Phân tích chức năng quản lý người dùng	45](#_Toc194939717)
+
+[2\.8\.1\. Biểu đồ Use case phân rã chức năng quản lý người dùng	45](#_Toc194939718)
+
+[2\.8\.2\. Kịch bản chức năng quản lý người dùng	45](#_Toc194939720)
+
+[2\.8\.3\. Sơ đồ hoạt động và tuần tự quản lý người dùng	47](#_Toc194939722)
+
+[2\.9\. Biểu đồ lớp	53](#_Toc194939729)
+
+[2\.10\. Biểu đồ cơ sở dữ liệu	54](#_Toc194939731)
+
+[2\.11\. Danh mục bảng	54](#_Toc194939733)
+
+__[CHƯƠNG 3: XÂY DỰNG PHẦN MỀM QUẢN LÝ CỬA HÀNG ĐỒNG HỒ](#_Toc194939756)__[	63](#_Toc194939756)
+
+[3\.1\. Giao diện bên khách hàng vãng lai	63](#_Toc194939757)
+
+[3\.2\. Giao diện trang chủ khách hàng\.	65](#_Toc194939770)
+
+[3\.3\. Giao diện trang chủ quản trị viên\.	69](#_Toc194939789)
+
+[KẾT LUẬN VÀ KIẾN NGHỊ	73](#_Toc194939813)
+
+[TÀI LIỆU THAM KHẢO	74](#_Toc194939831)<a id="_Toc194939627"></a>
+
+__DANH MỤC BẢNG BIỂU __
+
+[Hình 1\.1\. Hình ảnh ngôn ngữ lập trình Java	5](#_Toc195551505)
+
+[Hình 1\.2\.Hình ảnh ngôn ngữ lập trình JavaScript	6](#_Toc195551506)
+
+[Hình 1\.3\. Hình ảnh về JSX	6](#_Toc195551507)
+
+[Hình 1\.4\. Hình ảnh Framework Spring Boot	7](#_Toc195551508)
+
+[Hình 2\.1\.Cấu trúc và nghiệp vụ của hệ thống	13](#_Toc195551509)
+
+[Hình 2\.2\. Biểu đồ use case tổng quát	15](#_Toc195551510)
+
+[Hình 2\.3\. Biểu đồ Use case phân rã chức năng quản lý danh mục	16](#_Toc195551511)
+
+[Hình 2\.4\. Biểu đồ hoạt động chức năng thêm danh mục	19](#_Toc195551512)
+
+[Hình 2\.5\. Biểu đồ tuần tự chức năng thêm danh mục	20](#_Toc195551513)
+
+[Hình 2\.6\. Biểu đồ hoạt động chức năng sửa danh mục	21](#_Toc195551514)
+
+[Hình 2\.7\. Biểu đồ tuần tự chức năng sửa danh mục	22](#_Toc195551515)
+
+[Hình 2\.8\. Biểu đồ hoạt động chức năng xóa danh mục	23](#_Toc195551516)
+
+[Hình 2\.9\. Biểu đồ tuần tự chức năng xóa danh mục	24](#_Toc195551517)
+
+[Hình 2\. 10\. Biểu đồ hoạt động chức năng tìm kiếm danh mục	25](#_Toc195551518)
+
+[Hình 2\. 11\. Biểu đồ tuần tự chức năng tìm kiếm danh mục	26](#_Toc195551519)
+
+[Hình 2\.12\. Biểu đồ Use case phân rã chức năng quản lý sản phẩm	27](#_Toc195551520)
+
+[Hình 2\.13\. Biểu đồ hoạt động chức năng thêm sản phẩm	30](#_Toc195551521)
+
+[Hình 2\.14\. Biểu đồ tuần tự chức năng thêm sản phẩm	31](#_Toc195551522)
+
+[Hình 2\.15\. Biểu đồ hoạt động chức năng sửa sản phẩm	32](#_Toc195551523)
+
+[Hình 2\.16\. Biểu đồ tuần tự chức năng sửa sản phẩm	33](#_Toc195551524)
+
+<a id="_Toc194939628"></a>__DANH MỤC HÌNH ẢNH__
+
+[Hình 1\.1\. Hình ảnh ngôn ngữ lập trình Java	5](#_Toc194939646)
+
+[Hình 1\.2\.Hình ảnh ngôn ngữ lập trình JavaScript	6](#_Toc194939648)
+
+[Hình 1\.3\. Hình ảnh về JSX	6](#_Toc194939650)
+
+[Hình 1\.4 Hình ảnh Framework Spring Boot	7](#_Toc194939653)
+
+[Hình 2\.1\.Cấu trúc và nghiệp vụ của hệ thống	13](#_Toc194939674)
+
+[Hình 2\.2\. Biểu đồ use case tổng quát	15](#_Toc194939677)
+
+[Hình 2\.3\. Biểu đồ Use case phân rã chức năng quản lý danh mục	16](#_Toc194939681)
+
+[Hình 2\.4\. Biểu đồ hoạt động chức năng thêm danh mục	19](#_Toc194939685)
+
+[Hình 2\.5\. Biểu đồ tuần tự chức năng thêm danh mục	20](#_Toc194939686)
+
+[Hình 2\.6\. Biểu đồ hoạt động chức năng sửa danh mục	21](#_Toc194939687)
+
+[Hình 2\.7\. Biểu đồ tuần tự chức năng sửa danh mục	22](#_Toc194939688)
+
+[Hình 2\.8\. Biểu đồ hoạt động chức năng xóa danh mục	23](#_Toc194939689)
+
+[Hình 2\.9\. Biểu đồ tuần tự chức năng xóa danh mục	24](#_Toc194939690)
+
+[Hình 2\.10\. Biểu đồ hoạt động chức năng tìm kiếm danh mục	25](#_Toc194939691)
+
+[Hình 2\.11\. Biểu đồ tuần tự chức năng tìm kiếm danh mục	26](#_Toc194939692)
+
+[Hình 2\.12\. Biểu đồ Use case phân rã chức năng quản lý sản phẩm	27](#_Toc194939695)
+
+[Hình 2\.13\. Biểu đồ hoạt động chức năng thêm sản phẩm	30](#_Toc194939699)
+
+[Hình 2\.14\. Biểu đồ tuần tự chức năng thêm sản phẩm	31](#_Toc194939700)
+
+[Hình 2\.15\. Biểu đồ hoạt động chức năng sửa sản phẩm	32](#_Toc194939701)
+
+[Hình 2\.16\. Biểu đồ tuần tự chức năng sửa sản phẩm	33](#_Toc194939702)
+
+[Hình 2\.17\. Biểu đồ hoạt động chức năng xóa sản phẩm	34](#_Toc194939703)
+
+[Hình 2\.18\. Biểu đồ tuần tự chức năng  xóa sản phẩm	35](#_Toc194939704)
+
+[Hình 2\.19\. Biểu đồ hoạt động chức năng tìm kiếm sản phẩm	36](#_Toc194939705)
+
+[Hình 2\.20\. Biểu đồ tuần tự chức năng tìm kiếm sản phẩm	37](#_Toc194939706)
+
+[Hình 2\.21\. Biểu đồ Use case phân rã chức năng quản lý đơn hàng	38](#_Toc194939709)
+
+[Hình 2\.22\. Biểu đồ tuần tự chức năng hiển thị đơn hàng theo trạng thái	41](#_Toc194939713)
+
+[Hình 2\.23\. Biểu đồ tuần tự chức năng hiển thị đơn hàng theo trạng thái	42](#_Toc194939714)
+
+[Hình 2\.24\. Biểu đồ hoạt động chức năng cập nhật trạng thái đơn hàng	43](#_Toc194939715)
+
+[Hình 2\.25\. Biểu đồ tuần tự chức năng cập nhật trạng thái đơn hàng	44](#_Toc194939716)
+
+[Hình 2\.26\. Biểu đồ Use case phân rã chức năng quản lý người dùng	45](#_Toc194939719)
+
+[Hình 2\.27\. Biểu đồ hoạt động chức năng phân quyền	47](#_Toc194939723)
+
+[Hình 2\.28\. Biểu đồ tuần tự chức năng phân quyền	48](#_Toc194939724)
+
+[Hình 2\.29\. Biểu đồ tuần tự hoạt động chức năng cập nhật trạng thái người dùng	49](#_Toc194939725)
+
+[Hình 2\.30\. Biểu đồ tuần tự chức năng cập nhật trạng thái người dùng	50](#_Toc194939726)
+
+[Hình 2\.31\. Biểu đồ tuần tự chức năng tìm kiếm người dùng	51](#_Toc194939727)
+
+[Hình 2\.32\. Biểu đồ hoạt động chức năng tìm kiếm người dùng	52](#_Toc194939728)
+
+[Hình 2\.33\. Biểu đồ lớp	53](#_Toc194939730)
+
+[Hình 2\.34\. Biểu đồ cơ sở dữ liệu	54](#_Toc194939732)
+
+[Hình 3\.1\. Hình ảnh trang bên khách hàng vãng lai	63](#_Toc194939759)
+
+[Hình 3\.2\. Hình ảnh chi tiết sản phẩm	63](#_Toc194939762)
+
+[Hình 3\.3\. Hình ảnh trang đăng nhập	64](#_Toc194939765)
+
+[Hình 3\.4\. Hình ảnh trang đăng ký	64](#_Toc194939768)
+
+[Hình 3\.5\. Hình ảnh trang chủ khách hàng	65](#_Toc194939772)
+
+[Hình 3\.6\. Hình ảnh thương hiệu sản phẩm	65](#_Toc194939775)
+
+[Hình 3\.7\. Hình ảnh danh mục sản phẩm	66](#_Toc194939778)
+
+Hình 3\.8\. Hình ảnh danh mục giỏ hàng	69
+
+[Hình 3\.9\. Hình ảnh nhập thông tin để giao hàng	67](#_Toc194939782)
+
+[Hình 3\.10\. Hình ảnh thanh toán	68](#_Toc194939785)
+
+Hình 3\.11\. Hình ảnh hóa đơn	72
+
+[Hình 3\.12\. Hình ảnh trang chủ quản trị viên	69](#_Toc194939791)
+
+[Hình 3\.13\. Hình ảnh quản lý người dùng	70](#_Toc194939794)
+
+[Hình 3\.14\. Hình ảnh quản lý sản phẩm	70](#_Toc194939797)
+
+[Hình 3\.15\. Hình ảnh quản lý danh mục	70](#_Toc194939800)
+
+[Hình 3\.16\. Hình ảnh quản lý thương hiệu	71](#_Toc194939803)
+
+[Hình 3\.17\. Hình ảnh quản lý đơn hàng	71](#_Toc194939806)
+
+# <a id="_Toc194872838"></a><a id="_Toc194939629"></a>MỞ ĐẦU
+
+### <a id="_Toc194869883"></a><a id="_Toc194869578"></a><a id="_Toc194939631"></a><a id="_Toc194870152"></a><a id="_Toc194869963"></a><a id="_Toc194872840"></a><a id="_Toc194870151"></a><a id="_Toc194872839"></a><a id="_Toc194939630"></a>Giới thiệu về cơ sở thực tập
+
+Học viện Công nghệ Rikkei Academy là một đơn vị đào tạo chuyên sâu trong lĩnh vực công nghệ thông tin, cung cấp các khóa học lập trình chuyên nghiệp nhằm đáp ứng nhu cầu nhân lực chất lượng cao cho ngành IT\.
+
+Học viện được thành lập với mục tiêu đào tạo lập trình viên theo mô hình thực tiễn, giúp học viên có kỹ năng làm việc ngay sau khi tốt nghiệp\. Các chương trình đào tạo tại Rikkei Academy bám sát nhu cầu doanh nghiệp, tập trung vào các công nghệ hiện đại như Java Spring Boot, ReactJS, DevOps, AI, v\.v\.
+
+Trong quá trình thực tập tại Học viện, em có cơ hội tham gia vào dự án thực tế liên quan đến phát triển hệ thống quản lý cửa hàng đồng hồ, sử dụng các công nghệ Java Spring Boot cho backend và ReactJS cho frontend\. Dưới sự hướng dẫn của các giảng viên và chuyên gia tại Rikkei Academy, em đã học hỏi và ứng dụng nhiều kỹ thuật lập trình nâng cao, đặc biệt là trong việc xây dựng API, quản lý cơ sở dữ liệu MySQL, bảo mật hệ thống với Spring Security và JWT, cũng như tối ưu hóa hiệu suất ứng dụng\.
+
+Thời gian thực tập tại Rikkei Academy giúp em củng cố kiến thức, rèn luyện kỹ năng lập trình thực tế và chuẩn bị tốt hơn cho công việc sau này trong ngành công nghệ thông tin\.
+
+### Lý do chọn lựa đề tài 
+
+<a id="_Toc194869884"></a><a id="_Toc194870153"></a><a id="_Toc193295715"></a><a id="_Toc194872841"></a><a id="_Toc194869964"></a><a id="_Toc194869579"></a><a id="_Toc194939632"></a>Trong bối cảnh công nghệ thông tin ngày càng phát triển mạnh mẽ, việc ứng dụng phần mềm vào hoạt động kinh doanh đã trở thành xu hướng tất yếu nhằm nâng cao hiệu quả quản lý và tối ưu hóa quy trình làm việc\. Đặc biệt, đối với các cửa hàng bán lẻ như cửa hàng đồng hồ – nơi có số lượng sản phẩm đa dạng, nhiều mẫu mã và cần quản lý tồn kho, hóa đơn, khách hàng một cách chính xác – thì việc sử dụng phần mềm quản lý là vô cùng cần thiết\.
+
+Tuy nhiên, thực tế cho thấy hiện nay vẫn còn nhiều cửa hàng đồng hồ quản lý theo phương pháp thủ công hoặc sử dụng các phần mềm đơn giản, thiếu tính năng chuyên sâu, dẫn đến tình trạng sai sót trong khâu thống kê, khó kiểm soát doanh thu cũng như gặp khó khăn trong việc tra cứu thông tin khi cần thiết\. Điều này ảnh hưởng trực tiếp đến hoạt động kinh doanh và khả năng mở rộng quy mô của cửa hàng\.
+
+Xuất phát từ nhu cầu thực tế đó, em lựa chọn đề tài __"Xây dựng phần mềm quản lý cửa hàng đồng hồ"__ nhằm góp phần giải quyết những hạn chế trong công tác quản lý truyền thống\. Phần mềm được xây dựng sẽ hỗ trợ các chức năng chính như quản lý sản phẩm, quản lý đơn hàng, khách hàng, thương hiệu, danh mục và thống kê doanh thu, góp phần nâng cao hiệu quả hoạt động kinh doanh của cửa hàng\.
+
+Ngoài ra, việc thực hiện đề tài cũng giúp em củng cố kiến thức chuyên môn, rèn luyện kỹ năng lập trình, thiết kế hệ thống và triển khai ứng dụng thực tế – những hành trang quan trọng chuẩn bị cho công việc sau khi tốt nghiệp\.
+
+### Mục tiêu của đề tài
+
+#### <a id="_Toc194939633"></a><a id="_Toc193295716"></a>__Mục tiêu chung__
+
+Xây dựng một hệ thống thương mại điện tử trực tuyến hoàn chỉnh, sử dụng công nghệ Java và Spring Boot cho backend, cùng với ReactJS cho frontend, nhằm cung cấp một nền tảng mua sắm trực tuyến an toàn, hiệu quả và thân thiện với người dùng\. Hệ thống sẽ hỗ trợ quản lý dữ liệu, giao dịch, và trải nghiệm người dùng một cách tối ưu, đồng thời tích hợp các dịch vụ bên ngoài để nâng cao tính năng và khả năng mở rộng\.
+
+Phát triển phần mềm backend: Sử dụng Java và Spring FrameWork để xây dựng phần backend của hệ thống \[6\], bao gồm việc xử lý logic quản lý tài nguyên, xây dựng API và kết nối với cơ sở dữ liệu\.
+
+Quản lý cơ sở dữ liệu : Sử dụng MySQL để thiết kế và triển khai cơ sở dữ liệu cho hệ thống quản lý tài liệu điện tử, bao gồm việc tạo bảng, quan hệ và truy vấn dữ liệu\.
+
+__ Mục tiêu cụ thể	__
+
+Đối với quản trị hệ thống: Quản trị viên có thể quản lý người dùng, bao gồm việc tạo mới, chỉnh sửa, xóa tài khoản người dùng và các danh mục, thư mục và tài liệu trong hệ thống, cũng như gán quyền truy cập vào các tài liệu theo yêu cầu\. 
+
+Đối với người dùng: Có thể đăng nhập, đăng ký vào hệ thống để xem thông tin, tìm kiếm và được đăng tải tài liệu nhưng phải thông qua phê duyệt của người quản trị hệ thống\.
+
+### <a id="_Toc194869580"></a><a id="_Toc194869885"></a><a id="_Toc194872842"></a><a id="_Toc194870154"></a><a id="_Toc194939634"></a><a id="_Toc194869965"></a><a id="_Toc193295717"></a>Nội dung nghiên cứu
+
+#### <a id="_Toc193295718"></a> <a id="_Toc194939635"></a>Tổng quan về thương mại điện tử và thị trường đồng hồ \[3\]\.
+
+Phân tích thị trường đồng hồ, xu hướng mua sắm trực tuyến và hành vi tiêu dùng của khách hàng đối với sản phẩm đồng hồ\.
+
+Đánh giá lợi ích của việc xây dựng một website thương mại điện tử chuyên về đồng hồ\.
+
+#### <a id="_Toc193295719"></a><a id="_Toc194939636"></a>Phát triển hệ thông với Frontend
+
+Nghiên cứu và sử dụng  ReactJS để xây dựng, thiết kế giao diện thân thiện , dễ sử dụng\. \[8\]
+
+Sử dụng Bootstrap để xây dựng giao diện có độ phản hồi cao \(responsive\) và tương thích trên nhiều thiết bị\. \[11\]
+
+Sử dụng ReactJS để xây dựng giao diện người dùng \(frontend\) \[8\], giúp tăng tính tương tác và tối ưu trải nghiệm người dùng
+
+#### <a id="_Toc193295720"></a> <a id="_Toc194939637"></a>Phát triển hệ thống với Backend
+
+Nghiên cứu và sử dụng Java và Spring Framework để lập trình các chức năng của hệ thống\.
+
+Tìm hiểu cách sử dụng JavaScript để thêm tính năng tương tác vào giao diện người dùng\.
+
+Sử dụng Java và Spring Framework để phát triển phần backend, bao gồm xử lý logic và kết nối với cơ sở dữ liệu\.
+
+Tích hợp Spring Security và JWT để xác thực và phân quyền người dùng\. \[6\]
+
+#### <a id="_Toc193295721"></a> <a id="_Toc194939638"></a>Thiết kế hệ quản trị cơ sở dữ liệu
+
+Nghiên cứu và sử dụng hệ quản trị cơ sở dữ liệu MySQL để xây dựng cơ sở dữ liệu\.
+
+Sử dụng MySQL Workbench 8\.0 CE để thiết kế cơ sở dữ liệu và tạo bảng dữ liệu cho hệ thống\.
+
+#### <a id="_Toc193295722"></a> <a id="_Toc194939639"></a>Kiểm thử và đánh giá hệ thống
+
+Tiến hành kiểm thử các chức năng của website để đảm bảo tính chính xác và ổn định\.
+
+Kiểm thử khả năng phản hồi của giao diện trên nhiều thiết bị khác nhau\.
+
+Đánh giá hiệu suất hệ thống và tối ưu hóa nếu cần thiết\.
+
+### <a id="_Toc194939640"></a><a id="_Toc194870155"></a><a id="_Toc194872843"></a>Phương pháp nghiên cứu
+
+Phương pháp nghiên cứu lý thuyết: Thu thập và nghiên cứu các tài liệu liên quan đến đề tài, bao gồm ngôn ngữ lập trình Java, framework ReactJS và Spring Boot, cũng như hệ quản trị cơ sở dữ liệu MySQL \[5\], \[6\], \[8\]\.
+
+Phương pháp tổng hợp và phân tích: Tổng hợp, phân tích các tài liệu nghiên cứu để làm cơ sở thiết kế và xây dựng các chức năng của hệ thống\.
+
+Phương pháp thực nghiệm: Triển khai, chạy thử ứng dụng đã xây dựng để kiểm tra tính ổn định, hiệu suất và khả năng đáp ứng yêu cầu thực tế\.
+
+Phương pháp chuyên gia: Thu thập ý kiến đánh giá từ giảng viên hướng dẫn và giáo viên tại nơi thực tập để điều chỉnh, cải thiện hệ thống, đảm bảo tính chính xác và phù hợp với thực tiễn\.
+
+### <a id="_Toc194939641"></a><a id="_Toc194870156"></a><a id="_Toc194872844"></a>Kết quả đạt được
+
+\- Hoàn thành báo cáo tốt nghiệp và sản phẩm phần mềm đúng thời hạn\.
+
+\- Xây dựng phần mềm  quản lý cửa hàng đồng hồ có giao diện dễ sử dụng và đầy đủ các chức năng : Phân quyền, quản lý danh mục, quản lý sản phẩm, quản lý thông tin người dùng, quản lý tài khoản,\.\.\.\.\.
+
+### <a id="_Toc194939642"></a><a id="_Toc194870157"></a><a id="_Toc194872845"></a>Kết cấu của Khóa luận
+
+Gồm 3 chương:
+
+\-	Chương 1: Tổng quan về đề tài
+
+\-	Chương 2: Phân tích thiết kế hệ thống
+
+\-  Chương 3: Xây dựng phần mềm quản lý cửa hàng đồng hồ
+
+# <a id="_Toc194652170"></a><a id="_Toc194872846"></a><a id="_Toc194939643"></a><a id="_Toc194870158"></a><a id="_Toc194869886"></a><a id="_Toc194869966"></a><a id="_Toc194869581"></a>CHƯƠNG 1: CƠ SỞ LÝ THUYẾT
+
+## <a id="_Toc194869967"></a><a id="_Toc194872847"></a><a id="_Toc194869887"></a><a id="_Toc194870159"></a><a id="_Toc194869582"></a><a id="_Toc194939644"></a>1\.1\. Tổng quan về ngôn ngữ lập trình
+
+### <a id="_Toc194939645"></a><a id="_Toc194652173"></a><a id="_Toc194651935"></a><a id="_Toc194872848"></a><a id="_Toc194869888"></a><a id="_Toc194869968"></a><a id="_Toc194869583"></a><a id="_Toc194870160"></a>1\.1\.1\. Giới thiệu ngôn ngữ Java
+
+Java là một ngôn ngữ lập trình bậc cao, được phát triển bởi Sun Microsystems vào năm 1995 và hiện thuộc sở hữu của Oracle Corporation\. Java kế thừa nhiều đặc điểm từ C/C\+\+ nhưng loại bỏ các khuyết điểm như quản lý bộ nhớ phức tạp và lỗi tràn bộ nhớ, giúp lập trình viên phát triển ứng dụng dễ dàng hơn \[5\]\.
+
+Java được sử dụng rộng rãi trong nhiều lĩnh vực khác nhau, từ ứng dụng web, phần mềm doanh nghiệp, ứng dụng di động \(Android\), trò chơi điện tử, hệ thống nhúng, cho đến công nghệ đám mây và dữ liệu lớn\. Một trong những đặc điểm nổi bật của Java là khả năng chạy trên nhiều nền tảng khác nhau thông qua nguyên tắc __"Viết một lần, chạy mọi nơi"__ \(Write Once, Run Anywhere \- WORA\), nhờ vào Java Virtual Machine \(JVM\)\.
+
+Ví dụ, Java được sử dụng để phát triển:
+
+- Ứng dụng web: Các hệ thống quản lý doanh nghiệp như ERP, CRM\.
+- Ứng dụng di động: Hầu hết các ứng dụng Android đều được viết bằng Java\.
+- Hệ thống tài chính – ngân hàng: Các ứng dụng giao dịch trực tuyến của ngân hàng như Internet Banking, Mobile Banking\.
+- Trò chơi điện tử: Một số game nổi tiếng như Minecraft được phát triển bằng Java\.
+- Công nghệ đám mây & dữ liệu lớn: Java được dùng trong Hadoop, Apache Spark để xử lý dữ liệu lớn\.
+
+[HÌNH ẢNH]
+
+<a id="_Toc195551505"></a><a id="_Toc194939646"></a><a id="_Toc194873372"></a>Hình 1\.1\. Hình ảnh ngôn ngữ lập trình Java
+
+### <a id="_Toc194939647"></a><a id="_Toc194869889"></a><a id="_Toc194870161"></a><a id="_Toc194869969"></a><a id="_Toc194872849"></a><a id="_Toc194869584"></a>1\.1\.2\. Giới thiệu ngôn ngữ Javascript
+
+JavaScript là ngôn ngữ lập trình được nhà phát triển sử dụng để tạo trang web tương tác\. Từ làm mới bảng tin trên trang mạng xã hội đến hiển thị hình ảnh động và bản đồ tương tác, các chức năng của JavaScript có thể cải thiện trải nghiệm người dùng của trang web \[8\]\. 
+
+Là ngôn ngữ kịch bản phía máy khách, JavaScript là một trong những công nghệ cốt lõi của World Wide Web\. Ví dụ: khi duyệt internet, bất cứ khi nào bạn thấy quảng cáo quay vòng dạng hình ảnh, menu thả xuống nhấp để hiển thị hoặc màu sắc phần tử thay đổi động trên trang web cũng chính là lúc bạn thấy các hiệu ứng của JavaScript\.
+
+[HÌNH ẢNH]
+
+<a id="_Toc195551506"></a><a id="_Toc194939648"></a><a id="_Toc194873373"></a>Hình 1\.2\.Hình ảnh ngôn ngữ lập trình JavaScript
+
+### <a id="_Toc194870162"></a><a id="_Toc194872850"></a><a id="_Toc194869970"></a><a id="_Toc194869585"></a><a id="_Toc194869890"></a><a id="_Toc194939649"></a>1\.1\.3\. Giới thiệu ngôn ngữ JSX
+
+JSX \(JavaScript XML\) là một cú pháp mở rộng của JavaScript, được sử dụng phổ biến trong thư viện React để mô tả giao diện người dùng một cách dễ đọc và trực quan hơn\. JSX cho phép viết mã HTML trực tiếp trong JavaScript, giúp lập trình viên dễ dàng xây dựng giao diện mà không cần sử dụng các phương thức như document\.createElement\(\) hoặc appendChild\(\) \[8\]\.
+
+[HÌNH ẢNH]
+
+<a id="_Toc195551507"></a><a id="_Toc194873374"></a><a id="_Toc194939650"></a>Hình 1\.3\. Hình ảnh về JSX
+
+## <a id="_Toc194869971"></a><a id="_Toc194939651"></a><a id="_Toc194869586"></a><a id="_Toc194869891"></a><a id="_Toc194872851"></a><a id="_Toc194870163"></a>1\.2\. Tổng quan về các công nghệ và thư viện hỗ trợ\.
+
+### <a id="_Toc194651936"></a><a id="_Toc194872852"></a><a id="_Toc194652174"></a><a id="_Toc194870164"></a><a id="_Toc194869892"></a><a id="_Toc194939652"></a><a id="_Toc194869587"></a><a id="_Toc194869972"></a>1\.2\.1\. Giới thiệu Framework Spring Boot
+
+Spring Boot là một framework mã nguồn mở được phát triển trên nền tảng Spring Framework, giúp lập trình viên phát triển ứng dụng Java nhanh chóng, dễ dàng và tối ưu hơn \[6\]\.
+
+Spring Boot cung cấp một cách tiếp cận "Convention over Configuration" \(Quy ước thay vì Cấu hình\), giúp giảm bớt sự phức tạp khi thiết lập ứng dụng\. Nhờ đó, lập trình viên có thể tập trung vào viết logic thay vì mất thời gian cấu hình hệ thống\.
+
+Spring Boot thường được sử dụng để phát triển các ứng dụng web, microservices và hệ thống backend mạnh mẽ, dễ mở rộng\.
+
+[HÌNH ẢNH]
+
+<a id="_Toc195551508"></a><a id="_Toc194939653"></a><a id="_Toc194873375"></a>Hình 1\.4\. Hình ảnh Framework Spring Boot
+
+### <a id="_Toc194869588"></a><a id="_Toc194939654"></a><a id="_Toc194869893"></a><a id="_Toc194869973"></a><a id="_Toc194872853"></a><a id="_Toc194870165"></a><a id="_Toc194652175"></a><a id="_Toc194651937"></a>1\.2\.2\. Tổng quan về ReactJS
+
+ ReactJS là một thư viện JavaScript mã nguồn mở được phát triển bởi Facebook, được sử dụng rộng rãi để xây dựng giao diện người dùng \(UI\) cho các ứng dụng web, đặc biệt là các ứng dụng tương tác cao\. ReactJS hoạt động dựa trên khái niệm "component", cho phép các nhà phát triển tái sử dụng và quản lý giao diện một cách hiệu quả\. Ưu điểm của ReactJS bao gồm tốc độ cao nhờ cơ chế Virtual DOM, khả năng tái sử dụng mã nguồn, và hỗ trợ tốt cho các ứng dụng đa nền tảng\.
+
+Trong dự án này, ReactJS được lựa chọn để phát triển phần giao diện frontend của hệ thống thương mại điện tử, đảm bảo giao diện thân thiện, phản hồi nhanh và tối ưu hóa trải nghiệm người dùng trên các thiết bị khác nhau như máy tính, tablet, và điện thoại di động \[8\]\.
+
+[HÌNH ẢNH]
+
+Hình 1\.5\. Hình ảnh về thư viện React
+
+### <a id="_Toc194872854"></a><a id="_Toc194869894"></a><a id="_Toc194939655"></a><a id="_Toc194869589"></a><a id="_Toc194869974"></a><a id="_Toc194870166"></a><a id="_Toc194651938"></a><a id="_Toc194652176"></a>1\.2\.3\. Tổng quan về RESTful API
+
+RESTful API \(Representational State Transfer API\) là một phong cách thiết kế API dựa trên giao thức HTTP, cho phép các hệ thống khác nhau giao tiếp với nhau thông qua các phương thức chuẩn như GET, POST, PUT, DELETE\. RESTful API sử dụng định dạng dữ liệu phổ biến như JSON hoặc XML để trao đổi thông tin, giúp frontend và backend hoạt động độc lập và dễ dàng mở rộng\.
+
+Trong hệ thống thương mại điện tử, RESTful API đóng vai trò quan trọng trong việc kết nối giao diện người dùng \(ReactJS\) với backend \(Spring Boot\)\. Ví dụ, API có thể cung cấp các endpoint để lấy danh sách sản phẩm, xử lý đơn hàng, hoặc thực hiện thanh toán\. RESTful API còn đảm bảo tính bảo mật thông qua cơ chế xác thực \(authentication\) và phân quyền \(authorization\), ví dụ sử dụng token JWT \(JSON Web Token\)\. Trong dự án này, RESTful API được xây dựng để hỗ trợ các chức năng như quản lý sản phẩm, đơn hàng, và thanh toán trực tuyến \[6\]\.<a id="endnote-ref-0"></a>[\[1\]](#endnote-0)
+
+### <a id="_Toc194870167"></a><a id="_Toc194869895"></a><a id="_Toc194872855"></a><a id="_Toc194651939"></a><a id="_Toc194939656"></a><a id="_Toc194652177"></a><a id="_Toc194869590"></a><a id="_Toc194869975"></a>1\.2\.4\. Cơ sở dữ liệu MySQL
+
+MySQL là hệ quản trị cơ sở dữ liệu do nguồn mở phổ biến nhất thế giới và được các nhà phát triển rất ưa chuộng trong quá trình phát triển ứng dụng\. Vì MySQL là hệ quản trị cơ sở dữ liệu tốc độ cao, ổn định và dễ sử dụng, hoạt động trên nhiều hệ đều hành cung cấp một hệ thống lớn cá hàm tiện ích rất mạnh\. Với tốc độ và tính bảo mật cao, MySQL rất thích hợp cho các ứng dụng có truy cập cơ sở dữ liệu trên internet\.
+
+	MySQL được sử dụng cho việc bổ trợ NodeJs, PHP, Java và nhiều ngôn ngữ khác, làm nơi lưu trữ các thông tin trên các trang web\. Người dùng có thể tải về MySQL miễn phí từ trang chủ MySQL có nhiều phiên bản cho hầu hết các hệ điều hành khác nhau\.
+
+## <a id="_Toc194869976"></a><a id="_Toc194872856"></a><a id="_Toc194870168"></a><a id="_Toc194869896"></a><a id="_Toc194869591"></a><a id="_Toc194939657"></a><a id="_Toc194651940"></a><a id="_Toc194652178"></a> Các công cụ hỗ trợ phát triển hệ thống
+
+## <a id="_Toc194939658"></a><a id="_Toc194869592"></a><a id="_Toc194870169"></a><a id="_Toc194869977"></a><a id="_Toc194869897"></a><a id="_Toc194872857"></a>Visual Studio Code \(VS Code\)
+
+Visual Studio Code là một trình soạn thảo mã nguồn nhẹ nhưng mạnh mẽ, được phát triển bởi Microsoft\. Đây là một công cụ phổ biến cho việc lập trình với nhiều ngôn ngữ như JavaScript, Python, Java, và nhiều ngôn ngữ khác\.
+
+<a id="_Toc194869593"></a>Tính năng nổi bật:
+
+<a id="_Toc194869594"></a>\- Hỗ trợ tự động hoàn thành mã \(IntelliSense\)\.
+
+<a id="_Toc194869595"></a>\- Có nhiều plugin mở rộng cho các ngôn ngữ và công cụ phát triển khác\.
+
+<a id="_Toc194869596"></a>\- Debugging tích hợp giúp dễ dàng gỡ lỗi ứng dụng\.
+
+<a id="_Toc194869597"></a>\- Hỗ trợ quản lý phiên bản Git ngay trong IDE\.
+
+<a id="_Toc194869598"></a>\- Nhẹ và nhanh trong việc xử lý các file dự án lớn\.
+
+### <a id="_Toc194869599"></a><a id="_Toc194870170"></a><a id="_Toc194869978"></a><a id="_Toc194869898"></a><a id="_Toc194872858"></a><a id="_Toc194939659"></a>1\.3\.2\. IntelliJ IDEA
+
+<a id="_Toc194869600"></a>IntelliJ IDEA là một IDE mạnh mẽ được phát triển bởi JetBrains, chuyên dùng cho phát triển ứng dụng Java, nhưng cũng hỗ trợ nhiều ngôn ngữ khác như Kotlin, Scala, và JavaScript\.
+
+<a id="_Toc194869601"></a>Tính năng nổi bật:
+
+<a id="_Toc194869602"></a>\- Hỗ trợ đầy đủ cho Java với các tính năng như code completion, refactoring, và debugging\.
+
+<a id="_Toc194869603"></a>\- Tích hợp Git giúp quản lý mã nguồn hiệu quả\.
+
+<a id="_Toc194869604"></a>\- Khả năng mở rộng với nhiều plugin cho các công nghệ khác nhau\.
+
+<a id="_Toc194869605"></a>\- Hỗ trợ Spring Boot và nhiều framework Java khác\.
+
+<a id="_Toc194869606"></a>\- Tối ưu hóa cho lập trình viên Java, giúp tăng năng suất làm việc\.
+
+### <a id="_Toc194939660"></a><a id="_Toc194869607"></a><a id="_Toc194870171"></a><a id="_Toc194869979"></a><a id="_Toc194872859"></a><a id="_Toc194869899"></a>1\.3\.3\. MySQL Workbench
+
+<a id="_Toc194869608"></a>MySQL Workbench là một công cụ quản lý cơ sở dữ liệu cho MySQL, được thiết kế để giúp lập trình viên và quản trị viên cơ sở dữ liệu thiết kế, quản lý, và tối ưu hóa cơ sở dữ liệu\.
+
+<a id="_Toc194869609"></a>Tính năng nổi bật:
+
+<a id="_Toc194869610"></a>\- Quản lý cơ sở dữ liệu với giao diện đồ họa dễ sử dụng\.
+
+<a id="_Toc194869611"></a>\- Thiết kế sơ đồ cơ sở dữ liệu và hỗ trợ tạo các bảng, truy vấn, và các đối tượng cơ sở dữ liệu\.
+
+<a id="_Toc194869612"></a>\- Kiểm thử và tối ưu hóa truy vấn SQL\.
+
+<a id="_Toc194869613"></a>\- Quản lý kết nối đến nhiều máy chủ MySQL và giúp dễ dàng thực hiện các tác vụ sao lưu, phục hồi\.
+
+<a id="_Toc194869614"></a>\- Tạo báo cáo và phân tích hiệu suất của cơ sở dữ liệu\.
+
+### <a id="_Toc194869980"></a><a id="_Toc194870172"></a><a id="_Toc194869900"></a><a id="_Toc194939661"></a><a id="_Toc194869615"></a><a id="_Toc194872860"></a>1\.3\.4\. Postman
+
+<a id="_Toc194869616"></a>Postman là một công cụ kiểm thử API phổ biến, được sử dụng để kiểm tra, phát triển và tài liệu hóa các dịch vụ web\.
+
+<a id="_Toc194869617"></a>Tính năng nổi bật:
+
+<a id="_Toc194869618"></a>\- Kiểm thử API với các phương thức HTTP như GET, POST, PUT, DELETE\.
+
+<a id="_Toc194869619"></a>\- Tạo và quản lý các yêu cầu API, giúp kiểm tra các phản hồi trả về từ server\.
+
+<a id="_Toc194869620"></a>\- Hỗ trợ tạo collection để nhóm các yêu cầu API theo dự án\.
+
+<a id="_Toc194869621"></a>\- Tích hợp môi trường và biến giúp kiểm thử các API trong các môi trường khác nhau \(dev, prod, staging\)\.
+
+<a id="_Toc194869622"></a>\- Tự động kiểm thử với các tập lệnh kiểm tra sau khi gửi yêu cầu API\.
+
+<a id="_Toc194869623"></a>\- Tích hợp CI/CD giúp tích hợp Postman vào quy trình phát triển phần mềm\.<a id="_Toc193295746"></a>
+
+# <a id="_Toc194869625"></a><a id="_Toc194869902"></a><a id="_Toc194872862"></a><a id="_Toc194939663"></a><a id="_Toc194870174"></a><a id="_Toc194869982"></a>CHƯƠNG 2\. PHÂN TÍCH THIẾT KẾ HỆ THỐNG
+
+## <a id="_Toc194869626"></a><a id="_Toc194652181"></a><a id="_Toc194651943"></a><a id="_Toc194869903"></a><a id="_Toc194869983"></a><a id="_Toc194939664"></a><a id="_Toc194870175"></a><a id="_Toc194872863"></a>2\.1\. Bài toán quản lý bán hàng
+
+Để đáp ứng nhu cầu kinh doanh hiện đại và hỗ trợ quá trình mua sắm trực tuyến hiệu quả, hệ thống phần mềm quản lý cửa hàng đồng hồ cần được xây dựng như một nền tảng thương mại điện tử với đầy đủ các chức năng phục vụ cả người dùng thông thường và quản trị viên\. Cụ thể, hệ thống cần đảm bảo các yêu cầu sau:
+
+- Chức năng chính: Hỗ trợ duyệt sản phẩm, quản lý giỏ hàng, đặt hàng, thanh toán trực tuyến, và quản lý hệ thống \(người dùng, danh mục, sản phẩm, thương hiệu, đơn hàng\)\.
+- Hiệu suất: Đảm bảo tốc độ tải trang nhanh trên nền tảng web\.
+- Bảo mật: Bảo vệ thông tin cá nhân và giao dịch tài chính bằng mã hóa, xác thực \(JWT\), và giao thức SSL\.
+- Khả năng mở rộng: Hỗ trợ thêm tính năng mới \(ví dụ: tích hợp thêm cổng thanh toán, tích hợp gửi gmail quên mật khẩu báo cáo nâng cao\) mà không làm gián đoạn hệ thống\.
+- Trải nghiệm người dùng: Giao diện trực quan với ngôn ngữ hỗ trợ tiếng Việt\.<a id="_Toc194869639"></a>\.
+
+### <a id="_Toc194869986"></a><a id="_Toc194872866"></a><a id="_Toc194869640"></a><a id="_Toc194870178"></a><a id="_Toc194939667"></a><a id="_Toc194869906"></a>2\.2\. Nghiệp vụ bài toán
+
+	Hệ thống quản lý cửa hàng đồng hồ không chỉ đơn thuần là một website bán hàng, mà còn bao gồm các nghiệp vụ liên quan đến quy trình kinh doanh và quản lý vận hành\. Các nghiệp vụ chính của bài toán bao gồm:
+
+__	Quản lý người dùng:__
+
+		Đăng ký, đăng nhập: Cho phép người dùng tạo tài khoản, đăng nhập hệ thống và sử dụng các chức năng mua sắm\.
+
+		Cập nhật thông tin cá nhân: Người dùng có thể thay đổi thông tin cá nhân như tên, địa chỉ, số điện thoại,\.\.\.\.
+
+		Phân quyền truy cập: Phân biệt rõ người dùng thông thường và quản trị viên để kiểm soát quyền truy cập và sử dụng hệ thống\.
+
+__	Quản lý sản phẩm:__
+
+__		__Các sản phẩm được phân loại theo danh mục\(ví dụ: đồng hồ nam, đồng hồ nữ, đồng hồ cặp đôi\.\.\.\.\)
+
+		Thêm, sửa, xóa, tìm kiếm, sắp xếp, xem chi tiết sản phẩm
+
+__	Quản lý giỏ hàng:__
+
+		Thêm sản phẩm vào giỏ hàng: Người dùng chọn các sản phẩm muốn mua và thêm vào giỏ hàng\.
+
+		Cập nhật giỏ hàng: Người dùng có thể thay đổi số lượng hoặc xóa sản phẩm khỏi giỏ hàng\.
+
+		Tính tổng tiền: Hệ thống tự động tính tiền hàng và hiển thị cho người dùng trước khi đặt hàng\.
+
+__	Đặt hàng và thanh toán:__
+
+		Tạo đơn hàng: Khi người dùng xác nhận giỏ hàng, hệ thống sẽ tạo đơn hàng kèm thông tin người nhận và phương thức thanh toán\.
+
+		Thanh toán trực tuyến: Hệ thống hỗ trợ thanh toán qua các cổng thanh toán điện tử PayPal\.
+
+		Cập nhật trạng thái đơn hàng: Đơn hàng có các trạng thái như: Đang xử lý, đang giao hàng, đã giao hoặc hủy\.
+
+__ 	Quản lý đơn hàng:__
+
+		Dành cho người dùng: Xem danh sách chi tiết các đơn hàng đã đặt và có thể lọc theo các trạng thái hàng hoặc có thể huỷ đơn hàng nếu muốn\.
+
+		Dành cho quản trị viên: Theo dõi và xử lý đơn hàng có thể xuất hóa đơn cho người dùng\. 
+
+__	Quản trị hệ thống:__
+
+		Quản lý tài khoản người dùng: Khóa/mở tài khoản, cấp quyền quản trị\.
+
+		Quản lý danh mục, sản phẩm, thương hiệu: Thực hiện các thao tác CRUD\.
+
+		Thống kê cơ bản: Xem số lượng đơn hàng, người dùng tạo tài khoản trong tháng, doanh thu\.\.\.\.\.\.
+
+## <a id="_Toc194939670"></a><a id="_Toc193295762"></a><a id="_Toc194869989"></a><a id="_Toc194870181"></a><a id="_Toc194869909"></a><a id="_Toc194869679"></a><a id="_Toc194872869"></a>2\.3\. Xác định Use Case của hệ thống
+
+### <a id="_Toc193295763"></a><a id="_Toc194939671"></a><a id="_Toc194870182"></a><a id="_Toc194869990"></a><a id="_Toc194872870"></a><a id="_Toc194869910"></a><a id="_Toc194869680"></a>2\.3\.1\. Đối tượng sử dụng hệ thống
+
+- Quản trị viên : Quản trị viên là cá nhân sử dụng hệ thống để quản lý toàn bộ hệ thống, bao gồm việc thống kê, thêm, sửa, xóa thông tin và xử lý đơn hàng\.
+- Khách hàng: Là những người truy cập hệ thống với mục đích tham khảo thông tin sản phẩm và mua sắm trực tuyến\.
+- Khách hàng vãng lai: Là những người không cần đăng nhập có thể xem sản phẩm, danh mục và tìm kiếm sản phẩm theo từ khóa\.
+
+### <a id="_Toc193295764"></a><a id="_Toc194870183"></a><a id="_Toc194869911"></a><a id="_Toc194869991"></a><a id="_Toc194869681"></a><a id="_Toc194872871"></a><a id="_Toc194939672"></a>2\.3\.2\. Các chức năng chính của hệ thống
+
+<a id="_Toc193295765"></a>Về phía Quản trị viên
+
+- Quản lý sản phẩm, danh mục, thương hiệu : Cho phép thêm, sửa, xóa thông tin sản phẩm và các thông tin liên quan\.
+- Quản lý người dùng: Cho phép thêm quyền và khóa tài khoản người dùng\.
+- Quản lý đơn hàng: Cho phép theo dõi trạng thái đơn hàng, tìm kiếm, xem chi tiết và xuất hóa đơn cho khách hàng\.
+- Thống kê báo cáo doanh thu, lợi nhuận theo ngày, tuần, tháng, năm\.
+- Đăng nhập tài khoản quản trị viên : Chỉ quản trị viên được cấp quyền mới có thể truy cập hệ thống quản lý\.
+- Đăng xuất: Sau khi hoàn thành công việc, quản trị viên có thể đăng xuất tài khoản\.
+
+<a id="_Toc193295766"></a>Về phía Khách hàng
+
+- Chức năng tìm kiếm sản phẩm: Người dùng có thể nhập từ khóa theo tên hoặc mô tả để tìm kiếm sản phẩm nhanh chóng\.
+- Chức năng quản lý giỏ hàng: Cho phép khách hàng thêm sản phẩm vào giỏ để tiến hành đặt hàng và khách hàng có thể cập nhật số lượng hoặc xóa sản phẩm \.
+- Chức năng đặt hàng: Người dùng sẽ tiến hành đặt hàng và tiến hành thanh toán sản phẩm với chức năng đặt hàng và chọn hình thức thanh toán : Sau khi đã thêm sản phẩm vào giỏ hàng và có ý định đặt sản phẩm theo các phương thức thanh toán đã có ở Web\.
+- Chức năng yêu thích sản phẩm: Người dùng có thể thêm sản phẩm vào danh sách yêu thích,xem lại thông tin sản phẩm đã yêu thích\.
+- Chức năng đăng nhập và đăng ký: Người dùng cần đăng nhập để mua hàng và xem giỏ hàng, nếu chưa có tài khoản, có thể đăng ký để thực hiện các thao tác trên\.
+- Chức năng cập nhật thông tin: Người dùng có thể thay đổi, xem thông tin cá nhân và đổi mật khẩu\.
+
+Về phía khách hàng vãng lai
+
+- Chức năng xem sản phẩm và danh mục : Người dùng có thể nhập từ khóa để tìm kiếm sản phẩm nhanh chóng\.
+- Chức năng đăng nhập và đăng ký: Người dùng cần có tài khoản để đăng nhập rồi mua hàng và xem giỏ hàng, nếu chưa có tài khoản, có thể đăng ký để thực hiện các thao tác trên\.
+
+<a id="_Toc195551509"></a><a id="_Toc194873376"></a><a id="_Toc194939674"></a>Hình 2\.1\.Cấu trúc và nghiệp vụ của hệ thống
+
+Các tác nhân của hệ thống gồm có
+
+__Bảng 2\.1\. Danh sách Actor__
+
+__STT__
+
+__Actor__
+
+__Vai trò trong hệ thống__
+
+1
+
+Khách hàng vãng lai \(PermitAll\)
+
+Người dùng chưa đăng nhập, có thể đăng ký, đăng nhập, xem danh mục, sản phẩm, tìm kiếm sản phẩm và xem chi tiết sản phẩm\.
+
+2
+
+Người dùng đã đăng nhập \(ROLE\_USER\)
+
+Người dùng đã đăng nhập, có thể quản lý giỏ hàng, đặt hàng, xem lịch sử mua hàng, quản lý tài khoản cá nhân và danh sách yêu thích\.
+
+3
+
+Quản trị viên \(ROLE\_ADMIN\)
+
+Người quản lý hệ thống, có quyền quản lý người dùng, danh mục, sản phẩm, đơn hàng và xem các báo cáo, thống kê\.
+
+## <a id="_Toc194869913"></a><a id="_Toc194872873"></a><a id="_Toc194869993"></a><a id="_Toc194939676"></a><a id="_Toc194869683"></a><a id="_Toc194870185"></a>2\.4\. Biểu đồ use case tổng quát
+
+[HÌNH ẢNH][HÌNH ẢNH]
+
+<a id="_Toc194939677"></a><a id="_Toc195551510"></a><a id="_Toc194873377"></a>Hình 2\.2\. Biểu đồ use case tổng quát
+
+## <a id="_Toc194869914"></a><a id="_Toc194872874"></a><a id="_Toc194870186"></a><a id="_Toc194869684"></a><a id="_Toc193295770"></a><a id="_Toc194939678"></a><a id="_Toc194869994"></a>2\.5\. Phân tích chức năng quản lý danh mục
+
+### <a id="_Toc194869995"></a><a id="_Toc194939679"></a><a id="_Toc194870187"></a><a id="_Toc194869915"></a><a id="_Toc194872875"></a><a id="_Toc194869685"></a>2\.5\.1\. Sơ đồ use case phân rã chức năng quản lý danh mục <a id="_Toc194939680"></a>[HÌNH ẢNH]
+
+<a id="_Toc194873378"></a><a id="_Toc195551511"></a><a id="_Toc194939681"></a>Hình 2\.3\. Biểu đồ Use case phân rã chức năng quản lý danh mục
+
+### <a id="_Toc193295771"></a><a id="_Toc194870188"></a><a id="_Toc194872876"></a><a id="_Toc194869916"></a><a id="_Toc194939682"></a><a id="_Toc194869996"></a><a id="_Toc194869686"></a>2\.5\.2\. Kịch bản chức năng quản lý danh mục
+
+Chức năng quản lý danh mục cho phép quản trị viên quản lý các danh mục có trong hệ thống\. Cho phép các thao tác xử lý thêm, sửa, xóa, tìm kiếm các danh mục 
+
+__Bảng 2\.2\. Bảng kịch bản chức năng quản lý danh mục__
+
+__Tên usecase__
+
+Quản lý danh mục
+
+__Tác nhân__
+
+Quản trị viên
+
+__Mô tả__
+
+Quản trị viên thực hiện các thao tác tạo mới, cập nhật, xóa danh mục trong hệ thống\.
+
+__Tiền điều kiện__
+
+\- Quản trị viên đã đăng nhập vào hệ thống\.
+
+\- Có quyền quản trị viên\.
+
+__Điều kiện kích hoạt__
+
+Quản trị viên chọn menu "Quản lý danh mục"\.
+
+__Đảm bảo thành công__
+
+\- Danh mục được tạo, cập nhật hoặc xóa thành công\.
+
+\- Hệ thống hiển thị danh sách danh mục cập nhật\.
+
+__Luồng sự kiện chính__
+
+STT
+
+Tác nhân
+
+Hành động “Thêm” hoặc “Cập nhật”
+
+1
+
+Quản trị viên
+
+Chọn chức năng thêm hoặc cập nhật danh mục
+
+2
+
+Hệ thống
+
+Hiển thị form nhập thông tin\.
+
+3
+
+Quản trị viên
+
+Nhập thông tin vào form thêm hoặc cập nhật, nhấn "Thêm" hoặc “Cập nhật”
+
+4
+
+Hệ thống
+
+Kiểm tra thông tin vừa nhập và lưu thông tin\.
+
+5
+
+Hệ thống
+
+Hiển thị danh sách cập nhật\.
+
+STT
+
+Tác nhân
+
+Hành động “Xóa”
+
+1
+
+Quản trị viên
+
+Chọn button “Xóa” ở danh mục muốn xóa
+
+2
+
+Hệ thống
+
+Hiển thị thông báo “Bạn có chắc chắn muốn xóa danh mục này không”
+
+3
+
+Quản trị viên
+
+Chọn “Có”
+
+4
+
+Hệ thống
+
+Kiểm tra thông tin danh mục có sản phẩm không\.
+
+5
+
+Hệ thống
+
+Xóa thông tin về danh mục và hiển thị lại danh sách cập nhật\.
+
+STT
+
+Tác nhân
+
+Hành động “Tìm kiếm”
+
+1
+
+Quản trị viên
+
+Chọn input gõ dữ liệu danh mục muốn tìm\.
+
+2
+
+Hệ thống
+
+Kiểm tra xem có có danh mục trong cơ sở dữ liệu không\.
+
+3
+
+Hệ thống
+
+Trả về hiển thị dữ liệu muốn tìm kiếm\.
+
+__Luồng sự kiện thay thế__
+
+STT
+
+Tác nhân
+
+Hành động “Thêm” hoặc “Cập nhật”
+
+4\.1
+
+Hệ thống
+
+Thông báo lỗi nếu tên danh mục đã tồn tại hoặc bị để trống\.
+
+4\.2
+
+Quản trị viên
+
+Nhập lại thông tin và tiến hành các bước tiếp theo
+
+STT
+
+Tác nhân
+
+Hành động “Xóa”
+
+4\.1
+
+Hệ thống
+
+Thông báo lỗi nếu danh mục có tồn tại sản phẩm\.
+
+4\.2
+
+Hệ thống
+
+Hiển thị lại danh mục
+
+STT
+
+Tác nhân
+
+Hành động “tìm kiếm”
+
+2\.1
+
+Hệ thống
+
+“Hiển thị thông báo không tìm thấy danh mục” 
+
+2\.2
+
+Quản trị viên
+
+Nhập lại dữ liệu muốn tìm kiếm lại
+
+* *
+
+<a id="_Toc194869997"></a><a id="_Toc194872877"></a><a id="_Toc194869687"></a><a id="_Toc194869917"></a><a id="_Toc194870189"></a>
+
+### <a id="_Toc194939684"></a>2\.5\.3\. Sơ đồ hoạt động và tuần tự chức năng quản lý danh mục 
+
+[HÌNH ẢNH]
+
+<a id="_Toc195551512"></a><a id="_Toc194873379"></a><a id="_Toc194939685"></a>Hình 2\.4\. Biểu đồ hoạt động chức năng thêm danh mục
+
+[HÌNH ẢNH]
+
+<a id="_Toc195551513"></a><a id="_Toc194873380"></a><a id="_Toc194939686"></a>Hình 2\.5\. Biểu đồ tuần tự chức năng thêm danh mục
+
+Mô tả hoạt động thêm danh mục: Sau khi chọn quản lý danh mục ở thanh menu trang quản lý, quản trị viên chọn button “Thêm mới”\. Hệ thống sẽ trả về form thông tin thêm mới một danh mục, controller sẽ làm nhiệm vụ xử lý thực thi yêu càu gửi thông tin dịch vụ và lưu vào database qua service\.
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939687"></a><a id="_Toc195551514"></a><a id="_Toc194873381"></a>Hình 2\.6\. Biểu đồ hoạt động chức năng sửa danh mục
+
+[HÌNH ẢNH]
+
+<a id="_Toc194873382"></a><a id="_Toc195551515"></a><a id="_Toc194939688"></a>Hình 2\.7\. Biểu đồ tuần tự chức năng sửa danh mục
+
+Mô tả hoạt động sửa danh mục: Sau khi chọn quản lý danh mục quản trị viên chọn button “Sửa” tại danh mục cần sửa\. Hệ thống sẽ trả về view form thông tin hiện tại danh mục đó và quản trị viên sẽ thao tác sửa trên nó, controller sẽ làm nhiệm vụ xử lý thực thi yêu cầu gửi thông tin dịch vụ và lưu vào database qua Service\.
+
+[HÌNH ẢNH]
+
+<a id="_Toc195551516"></a><a id="_Toc194939689"></a><a id="_Toc194873383"></a>Hình 2\.8\. Biểu đồ hoạt động chức năng xóa danh mục
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939690"></a><a id="_Toc195551517"></a><a id="_Toc194873384"></a>Hình 2\.9\. Biểu đồ tuần tự chức năng xóa danh mục
+
+Mô tả hoạt động xóa danh mục\. Sau khi chọn quản lý danh mục quản trị viên chọn button “Xóa” tại danh mục cần xóa\. Hệ thống hiển thị thông báo, bấm xác nhận, controller sẽ làm nhiệm vụ xử lý thực thi yêu cầu gửi thông tin dịch vụ và xóa khỏi database trong bảng Categories qua tầng Service\.
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939691"></a><a id="_Toc194873385"></a><a id="_Toc195551518"></a>Hình 2\. 10\. Biểu đồ hoạt động chức năng tìm kiếm danh mục
+
+[HÌNH ẢNH]
+
+<a id="_Toc194873386"></a><a id="_Toc194939692"></a><a id="_Toc195551519"></a>Hình 2\. 11\. Biểu đồ tuần tự chức năng tìm kiếm danh mục
+
+Mô tả chức năng tìm kiếm danh mục Sau khi chọn quản lý danh mục, quản trị viên nhập từ khóa tìm kiếm vào ô tìm kiếm và nhấn nút Tìm kiếm\. Hệ thống gửi yêu cầu đến Controller, Controller thực thi xử lý, gửi thông tin đến Service để tìm kiếm danh mục trong bảng Categories qua tầng Repository\. Nếu tìm thấy danh mục phù hợp, hệ thống hiển thị danh sách danh mục thỏa mãn từ khóa tìm kiếm\. Nếu không tìm thấy danh mục nào, hệ thống hiển thị thông báo "Không tìm thấy danh mục phù hợp" \[1\], \[2\]\.
+
+<a id="_Toc193295772"></a>
+
+## 2\.6\. <a id="_Toc194872878"></a><a id="_Toc194869998"></a><a id="_Toc194870190"></a><a id="_Toc194869918"></a><a id="_Toc194869688"></a><a id="_Toc194939693"></a>Phân tích chức năng quản lý sản phẩm
+
+### <a id="_Toc194870191"></a><a id="_Toc194869999"></a><a id="_Toc194872879"></a><a id="_Toc194939694"></a><a id="_Toc194869689"></a><a id="_Toc194869919"></a>2\.6\.1\. Biểu đồ Use case phân rã chức năng quản lý sản phẩm
+
+[HÌNH ẢNH]
+
+<a id="_Toc195551520"></a><a id="_Toc194939695"></a><a id="_Toc194873387"></a>Hình 2\.12\. Biểu đồ Use case phân rã chức năng quản lý sản phẩm
+
+### <a id="_Toc193295773"></a><a id="_Toc194870192"></a><a id="_Toc194872880"></a><a id="_Toc194869690"></a><a id="_Toc194869920"></a><a id="_Toc194939696"></a><a id="_Toc194870000"></a>2\.6\.2\. Kịch bản chức năng quản lý sản phẩm
+
+__	__Chức năng quản lý danh mục cho phép quản trị viên quản lý các sản phẩm có trong hệ thống\. Cho phép các thao tác xử lý thêm, sửa, xóa, tìm kiếm các sản phẩm\.
+
+__Bảng 2\.3\. Bảng kịch bản chức năng quản lý sản phẩm__
+
+__Tên usecase__
+
+Quản lý sản phẩm
+
+__Tác nhân__
+
+Quản trị viên 
+
+__Mô tả__
+
+Quản trị viên thực hiện các thao tác tạo mới, cập nhật, xóa sản phẩm trong hệ thống\.
+
+__Tiền điều kiện__
+
+\- Quản trị viên đã đăng nhập vào hệ thống\.
+
+\- Có quyền quản trị viên\.
+
+__Điều kiện kích hoạt__
+
+Quản trị viên chọn menu "Quản lý sản phẩm"\.
+
+__Đảm bảo thành công__
+
+\- Sản phẩm được tạo, cập nhật hoặc xóa thành công\.
+
+\- Hệ thống hiển thị danh sách sản phẩm cập nhật\.
+
+__Luồng sự kiện chính__
+
+STT
+
+Tác nhân
+
+Hành động “Thêm” hoặc “Cập nhật”
+
+1
+
+Quản trị viên
+
+Chọn chức năng thêm hoặc cập nhật sản phẩm
+
+2
+
+Hệ thống
+
+Hiển thị form nhập thông tin\.
+
+3
+
+Quản trị viên
+
+Nhập thông tin vào form thêm hoặc cập nhật, nhấn "Thêm" hoặc “Cập nhật”
+
+4
+
+Hệ thống
+
+Kiểm tra thông tin vừa nhập và lưu thông tin\.
+
+5
+
+Hệ thống
+
+Hiển thị danh sách cập nhật\.
+
+STT
+
+Tác nhân
+
+Hành động “Xóa”
+
+1
+
+Quản trị viên
+
+Chọn button “Xóa” ở sản phẩm muốn xóa
+
+2
+
+Hệ thống
+
+Hiển thị thông báo “Bạn có chắc chắn muốn xóa sản phẩm này không”
+
+3
+
+Quản trị viên
+
+Chọn “Có”
+
+4
+
+Hệ thống
+
+Xóa thông tin về sản phẩm và hiển thị lại danh sách cập nhật\.
+
+STT
+
+Tác nhân
+
+Hành động “Tìm kiếm”
+
+1
+
+Quản trị viên
+
+Chọn input gõ dữ liệu sản phẩm muốn tìm\.
+
+2
+
+Hệ thống
+
+Kiểm tra xem có có sản phẩm trong cơ sở dữ liệu không\.
+
+3
+
+Hệ thống
+
+Trả về hiển thị dữ liệu muốn tìm kiếm\.
+
+__Luồng sự kiện thay thế__
+
+STT
+
+Tác nhân
+
+Hành động “Thêm” hoặc “Cập nhật”
+
+4\.1
+
+Hệ thống
+
+Thông báo lỗi nếu tên sản phẩm đã tồn tại hoặc bị để trống\.
+
+4\.2
+
+Quản trị viên
+
+Nhập lại thông tin và tiến hành các bước tiếp theo
+
+STT
+
+Tác nhân
+
+Hành động “tìm kiếm”
+
+2\.1
+
+Hệ thống
+
+“Hiển thị thông báo không tìm thấy sản phẩm” 
+
+2\.2
+
+Quản trị viên
+
+Nhập lại dữ liệu muốn tìm kiếm lại
+
+### * *<a id="_Toc193295774"></a><a id="_Toc194939698"></a><a id="_Toc194872881"></a><a id="_Toc194869921"></a><a id="_Toc194870193"></a><a id="_Toc194869691"></a><a id="_Toc194870001"></a>2\.6\.3\. Sơ đồ hoạt động và tuần tự chức năng quản lý sản phẩm
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939699"></a><a id="_Toc194873388"></a><a id="_Toc195551521"></a>Hình 2\.13\. Biểu đồ hoạt động chức năng thêm sản phẩm
+
+[HÌNH ẢNH]
+
+<a id="_Toc194873389"></a><a id="_Toc195551522"></a><a id="_Toc194939700"></a>Hình 2\.14\. Biểu đồ tuần tự chức năng thêm sản phẩm
+
+Mô tả hoạt động thêm sản phẩm: Sau khi chọn quản lý sản phẩm ở thanh menu trang quản lý, quản trị viên chọn button “Thêm mới”\. Hệ thống sẽ trả về form thông tin thêm mới một sản phẩm, controller sẽ làm nhiệm vụ xử lý thực thi yêu càu gửi thông tin dịch vụ và lưu vào database qua service\.
+
+[HÌNH ẢNH]
+
+<a id="_Toc194873390"></a><a id="_Toc195551523"></a><a id="_Toc194939701"></a>Hình 2\.15\. Biểu đồ hoạt động chức năng sửa sản phẩm
+
+[HÌNH ẢNH]
+
+<a id="_Toc194873391"></a><a id="_Toc194939702"></a><a id="_Toc195551524"></a>Hình 2\.16\. Biểu đồ tuần tự chức năng sửa sản phẩm
+
+Mô tả hoạt động sửa sản phẩm : Sau khi chọn quản lý sản phẩm quản trị viên chọn button “Sửa” tại sản phẩm cần sửa\. Hệ thống sẽ trả về view form thông tin hiện tại sản phẩm đó và quản trị viên sẽ thao tác sửa trên nó, controller sẽ làm nhiệm vụ xử lý thực thi yêu cầu gửi thông tin dịch vụ và lưu vào database qua Service\.
+
+<a id="_Toc194939703"></a><a id="_Toc194873392"></a><a id="_Toc195551525"></a>[HÌNH ẢNH]Hình 2\.17\. Biểu đồ hoạt động chức năng xóa sản phẩm
+
+[HÌNH ẢNH]
+
+<a id="_Toc194873393"></a><a id="_Toc195551526"></a><a id="_Toc194939704"></a>Hình 2\.18\. Biểu đồ tuần tự chức năng  xóa sản phẩm
+
+Mô tả hoạt động xóa sản phẩm\. Sau khi chọn quản lý sản phẩm quản trị viên chọn button “Xóa” tại sản phẩm cần xóa\. Hệ thống hiển thị thông báo, bấm xác nhận, controller sẽ làm nhiệm vụ xử lý thực thi yêu cầu gửi thông tin dịch vụ và xóa khỏi database trong bảng Product qua tầng Service\.
+
+<a id="_Toc194939705"></a>[HÌNH ẢNH]Hình 2\.19\. Biểu đồ hoạt động chức năng tìm kiếm sản phẩm
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939706"></a>Hình 2\.20\. Biểu đồ tuần tự chức năng tìm kiếm sản phẩm
+
+Mô tả chức năng tìm kiếm sản phẩm sau khi chọn quản lý sản phẩm , quản trị viên nhập từ khóa tìm kiếm vào ô tìm kiếm và nhấn nút Tìm kiếm\. Hệ thống gửi yêu cầu đến Controller, Controller thực thi xử lý, gửi thông tin đến Service để tìm kiếm sản phẩm trong bảng Product qua tầng Repository\. Nếu tìm   thấy sản phẩm phù hợp, hệ thống hiển thị danh sách sản phẩm thỏa mãn từ khóa tìm kiếm\. Nếu không tìm thấy sản phẩm nào, hệ thống hiển thị thông báo "Không tìm thấy sản phẩm phù hợp" \[1\], \[2\]\.
+
+<a id="_Toc193295775"></a>
+
+## <a id="_Toc194872882"></a><a id="_Toc194869922"></a><a id="_Toc194869692"></a><a id="_Toc194870194"></a><a id="_Toc194870002"></a><a id="_Toc194939707"></a>2\.7\. Phân tích chức năng quản lý đơn hàng
+
+### <a id="_Toc194870195"></a><a id="_Toc194870003"></a><a id="_Toc194869693"></a><a id="_Toc194939708"></a><a id="_Toc194872883"></a><a id="_Toc194869923"></a>2\.7\.1*\. *Biểu đồ Use case phân rã chức năng quản lý đơn hàng
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939709"></a>Hình 2\.21\. Biểu đồ Use case phân rã chức năng quản lý đơn hàng
+
+### <a id="_Toc193295776"></a><a id="_Toc194870196"></a><a id="_Toc194869924"></a><a id="_Toc194872884"></a><a id="_Toc194870004"></a><a id="_Toc194869694"></a><a id="_Toc194939710"></a>2\.7\.2\. Kịch bản chức năng quản lý đơn hàng
+
+Chức năng quản lý đơn hàng cho phép quản trị viên quản lý các đơn hàng trong hệ thống\. Chức năng này bao gồm các thao tác xem danh sách đơn hàng, xem chi tiết đơn hàng, lọc đơn hàng theo trạng thái, và cập nhật trạng thái đơn hàng\.
+
+__Bảng 2\.4\. Bảng kịch bản chức năng quản lý đơn hàng__
+
+__Tên usecase__
+
+Quản lý đơn hàng
+
+__Tác nhân__
+
+Quản trị viên 
+
+__Mô tả__
+
+Quản trị viên thực hiện các thao tác xem, lọc, và cập nhật trạng thái đơn hàng trong hệ thống\.
+
+__Tiền điều kiện__
+
+\- Quản trị viên đã đăng nhập vào hệ thống\.
+
+\- Có quyền quản trị viên\.
+
+__Điều kiện kích hoạt__
+
+Quản trị viên chọn menu "Quản lý đơn hàng"\.
+
+__Đảm bảo thành công__
+
+\- Danh sách đơn hàng được hiển thị chính xác\.
+
+\- Trạng thái đơn hàng được cập nhật thành công\.
+
+\- Hệ thống hiển thị thông tin chi tiết đơn hàng hoặc danh sách cập nhật\.
+
+__Luồng sự kiện chính__
+
+STT
+
+Tác nhân
+
+Hành động“Tìm kiếm đơn hàng theo trạng thái
+
+”
+
+1
+
+Quản trị viên
+
+Chọn chức năng “Xem danh sách đơn hàng theo trạng thái” từ menu “Quản lý đơn hàng”\.
+
+2
+
+Hệ thống
+
+Hiển thị danh sách đơn hàng theo trạng thái\.
+
+3
+
+Hệ thống
+
+Hiển thị đơn hàng theo trạng thái\.
+
+STT
+
+Tác nhân
+
+Hành động “Cập nhật trạng thái đơn hàng”
+
+1
+
+Quản trị viên
+
+Chọn một đơn hàng, nhấn nút “Cập nhật trạng thái” và chọn trạng thái mới \(ví dụ: CONFIRM\)\.
+
+2
+
+Hệ thống
+
+Hiển thị form xác nhận cập nhật trạng thái\.
+
+3
+
+Quản trị viên
+
+Nhấn “Xác nhận”\.
+
+4
+
+Hệ thống
+
+Cập nhật trạng thái trong cơ sở dữ liệu và hiển thị thông báo “Cập nhật thành công”\.
+
+__Luồng sự kiện thay thế__
+
+STT
+
+Tác nhân
+
+Hành động “Tìm kiếm danh sách đơn hàng theo trạng thái”\.
+
+2\.1
+
+Hệ thống
+
+Hiển thị thông báo “Không tìm thấy đơn hàng nào với trạng thái này” nếu danh sách rỗng\.
+
+2\.2
+
+Quản trị viên
+
+Chọn trạng thái khác để lọc lại\.
+
+STT
+
+Tác nhân
+
+Hành động “Cập nhật trạng thái đơn hàng”
+
+4\.1
+
+Hệ thống
+
+Thông báo lỗi nếu trạng thái không hợp lệ hoặc đơn hàng không tồn tại\. 
+
+4\.2
+
+Quản trị viên
+
+Chọn lại trạng thái hoặc kiểm tra thông tin đơn hàng và thử lại\.
+
+<a id="_Toc193295777"></a>
+
+### <a id="_Toc194869925"></a><a id="_Toc194939712"></a><a id="_Toc194869695"></a><a id="_Toc194870005"></a><a id="_Toc194870197"></a><a id="_Toc194872885"></a>2\.7\.3\. Sơ đồ hoạt động và tuần tự chức năng quản lý đơn hàng
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939713"></a>Hình 2\.22\. Biểu đồ tuần tự chức năng hiển thị đơn hàng theo trạng thái
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939714"></a>Hình 2\.23\. Biểu đồ tuần tự chức năng hiển thị đơn hàng theo trạng thái
+
+Mô tả chức năng này cho phép quản trị viên xem đơn hàng dựa trên trạng thái cụ thể như Chờ xác nhận, Đang giao, Đã hoàn thành, Đã hủy, v\.v\. quản trị viên có thể chọn trạng thái đơn hàng để lọc danh sách và hiển thị kết quả tương ứng\.
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939715"></a>Hình 2\.24\. Biểu đồ hoạt động chức năng cập nhật trạng thái đơn hàng
+
+*	*[HÌNH ẢNH]
+
+<a id="_Toc194939716"></a>Hình 2\.25\. Biểu đồ tuần tự chức năng cập nhật trạng thái đơn hàng
+
+Mô tả  chức năng này cho phép quản trị viên hoặc hệ thống cập nhật trạng thái của một đơn hàng dựa trên số đơn hàng \. Trạng thái đơn hàng có thể thay đổi theo quy trình xử lý đơn hàng như PENDING \(Đang chờ xử lý\), CONFIRMED \(Đã xác nhận\), SHIPPED \(Đã giao hàng\), DELIVERED \(Đã nhận hàng\), CANCELLED \(Đã hủy\) \[1\], \[2\]\.
+
+<a id="_Toc193295778"></a>
+
+## <a id="_Toc194869696"></a><a id="_Toc194870006"></a><a id="_Toc194872886"></a><a id="_Toc194869926"></a><a id="_Toc194870198"></a><a id="_Toc194939717"></a>2\.8\. Phân tích chức năng quản lý người dùng
+
+### <a id="_Toc194872887"></a><a id="_Toc194870199"></a><a id="_Toc194869927"></a><a id="_Toc194939718"></a><a id="_Toc194870007"></a><a id="_Toc194869697"></a>2\.8\.1\. Biểu đồ Use case phân rã chức năng quản lý người dùng
+
+<a id="_Toc194939719"></a>[HÌNH ẢNH]Hình 2\.26\. Biểu đồ Use case phân rã chức năng quản lý người dùng
+
+### <a id="_Toc193295779"></a><a id="_Toc194872888"></a><a id="_Toc194869698"></a><a id="_Toc194939720"></a><a id="_Toc194870008"></a><a id="_Toc194869928"></a><a id="_Toc194870200"></a>2\.8\.2\. Kịch bản chức năng quản lý người dùng
+
+Chức năng quản lý người dùng cho phép quản trị viên quản lý những người dùng có trong hệ thống\. Cho phép các thao tác phân quyền, cập nhật trạng thái và tìm kiếm người dùng
+
+__Bảng 2\.5\. Bảng kịch bản chức năng quản lý người dùng__
+
+__Tên usecase__
+
+Quản lý người dùng \(Phân quyền, Cập nhật trạng thái, Tìm kiếm\)
+
+__Tác nhân__
+
+Quản trị viên
+
+__Mô tả__
+
+Quản trị viên thực hiện các thao tác phân quyền, cập nhật trạng thái khóa/mở khóa, và tìm kiếm người dùng trong hệ thống\.
+
+__Tiền điều kiện__
+
+\- Quản trị viên đã đăng nhập vào hệ thống\.
+
+\- Có quyền quản trị viên
+
+__Điều kiện kích hoạt__
+
+Quản trị viên chọn menu "Quản lý người dùng"\.
+
+__Đảm bảo thành công__
+
+\- Người dùng được phân quyền, cập nhật trạng thái, hoặc tìm kiếm thành công\.
+
+\- Hệ thống hiển thị danh sách người dùng cập nhật\.
+
+__Luồng sự kiện chính__
+
+__STT__
+
+__Tác nhân__
+
+__Hành động “Phân quyền”__
+
+1
+
+Quản trị viên 
+
+Chọn chức năng quản lý người dùng\.
+
+2
+
+Hệ thống
+
+Hiển thị danh sách người dùng
+
+3
+
+Quản trị viên
+
+Chọn người dùng nào muốn phân quyền
+
+4
+
+Hệ thống
+
+Hiển thị form sửa
+
+5
+
+Quản trị viên
+
+Chọn vai trò \(quản trị viên, quyền người dùng\) và nhấn “Sửa”\.
+
+6
+
+Hệ thống
+
+Kiểm tra thông tin vừa nhập và lưu quyền\.
+
+7
+
+Hệ thống
+
+Hiển thị danh sách người dùng cập nhật\.
+
+__STT__
+
+__Tác nhân__
+
+__Hành động “Cập nhật trạng thái”__
+
+1
+
+Quản trị viên
+
+Chọn chức năng quản lý người dùng\.
+
+2
+
+Hệ thống
+
+Hiển thị danh sách người dùng
+
+3
+
+Quản trị viên
+
+Chọn người dùng cần cập nhật trạng thái\.
+
+4
+
+Hệ thống
+
+Hiển thị form sửa
+
+5
+
+Quản trị viên
+
+Chọn "Khóa" hoặc "Mở khóa" và xác nhận\.
+
+6
+
+Hệ thống
+
+Kiểm tra thông tin và cập nhật trạng thái\.
+
+7
+
+Hệ thống
+
+Hiển thị danh sách người dùng cập nhật\.
+
+__STT__
+
+__Tác nhân__
+
+__Hành động__
+
+1
+
+Quản trị viên
+
+Nhập từ khóa vào ô “Tìm kiếm” trong mục quản lý người dùng
+
+2
+
+Hệ thống
+
+Kiểm tra xem có người dùng phù hợp với từ khóa không\.
+
+3
+
+Hệ thống
+
+Hiển thị ra giao diện kết quả tìm kiếm\.
+
+__Luồng sự kiện thay thế__
+
+__STT__
+
+__Tác nhân__
+
+__Hành động__
+
+6\.1
+
+Hệ thống
+
+Thông báo lỗi khi người dùng chọn quyền đã có sẵn
+
+6\.2
+
+Quản trị viên
+
+Nhập lại thông tin và tiến hành các bước tiếp theo\.
+
+__STT__
+
+__Tác nhân__
+
+__Hành động__
+
+2\.1
+
+Hệ thống
+
+Hiển thị thông báo “Không tìm thấy người dùng”\.
+
+2\.2
+
+Quản trị viên
+
+Nhập lại từ khóa tìm kiếm\.
+
+### <a id="_Toc194870201"></a><a id="_Toc194870009"></a><a id="_Toc194872889"></a><a id="_Toc194939722"></a><a id="_Toc194869929"></a><a id="_Toc194869699"></a>2\.8\.3\. Sơ đồ hoạt động và tuần tự quản lý người dùng
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939723"></a>Hình 2\.27\. Biểu đồ hoạt động chức năng phân quyền
+
+<a id="_Toc194939724"></a>[HÌNH ẢNH]Hình 2\.28\.  Biểu đồ tuần tự chức năng phân quyền
+
+	Mô tả hoạt động phân quyền người dùng: Quản trị viên truy cập giao diện, chọn người dùng, hệ thống hiển thị form phân quyền sau khi lấy thông tin từ Database\. Quản trị viên chọn vai trò \(quản trị viên, người dùng\) và xác nhận, hệ thống kiểm tra vai trò; nếu hợp lệ thì cập nhật vào Database và hiển thị danh sách người dùng mới, nếu không thì thông báo lỗi \(vai trò không hợp lệ hoặc mất kết nối\) và quay lại bước chọn vai trò hoặc giao diện, sau đó kết thúc\.
+
+<a id="_Toc194939725"></a>[HÌNH ẢNH]Hình 2\.29\. Biểu đồ tuần tự hoạt động chức năng cập nhật trạng thái người dùng
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939726"></a>Hình 2\.30\.  Biểu đồ tuần tự chức năng cập nhật trạng thái người dùng
+
+Mô tả hoạt động cập nhật trạng thái người dùng: Quản trị viên truy cập giao diện, chọn người dùng, hệ thống hiển thị form trạng thái \(khóa/mở khóa\) sau khi lấy thông tin từ Database\. Quản trị viên chọn trạng thái mới và xác nhận, hệ thống kiểm tra; nếu hợp lệ, cập nhật trạng thái vào Database và hiển thị danh sách người dùng mới, nếu không \(người dùng đang hoạt động hoặc lỗi hệ thống\), thông báo lỗi và quay lại giao diện hoặc chọn lại, sau đó kết thúc\.
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939727"></a>Hình 2\.31\. Biểu đồ tuần tự chức năng tìm kiếm người dùng
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939728"></a>Hình 2\.32\.  Biểu đồ hoạt động chức năng tìm kiếm người dùng
+
+Mô tả chức năng tìm kiếm người dùng: Quản trị viên truy cập giao diện, nhập từ khóa tìm kiếm \(ví dụ: "user1"\), hệ thống gửi yêu cầu đến Backend và kiểm tra kết nối với Database\. Nếu thành công, hệ thống truy vấn và hiển thị danh sách người dùng phù hợp; nếu không tìm thấy hoặc xảy ra lỗi \(mất kết nối\), hiển thị thông báo "Không tìm thấy người dùng" hoặc "Lỗi hệ thống" và quay lại nhập từ khóa hoặc giao diện, sau đó kết thúc \[1\], \[2\]\.
+
+<a id="_Toc193295780"></a>
+
+## <a id="_Toc194939729"></a><a id="_Toc194872890"></a><a id="_Toc194869700"></a><a id="_Toc194869930"></a><a id="_Toc194870202"></a><a id="_Toc194870010"></a>2\.9\. Biểu đồ lớp
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939730"></a>Hình 2\.33\. Biểu đồ lớp
+
+## 2\.10\.  <a id="_Toc194872891"></a><a id="_Toc194870203"></a><a id="_Toc194939731"></a><a id="_Toc194870011"></a><a id="_Toc194869701"></a><a id="_Toc194869931"></a>Biểu đồ cơ sở dữ liệu
+
+[HÌNH ẢNH]
+
+<a id="_Toc194939732"></a>Hình 2\.34\. Biểu đồ cơ sở dữ liệu
+
+## <a id="_Toc194870204"></a><a id="_Toc194869932"></a><a id="_Toc194872892"></a><a id="_Toc194870012"></a><a id="_Toc194939733"></a><a id="_Toc194869702"></a>2\.11\. Danh mục bảng
+
+__	__Mục đích lưu thông tin người dùng khi đăng ký, đăng nhập của Quản trị viên và người dùng
+
+	Danh sách các bảng thuộc tính:
+
+__Bảng 2\.6\. Bảng thiết kế cơ sở dữ liệu cho bảng “user”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+user\_id
+
+id người dùng
+
+BigInt
+
+Khóa chính,Giá trị tự động tăng khi thêm mới
+
+2
+
+username
+
+Tên đăng nhập
+
+Varchar\(100\)
+
+Tối thiểu 6 ký tự, tối đa 100 kí tự  
+Không có ký tự đặc biệt, không trùng lặp
+
+3
+
+email
+
+Email
+
+Varchar\(255\)
+
+Định dạng Email
+
+4
+
+fullname
+
+Họ và tên
+
+Varchar\(100\)
+
+Không được để trống
+
+5
+
+status
+
+Trạng thái người dùng
+
+Bit
+
+True \- Active \- hoạt động  
+False \- Block \- Khóa
+
+6
+
+password
+
+Mật khẩu
+
+Varchar\(255\)
+
+Mã hóa
+
+7
+
+avatar
+
+Hình đại diện
+
+Varchar\(255\)
+
+Không bắt buộc
+
+8
+
+phone
+
+Số điện thoại
+
+Varchar\(15\)
+
+Định dạng phone VN, không trùng lặp
+
+9
+
+address
+
+Địa chỉ
+
+Varchar\(255\)
+
+Không được để trống
+
+10
+
+created\_at
+
+Thời gian được tạo
+
+Date
+
+Mặc định là ngày hiện tại,hiển thị format dạng dd/mm/yyyy
+
+11
+
+updated\_at
+
+Thời gian cập nhật gần nhất
+
+Date
+
+format dạng dd/mm/yyyy
+
+11
+
+is\_deleted
+
+tài khoản đã xóa
+
+bit
+
+mặc định là 1   
+0 \-  Hoạt động  
+1 \-  Bị xóa
+
+<a id="_Toc193295782"></a>
+
+__ __<a id="_Toc194939735"></a>__Bảng “role”__
+
+Mục đích lưu thông tin vai trò của tài khoản dành cho Quản trị viên/Người dùng
+
+	Danh sách bảng thuộc tính
+
+__Bảng 2\.7\. Bảng thiết kế cơ sở dữ liệu cho bảng “role”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+role\_id
+
+id quyền
+
+BigInt
+
+Khóa chính,Giá trị tự động tăng khi thêm mới
+
+2
+
+role\_name
+
+Tên quyền
+
+enum
+
+\- ADMIN, USER, MANAGER, \.\.\.
+
+<a id="_Toc193295783"></a>__ __<a id="_Toc194939737"></a>__Bảng “category”__
+
+__	__Mục đích lưu thông tin về danh mục
+
+	Danh sách bảng thuộc tính
+
+__Bảng 2\.8\. Bảng thiết kế cơ sở dữ liệu cho bảng “category”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+category\_id
+
+ID danh mục
+
+BigInt
+
+Khóa chính ,Giá trị tự động tăng
+
+ khi thêm mới
+
+2
+
+category\_name
+
+Tên danh mục
+
+Varchar\(100\)
+
+Không được để trống
+
+3
+
+description
+
+Mô tả danh mục
+
+Text
+
+4
+
+status
+
+Trạng thái danh mục
+
+Bit
+
+True \- Active  
+False \- Inactive
+
+<a id="_Toc193295784"></a>
+
+__ __<a id="_Toc194939739"></a>__Bảng “products”__
+
+__	__Mục đích lưu thông tin về sản phẩm
+
+	Danh sách bảng thuộc tính
+
+__Bảng 2\.9\. Bảng thiết kế cơ sở dữ liệu cho bảng “products”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+product\_id
+
+ID sản phẩm
+
+BigInt
+
+Khóa chính ,Giá trị tự động tăng khi thêm mới
+
+2
+
+sku
+
+Code sản phẩm
+
+Varchar\(100\)
+
+Chuỗi uuid ngẫu nhiên , không trùng nhau
+
+3
+
+product\_name
+
+Tên sản phẩm
+
+Varchar\(100\)
+
+Không được để trống, không được trùng nhau
+
+4
+
+description
+
+Mô tả
+
+Text
+
+5
+
+unit\_price
+
+Đơn giá
+
+Decimal\(10,2\)
+
+6
+
+stock\_quantity
+
+Số lượng tồn kho
+
+Int
+
+Giá trị >= 0
+
+7
+
+image
+
+Hình ảnh về sản phẩm
+
+Varchar\(255\)
+
+8
+
+category\_id
+
+Mã danh mục
+
+Bigint
+
+9
+
+brand\_id
+
+Mã thương hiệu
+
+Bigint
+
+9
+
+created\_at
+
+Thời gian được tạo
+
+Date
+
+Mặc định là ngày hiện tại, format dạng dd/mm/yyyy
+
+10
+
+updated\_at
+
+Thời gian cập nhật gần nhất
+
+Date
+
+format dạng dd/mm/yyyy
+
+11
+
+sold\_quantity
+
+Số lượng bán được
+
+Int
+
+<a id="_Toc193295785"></a>
+
+__ __<a id="_Toc194939741"></a>__Bảng “orders”__
+
+__	__Mục đích lưu thông tin về đơn hàng
+
+	Danh sách bảng thuộc tính
+
+__Bảng 2\.10\. Bảng thiết kế cơ sở dữ liệu cho bảng “orders”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+order\_id
+
+ID đơn hàng
+
+bigint
+
+Khóa chính ,Id tự tăng
+
+2
+
+serial\_number
+
+Mã đơn hàng
+
+Varchar\(100\)
+
+Uuid tự sinh ngẫu nhiên
+
+3
+
+user\_id
+
+ID người đặt hàng
+
+BigInt
+
+Không được null , Khóa ngoại
+
+4
+
+total\_price
+
+Tổng tiền
+
+Decimal\(10,2\)
+
+5
+
+status
+
+Trạng thái đơn hàng
+
+Enum
+
+WAITING : Đơn hàng mới chờ xác nhận  
+CONFIRM : Đã xác nhận  
+DELIVERY : Đang giao hàng  
+SUCCESS : Đã giao hàng  
+CANCEL : Đã hủy đơn  
+DENIED: Bị từ chối
+
+6
+
+note
+
+Ghi chú
+
+Varchar\(100\)
+
+7
+
+receive\_name
+
+Varchar\(100\)
+
+8
+
+receive\_address
+
+Varchar\(255\)
+
+9
+
+receive\_phone
+
+Varchar\(15\)
+
+10
+
+created\_at
+
+Thời gian được tạo
+
+Date
+
+Mặc định là ngày hiện tại, format dạng dd/mm/yyyy
+
+11
+
+received\_at
+
+Thời gian giao hàng dự kiến
+
+Date
+
+Dự kiến 4 ngày sau khi đặt hàng, format dạng dd/mm/yyyy
+
+<a id="_Toc194939743"></a><a id="_Toc193295786"></a>__Bảng “orders\_details”__
+
+__	__Mục đích lưu thông tin về đơn hàng chi tiết 
+
+	Danh sách bảng thuộc tính
+
+__Bảng 2\.11\. Bảng thiết kế cơ sở dữ liệu cho bảng “orders\_details”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+order\_id
+
+ID đơn hàng
+
+BigInt
+
+Khóa ngoại , Khóa chính
+
+2
+
+product\_id
+
+ID sản phẩm
+
+BigInt
+
+Khóa Ngoại , Khóa chính
+
+3
+
+name
+
+Tên sản phẩm
+
+Varchar\(100\)
+
+4
+
+unit\_price
+
+Đơn giá
+
+Decimal\(10,2\)
+
+5
+
+order\_quantity
+
+Số lượng đặt hàng
+
+int
+
+Giá trị >0
+
+<a id="_Toc193295787"></a><a id="_Toc194939745"></a>__Bảng “orders\_details”	__
+
+<a id="_Toc194939746"></a>__Bảng “shopping\_cart”__
+
+Mục đích lưu thông tin về giỏ hàng
+
+	Danh sách bảng thuộc tính
+
+__Bảng 2\.12\. Bảng thiết kế cơ sở dữ liệu cho bảng “shopping\_cart”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+shopping\_cart\_id
+
+ID chi tiết đơn hàng
+
+int
+
+Khóa chính ,Giá trị tự động tăng khi thêm mới
+
+2
+
+product\_id
+
+ID sản phẩm
+
+BigInt
+
+Khóa ngoại
+
+3
+
+user\_id
+
+ID người dùng
+
+Bigint
+
+Khóa ngoại
+
+4
+
+order\_quantity
+
+Số lượng
+
+int
+
+Giá trị >0
+
+<a id="_Toc193295788"></a>__ __<a id="_Toc194939748"></a>__Bảng “address”__
+
+__	__Mục đích lưu thông tin về địa chỉ
+
+	Danh sách bảng thuộc tính
+
+__Bảng 2\.13\. Bảng thiết kế cơ sở dữ liệu cho bảng “address”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+address\_id
+
+ID địa chỉ
+
+Bigint
+
+Khóa chính ,Giá trị tự đông tăng khi thêm mới
+
+2
+
+user\_id
+
+ID người dùng
+
+BigInt
+
+Khóa ngoại
+
+3
+
+full\_address
+
+Địa chỉ chi tiết
+
+varchar\(255\)
+
+4
+
+phone
+
+Số điện thoại
+
+varchar\(15\)
+
+5
+
+receive\_name
+
+Tên người nhận
+
+varchar\(50\)
+
+<a id="_Toc194939750"></a>__Bảng “token\_back\_list”__
+
+Mục đích đăng xuất xóa token
+
+	Danh sách bảng thuộc tính
+
+__Bảng 2\.14\. Bảng thiết kế cơ sở dữ liệu cho bảng “token\_back\_list”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+id
+
+ID token đăng xuất
+
+Bigint
+
+Khóa chính ,Giá trị tự đông tăng khi thêm mới
+
+2
+
+is\_invalid
+
+Trạng thái token
+
+Bit
+
+3
+
+tken
+
+Token người dùng
+
+Varchar\(255\)
+
+<a id="_Toc193295791"></a>__ __<a id="_Toc194939752"></a>__Bảng “password\_reset\_token”__
+
+__	__Mục đích chức năng quên mật khẩu
+
+	Danh sách bảng thuộc tính
+
+__	__
+
+__Bảng 2\.15\. Bảng thiết kế cơ sở dữ liệu cho bảng “password\_reset\_token”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+id
+
+ID quên mật khẩu
+
+Bigint
+
+Khóa chính ,Giá trị tự đông tăng khi thêm mới
+
+2
+
+expiry\_date
+
+Thời gian token
+
+Datetime\(6\)
+
+3
+
+token
+
+Token người dùng
+
+Varchar\(255\)
+
+4
+
+user\_id
+
+Liên kết khóa ngoại với người dùng
+
+Bigint
+
+__	__
+
+<a id="_Toc194939754"></a>__Bảng “brand”__
+
+__	__Mục đích chức năng thương hiệu sản phẩm 
+
+	Danh sách bảng thuộc tính
+
+__Bảng 2\.16\. Bảng thiết kế cơ sở dữ liệu cho bảng “__ __brand”__
+
+__STT__
+
+__Tên thuộc tính__
+
+__Ý nghĩa__
+
+__Kiểu giá trị__
+
+__Mô tả__
+
+1
+
+brand\_id
+
+Mã thương hiệu
+
+Bigint
+
+Khóa chính ,Giá trị tự đông tăng khi thêm mới
+
+2
+
+created\_at
+
+Thời gian tạo phản hồi
+
+Datetime\(6\)
+
+3
+
+updated\_at
+
+Thời gian cập nhật phản hồi lần cuối
+
+Datetime\(6\)
+
+4
+
+brand\_name
+
+Tên thương hiệu
+
+Varchar\(255\)
+
+5
+
+category\_id
+
+Liên kết khóa ngoại với bảng danh mục
+
+Bigint
+
+6
+
+description
+
+Mô  tả thương hiệu
+
+Text
+
+7
+
+image
+
+Hình ảnh thương hiệu
+
+Varchar\(255\)
+
+<a id="_Toc194870205"></a><a id="_Toc194869933"></a><a id="_Toc194869703"></a><a id="_Toc194872893"></a><a id="_Toc194870013"></a>
+
+# <a id="_Toc194939756"></a>CHƯƠNG 3: XÂY DỰNG PHẦN MỀM QUẢN LÝ CỬA HÀNG ĐỒNG HỒ
+
+## <a id="_Toc194870014"></a><a id="_Toc194872894"></a><a id="_Toc194869704"></a><a id="_Toc194939757"></a><a id="_Toc194869934"></a><a id="_Toc194870206"></a>Giao diện bên khách hàng vãng lai <a id="_Toc194939758"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939759"></a>Hình 3\.1\. Hình ảnh trang bên khách hàng vãng lai 
+
+<a id="_Toc194939760"></a>Trang chủ này dành cho khách hàng vãng lai, khách hàng vãng lai có thể xem được danh mục, sản phẩm và tìm kiếm sản phẩm \[10\],\[4\], \[7\]\.<a id="_Toc194939761"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939762"></a>Hình 3\.2\.  Hình ảnh chi tiết sản phẩm 
+
+<a id="_Toc194939763"></a>Khi khách hàng vãng lai ấn vào xem chi tiết sản phẩm thì sẽ hiện ra các thông tin sản phẩm và khi mà ấn vào “Thêm vào giỏ hàng” nếu chưa đăng nhập sẽ dẫn đến trang đăng nhập\.<a id="_Toc194939764"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939765"></a>Hình 3\.3\.  Hình ảnh trang đăng nhập 
+
+<a id="_Toc194939766"></a>Trang đăng nhập dành cho khi khách hàng muốn mua hàng và cần phải đăng nhập mới thực hiện được chức năng mua hàng \[11\]\.<a id="_Toc194939767"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939768"></a>Hình 3\.4\. Hình ảnh trang đăng ký
+
+<a id="_Toc194939769"></a>Hình này mô tả khi khách hàng muốn mua hàng mà chưa có tài khoản đăng nhập thì cần điền thông tin để đăng ký tài khoản \[11\]\.
+
+## <a id="_Toc194870207"></a><a id="_Toc194939770"></a><a id="_Toc194869935"></a><a id="_Toc194869705"></a><a id="_Toc194872895"></a><a id="_Toc194870015"></a>Giao diện trang chủ khách hàng\.<a id="_Toc194939771"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939772"></a>Hình 3\.5\. Hình ảnh trang chủ khách hàng
+
+<a id="_Toc194939773"></a>Trang chủ này dành cho khách hàng đã đăng nhập, khách hàng có thể mua sản phẩm phù hợp với phong cách và giá tiền của mình \[10\],\[4\], \[7\]\.<a id="_Toc194939774"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939775"></a>Hình 3\.6\. Hình ảnh thương hiệu sản phẩm
+
+<a id="_Toc194939776"></a>Hình ảnh mô tả khách hàng có thể chọn thương hiệu yêu thích của mình để xem và mua sản phẩm từ thương hiệu đó \[10\],\[4\], \[7\]\.<a id="_Toc194939777"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939778"></a>Hình 3\.7\. Hình ảnh danh mục sản phẩm
+
+Hình ảnh mô tả khách hàng có thể chọn danh mục yêu thích của mình để xem và mua sản phẩm từ danh mục đó \[10\],\[4\], \[7\]\.<a id="_Toc194939779"></a>[HÌNH ẢNH]
+
+Hình 3\.8\. Hình ảnh danh mục giỏ hàng
+
+<a id="_Toc194939780"></a>Sau khi khách hàng xem chi tiết và thấy yêu thích sản phẩm đó khách hàng có thể thêm vào giỏ hàng\. Trong đây có thể thêm giảm số lượng tùy chỉnh, thấy được tổng tiền và bạn có thể xóa toàn bộ giỏ hàng \[10\],\[4\], \[7\]\.<a id="_Toc194939781"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939782"></a>Hình 3\.9\. Hình ảnh nhập thông tin để giao hàng
+
+<a id="_Toc194939783"></a>Trong đây có hai hình thức thanh toán đó chính là thanh toán khi nhận hàng hoặc qua Paypal \[10\],\[4\], \[7\]\.<a id="_Toc194939784"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939785"></a>Hình 3\.10\. Hình ảnh thanh toán
+
+<a id="_Toc194939786"></a>Hình ảnh mô tả khi bạn thanh toán bằng chuyển khoản PayPal và số tiền bạn cần thanh toán và chuyển khoản\.theo các hinh thức khác nhau của ngân hàng\.
+
+<a id="_Toc194939787"></a>[HÌNH ẢNH]
+
+Hình 3\.11\. Hình ảnh hóa đơn
+
+<a id="_Toc194939788"></a>Sau khi bạn chuyển khoản thành công thì hệ thống sẽ nhận được số tiền và bạn sẽ có lịch sử giao dịch kèm theo đó là hóa đơn bạn vừa thanh toán\. Đồng thời thì khi thanh toán xong giỏ hàng của bạn sẽ bị xóa hết\.
+
+## <a id="_Toc194869706"></a><a id="_Toc194869936"></a><a id="_Toc194939789"></a><a id="_Toc194870016"></a><a id="_Toc194872896"></a><a id="_Toc194870208"></a>Giao diện trang chủ quản trị viên\.<a id="_Toc194939790"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939791"></a>Hình 3\.12\.  Hình ảnh trang chủ quản trị viên 
+
+<a id="_Toc194939792"></a>Trang chủ dành cho quản trị viên có chức năng thống kê doanh thu, tài khoản mới trong tháng, sản phẩm bán chạy nhất……\[9\], \[10\]\.<a id="_Toc194939793"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939794"></a>Hình 3\.13\. Hình ảnh quản lý người dùng
+
+<a id="_Toc194939795"></a>Hình ảnh mô tả chức năng quản lý về người dùng có thể thêm quyền cho người dùng, xóa quyền người dùng và khóa tài khoản của người dùng \[10\],\[4\], \[7\]\.<a id="_Toc194939796"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939797"></a>Hình 3\.14\. Hình ảnh quản lý sản phẩm
+
+<a id="_Toc194939798"></a>Hình ảnh mô tả chức năng quản lý về sản phẩm có thể thêm, xóa, sửa, sắp xếp, xem chi tiết và tìm kiếm sản phẩm dành cho quản trị viên \[10\],\[4\], \[7\]\.<a id="_Toc194939799"></a>[HÌNH ẢNH]
+
+ <a id="_Toc194939800"></a>Hình 3\.15\.  Hình ảnh quản lý danh mục
+
+<a id="_Toc194939801"></a>Hình ảnh mô tả chức năng quản lý về danh mục có thể thêm, xóa, sửa, sắp xếp, xem chi tiết và tìm kiếm danh mục dành cho quản trị viên \[10\],\[4\], \[7\]\.<a id="_Toc194939802"></a>[HÌNH ẢNH]
+
+<a id="_Toc194939803"></a>Hình 3\.16\. Hình ảnh quản lý thương hiệu
+
+<a id="_Toc194939804"></a>Hình ảnh mô tả chức năng quản lý về thương hiệu có thể thêm, xóa, sửa, sắp xếp, xem chi tiết và tìm kiếm thương hiệu dành cho quản trị viên \[10\],\[4\], \[7\]\.<a id="_Toc194939805"></a>[HÌNH ẢNH]
+
+ <a id="_Toc194939806"></a>Hình 3\.17\. Hình ảnh quản lý đơn hàng
+
+<a id="_Toc194939807"></a>Hình ảnh mô tả chức năng quản lý về đơn hàng có thể chuyển trạng thái đơn hàng khi mà người dùng đã thanh toán, tìm kiếm đơn hàng và xem chi tiết đơn hàng \[10\],\[4\], \[7\]\.
+
+<a id="_Toc194939813"></a>__KẾT LUẬN VÀ KIẾN NGHỊ__
+
+<a id="_Toc194939814"></a>__Kết luận__
+
+<a id="_Toc194939815"></a>Đề tài __"Xây dựng phần mềm quản lý cửa hàng đồng hồ"__ xuất phát từ nhu cầu thực tế của các cửa hàng đồng hồ trong việc quản lý thông tin sản phẩm, danh mục, thương hiệu, đơn hàng, khách hàng và doanh thu\. Hệ thống giúp nâng cao hiệu quả hoạt động, giảm thiểu sai sót so với phương pháp quản lý thủ công\. Qua quá trình thực hiện, tôi đã tích lũy được nhiều kiến thức và kinh nghiệm về công nghệ phần mềm \[3\]\.
+
+<a id="_Toc194939816"></a>__Kết quả đạt được__
+
+- <a id="_Toc194939817"></a>Phần mềm đáp ứng các chức năng quan trọng như: quản lý danh mục sản phẩm, quản lý đơn hàng, quản lý doanh thu, quản lý người dùng, quản lý thương hiệu , quản lý doanh thu\.
+- <a id="_Toc194939818"></a>Hệ thống hỗ trợ thêm mới, cập nhật, xóa và tìm kiếm thông tin một cách dễ dàng\.
+- <a id="_Toc194939819"></a>Giao diện đơn giản, trực quan, thân thiện với người dùng\.
+- <a id="_Toc194939820"></a>Hỗ trợ xuất báo cáo để theo dõi tình hình kinh doanh\.
+- <a id="_Toc194939821"></a>Tích hợp thành công thanh toán online và gửi gmail về\.
+
+<a id="_Toc194939822"></a>__Hạn chế__
+
+- <a id="_Toc194939823"></a>Giao diện cần được tối ưu hóa hơn nữa để nâng cao trải nghiệm người dùng\.
+- <a id="_Toc194939824"></a>Yêu cầu máy chủ hoạt động liên tục để đảm bảo lưu trữ dữ liệu\.
+- <a id="_Toc194939825"></a>Chưa có tính năng đồng bộ dữ liệu khi mất kết nối\.
+
+<a id="_Toc194939827"></a>__Kiến nghị__
+
+- Phát triển thành ứng dụng web để dễ dàng truy cập từ nhiều thiết bị\.
+- <a id="_Toc194939828"></a>Bổ sung tính năng quản lý khuyến mãi, tích điểm khách hàng, lọc theo từ độ tuổi bao nhiêu cho phù hợp với nhu cầu khách hàng\.
+- <a id="_Toc194939829"></a>Thêm các phương pháp quản lý quá trình giao hàng đến đâu\.
+- <a id="_Toc194939830"></a>Tối ưu hóa giao diện để nâng cao trải nghiệm người dùng\.
+- Cách thức đăng nhập khác nhau như: facebook, gmail\.
+
+<a id="_Toc194939831"></a>__TÀI LIỆU THAM KHẢO__
+
+<a id="_Toc194939832"></a>__Tài liệu Tiếng Việt__
+
+1. <a id="_Hlk194873501"></a><a id="_Toc194939833"></a>Nguyễn Văn Vỵ, Phân tích thiết kế hệ thống phần mềm theo hướng đối tượng, Trường Đại học Công nghệ, Đại học quốc gia Hà Nội, 2004\.  
+\[2\] Đặng Văn Đức, Phân tích thiết kế hướng đối tượng bằng UML, NXB Giáo dục, 2003\.
+
+<a id="_Toc194939834"></a>\[3\] Phạm Hữu Khang , \(2003\), Xây dựng & Triển khai ứng dụng thương mại điện tử, NXB Thống Kê\.  
+\[4\] Nguyễn Văn Dũng \(2023\), *Hướng dẫn sử dụng Ant Design trong ReactJS*, Tài liệu nội bộ Đại học Bách Khoa Hà Nội\.  
+\[5\] Nguyễn Như Sơn, Vũ Văn Huân \(2014\), Lập trình trên môi trường Windows, version1\.0, ĐH Tài nguyên và Môi trường Hà Nội\.
+
+<a id="_Toc194939835"></a>__Tài liệu Tiếng Anh__
+
+<a id="_Toc194939836"></a>\[6\] Craig Walls \(2019\), *Spring Boot in Action*, Manning Publications\.  
+\[7\] Mark Heckler \(2021\), *Spring Boot: Up & Running*, O'Reilly Media\.  
+\[8\] Adam Boduch, Roy Derks \(2020\), *React and React Native*, Packt Publishing\.  
+\[9\] Material\-UI Docs\.  
+\[10\] Ant Design Docs\.  
+\[11\] Bootstrap Docs\.
+
+1. <a id="endnote-0"></a> [↑](#endnote-ref-0)
+
+
+
+

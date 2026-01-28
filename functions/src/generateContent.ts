@@ -30,17 +30,18 @@ export const generateContent = functions.https.onCall(
     // 2. Validate request data
     validateGenerateContentRequest(data);
 
-    const { 
-      prompt, 
-      template = 'blog', 
-      tone = 'professional', 
+    const {
+      prompt,
+      template = 'blog',
+      tone = 'professional',
       length = 'medium',
       contentType = 'text',
       provider,
       systemInstruction, // Custom system instruction from tool (takes priority)
       toolId,
       toolName,
-      toolCategory
+      toolCategory,
+      modelId
     } = data;
 
     // 3. Rate limiting
@@ -88,7 +89,7 @@ export const generateContent = functions.https.onCall(
 
     // 5. Determine provider based on plan and user selection
     let finalProvider: TextProvider | ImageProvider;
-    
+
     if (contentType === 'text') {
       // Text generation
       if (provider && (provider === 'groq' || provider === 'gemini')) {
@@ -144,6 +145,8 @@ export const generateContent = functions.https.onCall(
     } else {
       if (finalProvider === 'gemini') {
         creditsToCharge = 8;
+      } else if (finalProvider === 'stability') {
+        creditsToCharge = 4;
       } else {
         creditsToCharge = 0;
       }
@@ -174,7 +177,7 @@ export const generateContent = functions.https.onCall(
         if (finalProvider === 'groq') {
           content = await callGroqAPI(prompt, template, tone, length, { retries: 3, systemInstruction });
         } else if (finalProvider === 'gemini') {
-          content = await callGeminiAPI(prompt, template, tone, length, { retries: 3, systemInstruction });
+          content = await callGeminiAPI(prompt, template, tone, length, { retries: 3, systemInstruction, model: modelId });
         } else {
           throw new Error(`Invalid text provider: ${finalProvider}`);
         }
@@ -251,7 +254,7 @@ export const generateContent = functions.https.onCall(
       if (contentType === 'image') {
         const projectTitle = `Generated ${contentType}`;
         const projectType = 'image';
-        
+
         await sendNotificationIfEnabled(userId, 'projectCompleted', {
           projectTitle,
           projectType

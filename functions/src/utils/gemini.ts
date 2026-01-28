@@ -29,7 +29,7 @@ const systemPrompts: Record<string, (tone: string, length: string) => string> = 
     };
     return `You are a professional blog writer. Write a ${length} blog post (${lengthGuidance[length] || 'appropriate length'}) in a ${tone} tone. Include an engaging introduction, well-structured main points with examples, and a strong conclusion. Make it SEO-friendly and easy to read.`;
   },
-  
+
   caption: (tone, length) => {
     const lengthGuidance: Record<string, string> = {
       short: '50-100 words, very concise',
@@ -38,7 +38,7 @@ const systemPrompts: Record<string, (tone: string, length: string) => string> = 
     };
     return `You are a social media expert. Write an engaging ${tone} caption for Instagram/Facebook. The caption must be ${length} length (${lengthGuidance[length] || 'appropriate length'}). Include relevant emojis, a clear message, and a strong call-to-action. Add 3-5 relevant hashtags at the end.`;
   },
-  
+
   email: (tone, length) => {
     const lengthGuidance: Record<string, string> = {
       short: '100-200 words, brief and direct',
@@ -47,7 +47,7 @@ const systemPrompts: Record<string, (tone: string, length: string) => string> = 
     };
     return `You are a professional email marketing copywriter. Write a ${tone} marketing email that is ${length} length (${lengthGuidance[length] || 'appropriate length'}). Include: 1) Compelling subject line, 2) Friendly greeting, 3) Clear value proposition, 4) Main message with benefits, 5) Strong call-to-action, 6) Professional closing.`;
   },
-  
+
   product: (tone, length) => {
     const lengthGuidance: Record<string, string> = {
       short: '100-200 words, concise highlights',
@@ -62,6 +62,7 @@ interface GeminiOptions {
   retries?: number;
   timeout?: number;
   systemInstruction?: string; // Custom system instruction (takes priority over template-based prompt)
+  model?: string;
 }
 
 /**
@@ -74,17 +75,18 @@ export async function callGeminiAPI(
   length: string = 'medium',
   options: GeminiOptions = {}
 ): Promise<string> {
-  const { retries = 3, timeout = 30000, systemInstruction } = options;
+  const { retries = 3, timeout = 30000, systemInstruction, model: modelId = 'gemini-2.0-flash' } = options;
 
   const genAI = getGenAI();
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-  
+  // Standard SDK with v1beta is needed for these project-specific experimental models
+  const model = genAI.getGenerativeModel({ model: modelId });
+
   // Get system prompt - prioritize custom systemInstruction from tool definition
-  const systemPrompt = systemInstruction 
+  const systemPrompt = systemInstruction
     ? systemInstruction // Use custom system instruction from tool (most specific)
-    : (systemPrompts[template] 
-    ? systemPrompts[template](tone, length)
-        : systemPrompts.blog(tone, length)); // Fallback to template-based prompt
+    : (systemPrompts[template]
+      ? systemPrompts[template](tone, length)
+      : systemPrompts.blog(tone, length)); // Fallback to template-based prompt
 
   const fullPrompt = `${systemPrompt}\n\nUser request: ${prompt}`;
 
@@ -94,7 +96,7 @@ export async function callGeminiAPI(
     try {
       const result = await Promise.race([
         model.generateContent(fullPrompt),
-        new Promise<never>((_, reject) => 
+        new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Request timeout')), timeout)
         )
       ]);

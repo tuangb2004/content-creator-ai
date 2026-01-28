@@ -21,6 +21,8 @@ export interface GenerateContentRequest {
   toolId?: string;
   toolName?: string;
   toolCategory?: string;
+  modelId?: string;
+  image?: string; // base64 encoded image
 }
 
 export interface GenerateContentResponse {
