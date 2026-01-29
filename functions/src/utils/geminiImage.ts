@@ -58,9 +58,9 @@ export async function callGeminiImageAPI(
       const parts: any[] =
         fileData.length > 0
           ? [
-              ...fileData.map((f) => ({ fileData: { fileUri: f.fileUri, mimeType: f.mimeType } })),
-              { text: fullPrompt }
-            ]
+            ...fileData.map((f) => ({ fileData: { fileUri: f.fileUri, mimeType: f.mimeType } })),
+            { text: fullPrompt }
+          ]
           : [{ text: fullPrompt }];
 
       const result: any = await Promise.race([
@@ -71,7 +71,14 @@ export async function callGeminiImageAPI(
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timeout')), timeout))
       ]);
 
-      const responseParts = result?.candidates?.[0]?.content?.parts || [];
+      const candidate = result?.candidates?.[0];
+
+      if (candidate?.finishReason === 'SAFETY') {
+        // Safety violation - do NOT retry
+        throw new Error('CONTENT_SAFETY_BLOCK: Nội dung yêu cầu vi phạm chính sách an toàn của AI (NSFW/Bạo lực v.v). Vui lòng điều chỉnh lại prompt.');
+      }
+
+      const responseParts = candidate?.content?.parts || [];
       for (const part of responseParts) {
         if (part?.inlineData?.data) {
           const mimeType = part.inlineData.mimeType || 'image/png';
@@ -84,7 +91,7 @@ export async function callGeminiImageAPI(
       lastError = error;
       console.error(`Gemini Image attempt ${attempt}/${retries} failed:`, error.message);
 
-      if (attempt === retries) {
+      if (error.message.includes('CONTENT_SAFETY_BLOCK') || attempt === retries) {
         break;
       }
 

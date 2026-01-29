@@ -13,7 +13,7 @@ function getBucket() {
   return admin.storage().bucket();
 }
 
-const DATA_URL_REGEX = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/;
+const DATA_URL_REGEX = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/;
 
 function parseImageDataUrl(value: string): { buffer: Buffer; contentType: string } | null {
   const match = value.match(DATA_URL_REGEX);
@@ -32,29 +32,52 @@ function parseImageDataUrl(value: string): { buffer: Buffer; contentType: string
 async function uploadImageDataUrl(
   dataUrl: string,
   pathPrefix: string
-): Promise<string> {
+): Promise<string | null> {
+  // If not a string or empty, return as is (if valid) or null
+  if (!dataUrl || typeof dataUrl !== 'string') return dataUrl || null;
+
+  // Check if it's already a http URL (optimization)
+  if (dataUrl.startsWith('http')) return dataUrl;
+
   const parsed = parseImageDataUrl(dataUrl);
   if (!parsed) {
+    // If we can't parse it, and it's huge, we can't save it.
+    if (dataUrl.length > 1024 * 1024) return null;
     return dataUrl;
   }
 
-  const token = randomUUID();
-  const extension = parsed.contentType.split('/')[1] || 'png';
-  const filePath = `${pathPrefix}/${token}.${extension}`;
-  const bucket = getBucket();
-  const file = bucket.file(filePath);
+  try {
+    const token = randomUUID();
+    const extension = parsed.contentType.split('/')[1] || 'png';
+    const filePath = `${pathPrefix}/${token}.${extension}`;
+    const bucket = getBucket();
+    const file = bucket.file(filePath);
 
-  await file.save(parsed.buffer, {
-    contentType: parsed.contentType,
-    resumable: false,
-    metadata: {
+    await file.save(parsed.buffer, {
+      contentType: parsed.contentType,
+      resumable: false,
       metadata: {
-        firebaseStorageDownloadTokens: token
+        metadata: {
+          firebaseStorageDownloadTokens: token
+        }
       }
-    }
-  });
+    });
 
-  return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}?alt=media&token=${token}`;
+    return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}?alt=media&token=${token}`;
+  } catch (error) {
+    console.error('Failed to upload image to storage:', error);
+
+    // Safety check: Firestore document limit is 1MB.
+    // If the image is larger than ~1MB (base64 is ~33% larger than binary, so 1MB base64 is ~750KB image),
+    // we CANNOT fall back to saving it in Firestore. It will crash the request.
+    if (dataUrl.length > 1000000) {
+      console.warn('Image data URL too large for Firestore fallback (>1MB). Dropping image to save project.');
+      return null;
+    }
+
+    // Fallback: return the original data URL only if small enough
+    return dataUrl;
+  }
 }
 
 /** Attached file in a user message */
@@ -288,14 +311,16 @@ export const saveProject = functions.https.onCall(
           if (type === 'image' && normalizedContent.imageUrl) {
             const pathPrefix = `projects/${userId}/${existingProjectId}`;
             const uploaded = await uploadImageDataUrl(normalizedContent.imageUrl, pathPrefix);
-            (updateData.content as SaveProjectRequest['content']).imageUrl = uploaded;
+            if (uploaded) {
+              (updateData.content as SaveProjectRequest['content']).imageUrl = uploaded;
+            }
           }
         }
         if (normalizedMessages && normalizedMessages.length > 0) {
           updateData.messages = await Promise.all(normalizedMessages.map(async (msg) => {
-            if (msg.role === 'model' && msg.mediaUrl) {
+            if (msg.mediaUrl) {
               const uploaded = await uploadImageDataUrl(msg.mediaUrl, `projects/${userId}/${existingProjectId}`);
-              return { ...msg, mediaUrl: uploaded };
+              return { ...msg, mediaUrl: uploaded || msg.mediaUrl };
             }
             return msg;
           }));
@@ -320,6 +345,8 @@ export const saveProject = functions.https.onCall(
       }
 
       // Create new project document
+      const docRef = projectsRef.doc(); // Fixed docRef initialization order
+
       const projectData: Omit<Project, 'createdAt' | 'updatedAt'> & {
         createdAt: FieldValue;
         updatedAt: FieldValue;
@@ -338,9 +365,15 @@ export const saveProject = functions.https.onCall(
       }
       if (normalizedMessages && normalizedMessages.length > 0) {
         projectData.messages = await Promise.all(normalizedMessages.map(async (msg) => {
-          if (msg.role === 'model' && msg.mediaUrl) {
-            const uploaded = await uploadImageDataUrl(msg.mediaUrl, `projects/${userId}/${docRef.id}`);
-            return { ...msg, mediaUrl: uploaded };
+          if (msg.mediaUrl) {
+            try {
+              const uploaded = await uploadImageDataUrl(msg.mediaUrl, `projects/${userId}/${docRef.id}`);
+              return { ...msg, mediaUrl: uploaded || null };
+            } catch (error) {
+              console.error('Backend image upload failed, falling back to original Data URL:', error);
+              // Return original message with Data URL if upload fails (and fits)
+              return msg;
+            }
           }
           return msg;
         }));
@@ -351,17 +384,21 @@ export const saveProject = functions.https.onCall(
         projectData.metadata = normalizedMetadata;
       }
 
-      const docRef = projectsRef.doc();
-
       if (projectData.type === 'image' && projectData.content && Object.keys(projectData.content).length > 0) {
         const contentToUpdate: SaveProjectRequest['content'] = { ...projectData.content };
         const pathPrefix = `projects/${userId}/${docRef.id}`;
 
         if (contentToUpdate.imageUrl) {
-          contentToUpdate.imageUrl = await uploadImageDataUrl(
-            contentToUpdate.imageUrl,
-            pathPrefix
-          );
+          try {
+            const uploaded = await uploadImageDataUrl(
+              contentToUpdate.imageUrl,
+              pathPrefix
+            );
+            contentToUpdate.imageUrl = uploaded || undefined;
+          } catch (e) {
+            console.error('Backend main image upload failed, falling back:', e);
+            // Allow Data URL to persist if upload fails
+          }
         }
 
         if (contentToUpdate.images && contentToUpdate.images.length > 0) {
@@ -370,9 +407,9 @@ export const saveProject = functions.https.onCall(
               uploadImageDataUrl(imageUrl, pathPrefix)
             )
           );
-          contentToUpdate.images = uploadedImages;
-          if (!contentToUpdate.imageUrl && uploadedImages[0]) {
-            contentToUpdate.imageUrl = uploadedImages[0];
+          contentToUpdate.images = uploadedImages.filter((u): u is string => u !== null);
+          if (!contentToUpdate.imageUrl && contentToUpdate.images[0]) {
+            contentToUpdate.imageUrl = contentToUpdate.images[0];
           }
         }
 

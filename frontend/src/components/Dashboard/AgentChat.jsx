@@ -160,9 +160,16 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
                     {/* File/ảnh đính kèm: nằm TRÊN bubble, không trong bubble */}
                     {isUser && displayFiles.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-2 w-full max-w-[85%] md:max-w-[75%] justify-end">
-                            {displayFiles.map((f, i) => (
-                                <FileCard key={i} file={f} showRemove={false} onImageClick={onImageClick} />
-                            ))}
+                            {displayFiles.map((f, i) => {
+                                if (isImageFile(f)) {
+                                    return (
+                                        <div key={i} className="relative w-28 h-28 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer shadow-sm hover:opacity-90 transition-all bg-gray-100 dark:bg-gray-800" onClick={() => onImageClick && onImageClick(f.url)}>
+                                            <img src={f.url} alt="Attachment" className="w-full h-full object-cover" />
+                                        </div>
+                                    );
+                                }
+                                return <FileCard key={i} file={f} showRemove={false} onImageClick={onImageClick} />;
+                            })}
                         </div>
                     )}
                     <div className={`relative px-5 py-3.5 text-[15px] leading-7 group/bubble w-full max-w-full ${isUser
@@ -192,14 +199,14 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
                             </div>
                         )}
 
-                        {msg.mediaUrl && (
-                            <div className="mt-3 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                        {!isUser && msg.mediaUrl && (
+                            <div className="mt-3 inline-block">
                                 {onImageClick ? (
-                                    <button type="button" onClick={() => onImageClick(msg.mediaUrl)} className="block w-full text-left rounded-xl overflow-hidden ring-offset-2 hover:ring-2 hover:ring-purple-400 focus:ring-2 focus:ring-purple-400 focus:outline-none">
-                                        <img src={msg.mediaUrl} alt="Generated Content" className="w-full h-auto max-w-sm" />
+                                    <button type="button" onClick={() => onImageClick(msg.mediaUrl)} className="block rounded-2xl overflow-hidden focus:outline-none cursor-zoom-in">
+                                        <img src={msg.mediaUrl} alt="Generated Content" className="w-auto h-auto max-h-[400px] max-w-full object-contain rounded-2xl bg-gray-50 dark:bg-gray-800" />
                                     </button>
                                 ) : (
-                                    <img src={msg.mediaUrl} alt="Generated Content" className="w-full h-auto max-w-sm" />
+                                    <img src={msg.mediaUrl} alt="Generated Content" className="w-auto h-auto max-h-[400px] max-w-full object-contain rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shadow-sm" />
                                 )}
                             </div>
                         )}
@@ -433,20 +440,10 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
             return;
         }
 
-        // If it's an image, use legacy uploadedImage for backward compatibility
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setUploadedImage(reader.result);
-                setIsPlusMenuOpen(false);
-            };
-            reader.readAsDataURL(file);
-            return;
-        }
-
-        // For other files (PDF, text, etc.), upload to Storage
+        // Upload to Storage
         try {
             const reader = new FileReader();
+            toast.loading('Đang tải ảnh lên...', { id: 'uploading' });
             reader.onloadend = async () => {
                 try {
                     const base64 = reader.result.split(',')[1];
@@ -458,6 +455,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                     });
                     if (result.success) {
                         setUploadedFiles(prev => [...prev, { url: result.fileUrl, name: file.name, type: file.type }]);
+                        toast.dismiss('uploading');
                         toast.success('File đã được tải lên');
                     }
                 } catch (error) {
@@ -506,6 +504,8 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
 
         setMessages(prev => [...prev, userMsg]);
         setInputValue('');
+        setUploadedImage(null);
+        setUploadedFiles([]);
         setIsLoading(true);
 
         const model = (selectedModel && (MODELS[inputType] || MODELS.image).find(m => m.id === selectedModel.id)) ? selectedModel : (MODELS[inputType] || MODELS.image)[0];
@@ -536,17 +536,12 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                 fileUrls: fileUrls.length > 0 ? fileUrls : undefined // New file URLs for Gemini File API
             });
 
-            // Clear files after sending
-            setUploadedImage(null);
-            setUploadedFiles([]);
-
             let imageUrlToSave = result.contentType === 'image' ? result.content : null;
             if (result.contentType === 'image' && isDataUrl(result.content) && user?.uid) {
                 try {
                     imageUrlToSave = await uploadDataUrlToStorage(result.content, user.uid);
                 } catch (e) {
                     console.warn('Upload generated image to Storage failed:', e);
-                    toast.error('Client upload failed. Sending to server for backup save.');
                     // Fallback: send Data URL to server to handle
                     imageUrlToSave = result.content;
                 }
@@ -556,7 +551,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
             const aiMsg = {
                 id: (Date.now() + 1).toString(),
                 role: 'model',
-                content: result.contentType === 'image' ? "Dưới đây là hình ảnh được tạo dựa trên mô tả của bạn:" : result.content,
+                content: result.contentType === 'image' ? "" : result.content,
                 timestamp: new Date(),
                 type: result.contentType,
                 mediaUrl: displayImageUrl,
@@ -566,6 +561,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
 
             const updatedMessages = [...messages, userMsg, aiMsg];
             setMessages(prev => [...prev, aiMsg]);
+            setIsLoading(false);
 
             const sanitizeUrl = (u) => (u && !isDataUrl(u) ? u : null);
             // Allow Data URL for the LATEST message if it failed upload (it will be in imageUrlToSave)
@@ -604,23 +600,24 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                     isError: m.isError ?? null
                 }))
             };
-            const saveResult = await saveProject(payload);
 
-            // If server returned a new project with updated URLs (backend upload), use it
-            if (saveResult?.project) {
-                // Update local messages with server version (which has HTTP URLs)
-                if (saveResult.project.messages) {
+            // Save in background
+            saveProject(payload).then(saveResult => {
+                // If server returned a new project with updated URLs (backend upload), use it
+                if (saveResult?.project?.messages) {
                     setMessages(normalizeMessages(saveResult.project.messages));
                 }
-            }
-
-            if (saveResult?.projectId && !projectId) {
-                setProjectId(saveResult.projectId);
-            }
-            if (isHistoryOpen) fetchHistory();
+                if (saveResult?.projectId && !projectId) {
+                    setProjectId(saveResult.projectId);
+                    // Update URL without reload if needed
+                    window.history.pushState({}, '', `/dashboard/project/${saveResult.projectId}`);
+                }
+                if (isHistoryOpen) fetchHistory();
+            }).catch(e => console.error("Background save failed:", e));
 
         } catch (error) {
             console.error("Generation Error:", error);
+            setIsLoading(false); // Ensure loading stops on error
             const errorMsg = {
                 id: (Date.now() + 1).toString(),
                 role: 'model',
@@ -629,8 +626,6 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                 isError: true
             };
             setMessages(prev => [...prev, errorMsg]);
-        } finally {
-            setIsLoading(false);
         }
     };
 

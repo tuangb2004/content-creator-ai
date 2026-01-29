@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../config/firebase';
 import { Icons } from '../Icons';
@@ -24,7 +24,7 @@ const mapDocToProject = (doc) => {
         title: (cleanTitle || '').length > 50 ? (cleanTitle || '').substring(0, 50) + '...' : (cleanTitle || ''),
         fullTitle: cleanTitle || 'Sáng tạo mới',
         type: p.type || 'text',
-        date: new Date(createdAt).toLocaleDateString(),
+        date: new Date(createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }),
         imageUrl: p.content?.imageUrl || p.content?.previewUrl,
         content: p.content,
         _createdAt: createdAt
@@ -39,6 +39,9 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingUploads, setIsLoadingUploads] = useState(true);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+    const [selectedIds, setSelectedIds] = useState(new Set());
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (activeTab !== 'Creations' || !user?.uid) {
@@ -93,13 +96,69 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
     }, [activeTab, user?.uid]);
 
     const handleProjectClick = (project) => {
+        if (selectedIds.size > 0) {
+            toggleSelection(project.id);
+            return;
+        }
         if (onNavigateToProject) {
             onNavigateToProject(project);
         }
     };
 
+    const toggleSelection = (id, e) => {
+        if (e) e.stopPropagation();
+        const newSet = new Set(selectedIds);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+        }
+        setSelectedIds(newSet);
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedIds.size === 0) return;
+        if (!confirm(`Bạn có chắc muốn xóa ${selectedIds.size} mục đã chọn?`)) return;
+
+        setIsDeleting(true);
+        try {
+            const promises = Array.from(selectedIds).map(id =>
+                deleteDoc(doc(db, activeTab === 'Creations' ? 'projects' : 'uploads', id))
+            );
+            await Promise.all(promises);
+            setSelectedIds(new Set());
+        } catch (error) {
+            console.error("Error deleting documents: ", error);
+            alert("Đã xảy ra lỗi khi xóa mục.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleDownloadSelected = () => {
+        if (selectedIds.size === 0) return;
+
+        const items = activeTab === 'Creations' ? projects : uploads;
+        const selectedItems = items.filter(item => selectedIds.has(item.id));
+
+        selectedItems.forEach((item) => {
+            const url = activeTab === 'Creations' ? item.imageUrl : item.fileUrl;
+            if (url) {
+                // Force download by creating a temporary link
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = item.fileName || item.title || 'download';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+
+        // Clear selection after download starts (optional, keeping it selected might be better UX)
+    };
+
     return (
-        <div className="p-8 h-full flex flex-col">
+        <div className="p-8 h-full flex flex-col relative">
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white font-mono tracking-tight">
@@ -134,7 +193,7 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
                 {['Creations', 'Drafts', 'Uploads', 'Products', 'Trash'].map((tab) => (
                     <button
                         key={tab}
-                        onClick={() => setActiveTab(tab)}
+                        onClick={() => { setActiveTab(tab); setSelectedIds(new Set()); }}
                         className={`pb-3 text-sm font-medium transition-colors ${activeTab === tab
                             ? 'text-gray-900 dark:text-white border-b-2 border-black dark:border-white'
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
@@ -147,7 +206,7 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
 
             {/* Content based on active tab */}
             {activeTab === 'Creations' && (
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto px-1 pb-20">
                     {isLoading ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="flex items-center gap-2">
@@ -157,38 +216,69 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
                             </div>
                         </div>
                     ) : projects.length > 0 ? (
-                        <div className="grid grid-cols-5 gap-3">
-                            {projects.map((item) => (
-                                <div
-                                    key={item.id}
-                                    onClick={() => handleProjectClick(item)}
-                                    className="group flex-shrink-0 bg-white dark:bg-gray-800/40 hover:bg-white dark:hover:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 cursor-pointer p-2.5 flex items-center gap-3"
-                                >
-                                    <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm ${item.type === 'image' ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' :
-                                        item.type === 'video' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
-                                            'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                                        }`}>
-                                        {item.imageUrl ? (
-                                            <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <>
-                                                {item.type === 'image' && <Icons.Image size={18} />}
-                                                {item.type === 'video' && <Icons.Video size={18} />}
-                                                {(!item.type || item.type === 'text') && <Icons.FileText size={18} />}
-                                            </>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-[13px] font-bold text-gray-800 dark:text-white truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                                            {item.title}
-                                        </h3>
-                                        <div className="flex items-center gap-1 opacity-40">
-                                            <span className="text-[9px] font-bold uppercase tracking-wider">{item.type || 'text'}</span>
-                                            <span className="text-[9px] whitespace-nowrap">• {item.date}</span>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-12">
+                            {projects.map((item) => {
+                                const isSelected = selectedIds.has(item.id);
+                                return (
+                                    <div
+                                        key={item.id}
+                                        onClick={() => handleProjectClick(item)}
+                                        className={`group flex flex-col bg-white dark:bg-[#1e293b] hover:bg-white dark:hover:bg-[#1e293b] rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden relative ${isSelected
+                                            ? 'border-purple-500 dark:border-purple-400 shadow-[0_0_0_1px_rgba(168,85,247,0.4)]'
+                                            : 'border-gray-100 dark:border-gray-800 hover:border-transparent hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]'
+                                            }`}
+                                    >
+                                        {/* Selection Checkbox */}
+                                        <div
+                                            onClick={(e) => toggleSelection(item.id, e)}
+                                            className={`absolute top-2 right-2 z-20 w-5 h-5 rounded-full border flex items-center justify-center transition-all ${isSelected
+                                                ? 'bg-purple-600 border-purple-600 text-white opacity-100 scale-100'
+                                                : 'bg-white/80 dark:bg-black/50 border-gray-300 dark:border-gray-500 opacity-0 group-hover:opacity-100 scale-95 hover:scale-105 hover:border-purple-500'
+                                                }`}>
+                                            {isSelected && <Icons.CheckCircle size={12} />}
+                                        </div>
+
+                                        {/* Image Container - Horizontal Aspect Ratio (16:9) */}
+                                        <div className="relative w-full aspect-video bg-gray-50 dark:bg-gray-800/50 overflow-hidden">
+                                            {item.imageUrl ? (
+                                                <img
+                                                    src={item.imageUrl}
+                                                    alt={item.title}
+                                                    className={`w-full h-full object-cover transition-transform duration-700 ${isSelected ? 'scale-105' : 'group-hover:scale-105'}`}
+                                                />
+                                            ) : (
+                                                <div className={`w-full h-full flex flex-col items-center justify-center gap-3 ${item.type === 'image' ? 'text-purple-500 bg-purple-50 dark:bg-purple-900/10' :
+                                                    item.type === 'video' ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/10' :
+                                                        'text-green-500 bg-green-50 dark:bg-green-900/10'
+                                                    }`}>
+                                                    {item.type === 'image' && <Icons.Image size={40} className="opacity-50" />}
+                                                    {item.type === 'video' && <Icons.Video size={40} className="opacity-50" />}
+                                                    {(!item.type || item.type === 'text') && <Icons.FileText size={40} className="opacity-50" />}
+                                                </div>
+                                            )}
+
+                                            {/* Type Badge (Visible on Hover) */}
+                                            <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <span className="bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/10 uppercase tracking-wider backdrop-saturate-150">
+                                                    {item.type || 'text'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Content Info */}
+                                        <div className="p-4 flex flex-col flex-1 h-full">
+                                            <h3 className="text-base font-bold text-gray-900 dark:text-white truncate mb-1" title={item.fullTitle}>
+                                                {item.title}
+                                            </h3>
+                                            <div className="flex items-center justify-between mt-auto pt-2">
+                                                <p className="text-xs text-gray-400 font-medium">
+                                                    {item.date}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-center">
@@ -206,9 +296,37 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
                 </div>
             )}
 
+            {/* Selection Toolbar */}
+            {selectedIds.size > 0 && (
+                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl px-6 py-3 flex items-center gap-6 animate-in slide-in-from-bottom-4 duration-200">
+                    <div className="flex items-center gap-2 border-r border-gray-200 dark:border-gray-700 pr-6">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">{selectedIds.size}</span>
+                        <span className="text-sm text-gray-500">selected</span>
+                        <button onClick={() => setSelectedIds(new Set())} className="ml-2 text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white underline decoration-dotted">
+                            Clear
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleDownloadSelected}
+                            className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors tooltip flex flex-col items-center gap-1 group"
+                        >
+                            <Icons.Download size={20} />
+                        </button>
+                        <button
+                            onClick={handleDeleteSelected}
+                            disabled={isDeleting}
+                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors tooltip flex flex-col items-center gap-1 group"
+                        >
+                            <Icons.Trash2 size={20} />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Uploads tab */}
             {activeTab === 'Uploads' && (
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto px-1 pb-20">
                     {isLoadingUploads ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="flex items-center gap-2">
