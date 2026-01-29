@@ -42,7 +42,8 @@ export const generateContent = functions.https.onCall(
       toolName,
       toolCategory,
       modelId,
-      useGoogleSearchGrounding
+      useGoogleSearchGrounding,
+      fileUrls = [] // File URLs to analyze
     } = data;
 
     // 3. Rate limiting
@@ -176,9 +177,19 @@ export const generateContent = functions.https.onCall(
     try {
       if (contentType === 'text') {
         if (finalProvider === 'groq') {
+          // Groq doesn't support file analysis, only text
+          if (fileUrls && fileUrls.length > 0) {
+            throw new Error('File analysis is only supported with Gemini provider. Please use Gemini model.');
+          }
           content = await callGroqAPI(prompt, template, tone, length, { retries: 3, systemInstruction });
         } else if (finalProvider === 'gemini') {
-          content = await callGeminiAPI(prompt, template, tone, length, { retries: 3, systemInstruction, model: modelId, useGoogleSearchGrounding });
+          content = await callGeminiAPI(prompt, template, tone, length, {
+            retries: 3,
+            systemInstruction,
+            model: modelId,
+            useGoogleSearchGrounding,
+            fileUrls: fileUrls || []
+          });
         } else {
           throw new Error(`Invalid text provider: ${finalProvider}`);
         }
@@ -189,7 +200,19 @@ export const generateContent = functions.https.onCall(
         } else if (finalProvider === 'pollination') {
           content = await callPollinationAPI(prompt, { retries: 3 });
         } else if (finalProvider === 'gemini') {
-          content = await callGeminiImageAPI(prompt, { retries: 3, systemInstruction });
+          // Map internal model IDs to Gemini Imagen models
+          let geminiModel = 'imagen-3.0-generate-001';
+          if (modelId === 'nano-pro') geminiModel = 'gemini-3-pro-image-preview';
+          if (modelId === 'nano') geminiModel = 'gemini-2.5-flash-image';
+
+          console.log(`Using Gemini Image model: ${geminiModel} for toolId: ${modelId}, fileUrls: ${fileUrls?.length ?? 0}`);
+
+          content = await callGeminiImageAPI(prompt, {
+            retries: 3,
+            systemInstruction,
+            model: geminiModel,
+            fileUrls: fileUrls || []
+          });
         } else {
           throw new Error(`Invalid image provider: ${finalProvider}`);
         }

@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Icons } from '../Icons';
 import { AgentChat } from './AgentChat';
-import { getProjects } from '../../services/firebaseFunctions';
+import { getProjects, uploadFile, getUploads } from '../../services/firebaseFunctions';
+import toast from '../../utils/toast';
+import SelectFileModal from './SelectFileModal';
 
 const VIDEO_RATIOS = [
   { id: '16:9', label: '16:9', width: 'w-8', height: 'h-4' },
@@ -34,18 +36,22 @@ const MODELS = {
   ]
 };
 
-const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatToggle }) => {
+const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialProject, onChatToggle }) => {
   const [inputType, setInputType] = useState('image');
 
-  // Auto-switch to chat if initialPrompt is present
+  // Auto-switch to chat if initialPrompt or initialProject (open existing chat) is present
   useEffect(() => {
-    if (initialPrompt) {
+    if (initialProject?.messages?.length > 0) {
+      setIsChatMode(true);
+      if (onChatToggle) onChatToggle(true);
+      if (onCollapseSidebar) onCollapseSidebar(true);
+    } else if (initialPrompt) {
       setPromptForChat(initialPrompt);
       setIsChatMode(true);
       if (onChatToggle) onChatToggle(true);
       if (onCollapseSidebar) onCollapseSidebar(true);
     }
-  }, [initialPrompt, onCollapseSidebar, onChatToggle, onCollapseSidebar]); // Added dependencies to fix potential lint warning too
+  }, [initialPrompt, initialProject, onCollapseSidebar, onChatToggle]);
 
   const [recentProjects, setRecentProjects] = useState([]);
 
@@ -107,6 +113,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
   const [isVideoRatioLangMenuOpen, setIsVideoRatioLangMenuOpen] = useState(false);
   const [videoAspectRatio, setVideoAspectRatio] = useState('9:16');
   const [videoLanguage, setVideoLanguage] = useState('EN');
+  const [uploadedFiles, setUploadedFiles] = useState([]); // Array of { url, name, type }
+  const [isSelectingFromAssets, setIsSelectingFromAssets] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Animation States
   const [isChatMode, setIsChatMode] = useState(false);
@@ -170,8 +179,57 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
     };
   }, [isReturning]);
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('File size must be less than 20MB');
+      return;
+    }
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64 = reader.result.split(',')[1];
+          const result = await uploadFile({
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size,
+            fileData: base64
+          });
+          if (result.success) {
+            setUploadedFiles(prev => [...prev, { url: result.fileUrl, name: file.name, type: file.type }]);
+            toast.success('File đã được tải lên');
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          toast.error('Lỗi khi tải lên file');
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('File read error:', error);
+      toast.error('Lỗi khi đọc file');
+    }
+  };
+
+  const handleSelectFromAssets = () => {
+    setIsSelectingFromAssets(true);
+  };
+
+  const handleFileSelected = (file) => {
+    setUploadedFiles(prev => [...prev, file]);
+    toast.success('Đã chọn file từ Tài nguyên');
+  };
+
+  const removeFile = (index) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSend = () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() && uploadedFiles.length === 0) return;
 
     // Same pattern as "back": switch view first, then animate (no DOM swap in the middle).
     const rect = inputRef.current?.getBoundingClientRect();
@@ -210,13 +268,20 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
   };
 
   if (isChatMode) {
+    const hasExistingChat = initialProject?.messages?.length > 0;
     return (
       <AgentChat
-        initialPrompt={promptForChat}
-        initialInputType={inputType}
+        initialPrompt={hasExistingChat ? undefined : promptForChat}
+        initialMessages={hasExistingChat ? initialProject.messages : undefined}
+        projectId={hasExistingChat ? initialProject.id : undefined}
+        initialInputType={initialProject?.type || inputType}
         initialModel={selectedModel}
         initialMorphOffsetY={morphOffsetY}
-        onBack={handleBackToDashboard}
+        initialFileUrls={uploadedFiles.map(f => f.url)}
+        onBack={() => {
+          handleBackToDashboard();
+          setUploadedFiles([]);
+        }}
       />
     );
   }
@@ -324,6 +389,30 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
             }
           />
 
+          {/* Uploaded Files Preview */}
+          {uploadedFiles.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                  {file.type.startsWith('image/') ? (
+                    <img src={file.url} alt={file.name} className="w-6 h-6 rounded object-cover" />
+                  ) : (
+                    <Icons.FileText size={16} className="text-purple-600 dark:text-purple-400" />
+                  )}
+                  <span className="text-xs font-medium text-purple-700 dark:text-purple-300 truncate max-w-[120px]">
+                    {file.name}
+                  </span>
+                  <button
+                    onClick={() => removeFile(index)}
+                    className="p-0.5 hover:bg-purple-200 dark:hover:bg-purple-800 rounded"
+                  >
+                    <Icons.X size={12} className="text-purple-600 dark:text-purple-400" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="flex items-center justify-between mt-4 px-1 transition-opacity duration-100">
             <div className="flex items-center gap-2 relative">
               {/* Plus Button with Menu (Shared) */}
@@ -338,11 +427,30 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
                 {/* Dropdown Menu */}
                 {isPlusMenuOpen && (
                   <div className="absolute top-14 left-0 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                    <button
+                      onClick={() => {
+                        fileInputRef.current?.click();
+                        setIsPlusMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left"
+                    >
                       <Icons.Monitor size={18} className="text-black/60" />
                       Tải lên từ máy tính
                     </button>
-                    <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*,application/pdf,text/plain,text/markdown,text/csv"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => {
+                        handleSelectFromAssets();
+                        setIsPlusMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left"
+                    >
                       <Icons.Folder size={18} className="text-black/60" />
                       Chọn từ Tài nguyên
                     </button>
@@ -757,6 +865,13 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
             <Icons.HelpCircle size={24} />
           </button>
         </div>
+
+        {/* Select File Modal */}
+        <SelectFileModal
+          isOpen={isSelectingFromAssets}
+          onClose={() => setIsSelectingFromAssets(false)}
+          onSelectFile={handleFileSelected}
+        />
       </div>
     </div>
   );

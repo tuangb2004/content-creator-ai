@@ -57,6 +57,26 @@ async function uploadImageDataUrl(
   return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}?alt=media&token=${token}`;
 }
 
+/** Attached file in a user message */
+export interface AttachedFile {
+  url: string;
+  name?: string;
+  type?: string;
+}
+
+/** Chat message for full conversation history (Gemini/ChatGPT style) */
+export interface ChatMessage {
+  id?: string;
+  role: 'user' | 'model';
+  content: string;
+  timestamp?: unknown;
+  mediaUrl?: string | null;
+  attachedFiles?: AttachedFile[] | null;
+  modelId?: string | null;
+  inputType?: string | null;
+  isError?: boolean | null;
+}
+
 export interface Project {
   userId: string;
   title: string;
@@ -66,6 +86,8 @@ export interface Project {
     imageUrl?: string;
     images?: string[];
   };
+  /** Full chat history for this project */
+  messages?: ChatMessage[];
   metadata?: {
     prompt?: string;
     template?: string;
@@ -78,6 +100,8 @@ export interface Project {
 }
 
 export interface SaveProjectRequest {
+  /** If provided, update this project (append/set messages). Otherwise create new. */
+  projectId?: string;
   title: string;
   type: 'blog' | 'caption' | 'email' | 'product' | 'image';
   content: {
@@ -85,6 +109,8 @@ export interface SaveProjectRequest {
     imageUrl?: string;
     images?: string[];
   };
+  /** Full conversation messages to store/append */
+  messages?: ChatMessage[];
   metadata?: {
     prompt?: string;
     template?: string;
@@ -104,6 +130,11 @@ export interface GetProjectsResponse {
   success: boolean;
   projects: (Project & { id: string })[];
   count: number;
+}
+
+export interface GetProjectResponse {
+  success: boolean;
+  project: (Project & { id: string }) | null;
 }
 
 export interface DeleteProjectResponse {
@@ -127,7 +158,7 @@ export const saveProject = functions.https.onCall(
       );
     }
 
-    const { title, type, content, metadata } = data;
+    const { projectId: existingProjectId, title, type, content, metadata, messages: messagesInput } = data;
 
     const normalizeString = (value?: string): string | undefined => {
       if (typeof value !== 'string') return undefined;
@@ -204,33 +235,113 @@ export const saveProject = functions.https.onCall(
     const db = getDb();
     const projectsRef = db.collection('projects');
 
-    // Create project document
-    const projectData: Omit<Project, 'createdAt' | 'updatedAt'> & {
-      createdAt: FieldValue;
-      updatedAt: FieldValue;
-    } = {
-      userId,
-      title,
-      type,
-      content: {},
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+    const normalizeMessages = (): ChatMessage[] | undefined => {
+      if (!Array.isArray(messagesInput) || messagesInput.length === 0) return undefined;
+      return messagesInput
+        .filter((m) => m && (m.role === 'user' || m.role === 'model') && typeof m.content === 'string')
+        .map((m) => {
+          const msg = m as ChatMessage & { attachedFiles?: unknown };
+          const attachedFiles = Array.isArray(msg.attachedFiles)
+            ? msg.attachedFiles.map((f: { url?: unknown; name?: unknown; type?: unknown }) => ({
+                url: typeof f?.url === 'string' ? f.url : '',
+                name: typeof f?.name === 'string' ? f.name : undefined,
+                type: typeof f?.type === 'string' ? f.type : undefined,
+              })).filter((f) => f.url)
+            : null;
+          return {
+            id: typeof msg.id === 'string' ? msg.id : undefined,
+            role: msg.role,
+            content: msg.content,
+            timestamp: msg.timestamp,
+            mediaUrl: typeof msg.mediaUrl === 'string' ? msg.mediaUrl : null,
+            attachedFiles: attachedFiles && attachedFiles.length > 0 ? attachedFiles : null,
+            modelId: typeof msg.modelId === 'string' ? msg.modelId : null,
+            inputType: typeof msg.inputType === 'string' ? msg.inputType : null,
+            isError: !!msg.isError,
+          };
+        });
     };
 
-    const normalizedContent = normalizeContent();
-    if (normalizedContent) {
-      projectData.content = normalizedContent;
-    }
-
-    const normalizedMetadata = normalizeMetadata();
-    if (normalizedMetadata) {
-      projectData.metadata = normalizedMetadata;
-    }
+    const normalizedMessages = normalizeMessages();
 
     try {
+      // Update existing project
+      if (existingProjectId && typeof existingProjectId === 'string') {
+        const projectRef = projectsRef.doc(existingProjectId);
+        const existingDoc = await projectRef.get();
+        if (!existingDoc.exists) {
+          throw new functions.https.HttpsError('not-found', 'Project not found');
+        }
+        const existingData = existingDoc.data() as Project;
+        if (existingData.userId !== userId) {
+          throw new functions.https.HttpsError('permission-denied', 'Not your project');
+        }
+
+        const updateData: Record<string, unknown> = {
+          title,
+          type,
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        const normalizedContent = normalizeContent();
+        if (normalizedContent) {
+          updateData.content = normalizedContent;
+          if (type === 'image' && normalizedContent.imageUrl) {
+            const pathPrefix = `projects/${userId}/${existingProjectId}`;
+            const uploaded = await uploadImageDataUrl(normalizedContent.imageUrl, pathPrefix);
+            (updateData.content as SaveProjectRequest['content']).imageUrl = uploaded;
+          }
+        }
+        if (normalizedMessages && normalizedMessages.length > 0) {
+          updateData.messages = normalizedMessages;
+        }
+        const normalizedMetadata = normalizeMetadata();
+        if (normalizedMetadata) {
+          updateData.metadata = normalizedMetadata;
+        }
+
+        await projectRef.update(updateData);
+        const updatedSnap = await projectRef.get();
+        const project = updatedSnap.data() as Project;
+        return {
+          success: true,
+          projectId: existingProjectId,
+          project: {
+            ...project,
+            createdAt: project.createdAt || admin.firestore.Timestamp.now(),
+            updatedAt: project.updatedAt || admin.firestore.Timestamp.now(),
+          },
+        };
+      }
+
+      // Create new project document
+      const projectData: Omit<Project, 'createdAt' | 'updatedAt'> & {
+        createdAt: FieldValue;
+        updatedAt: FieldValue;
+      } = {
+        userId,
+        title,
+        type,
+        content: {},
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+
+      const normalizedContent = normalizeContent();
+      if (normalizedContent) {
+        projectData.content = normalizedContent;
+      }
+      if (normalizedMessages && normalizedMessages.length > 0) {
+        projectData.messages = normalizedMessages;
+      }
+
+      const normalizedMetadata = normalizeMetadata();
+      if (normalizedMetadata) {
+        projectData.metadata = normalizedMetadata;
+      }
+
       const docRef = projectsRef.doc();
 
-      if (projectData.type === 'image' && projectData.content) {
+      if (projectData.type === 'image' && projectData.content && Object.keys(projectData.content).length > 0) {
         const contentToUpdate: SaveProjectRequest['content'] = { ...projectData.content };
         const pathPrefix = `projects/${userId}/${docRef.id}`;
 
@@ -257,8 +368,7 @@ export const saveProject = functions.https.onCall(
       }
 
       await docRef.set(projectData);
-      
-      // Get the created document
+
       const docSnap = await docRef.get();
       const project = docSnap.data() as Project;
 
@@ -272,12 +382,50 @@ export const saveProject = functions.https.onCall(
         },
       };
     } catch (error: any) {
+      if (error instanceof functions.https.HttpsError) throw error;
       console.error('Error saving project:', error);
       throw new functions.https.HttpsError(
         'internal',
         'Failed to save project',
         error.message
       );
+    }
+  }
+);
+
+/**
+ * Get a single project by ID (for opening full chat history)
+ */
+export const getProject = functions.https.onCall(
+  async (data: { projectId: string }, context: functions.https.CallableContext): Promise<GetProjectResponse> => {
+    const userId = validateAuth(context);
+    if (!data.projectId) {
+      throw new functions.https.HttpsError('invalid-argument', 'projectId is required');
+    }
+
+    const db = getDb();
+    const projectRef = db.collection('projects').doc(data.projectId);
+
+    try {
+      const docSnap = await projectRef.get();
+      if (!docSnap.exists) {
+        return { success: true, project: null };
+      }
+      const projectData = docSnap.data() as Project;
+      if (projectData.userId !== userId) {
+        throw new functions.https.HttpsError('permission-denied', 'Not your project');
+      }
+      const project = {
+        ...projectData,
+        id: docSnap.id,
+        createdAt: projectData.createdAt || admin.firestore.Timestamp.now(),
+        updatedAt: projectData.updatedAt || admin.firestore.Timestamp.now(),
+      };
+      return { success: true, project };
+    } catch (error: any) {
+      if (error instanceof functions.https.HttpsError) throw error;
+      console.error('Error getting project:', error);
+      throw new functions.https.HttpsError('internal', 'Failed to get project', (error as Error).message);
     }
   }
 );
@@ -348,7 +496,7 @@ export const deleteProject = functions.https.onCall(
     try {
       // Check if project exists and belongs to user
       const projectDoc = await projectRef.get();
-      
+
       if (!projectDoc.exists) {
         throw new functions.https.HttpsError(
           'not-found',

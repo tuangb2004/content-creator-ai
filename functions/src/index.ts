@@ -3,7 +3,8 @@ import { generateContent } from './generateContent';
 import { createPaymentLinkFunction } from './createPaymentLink';
 import { payosWebhook } from './payosWebhook';
 import { onUserCreate } from './authTrigger';
-import { saveProject, getProjects, deleteProject } from './projects';
+import { saveProject, getProjects, getProject, deleteProject } from './projects';
+import { uploadFile, getUploads, deleteUpload } from './uploads';
 import { chat } from './chat';
 import { initializeUserIfNeeded } from './initializeUser';
 import { getTikTokAuthUrl, handleTikTokCallback } from './tiktokAuth';
@@ -44,7 +45,11 @@ export {
   onUserCreate,
   saveProject,
   getProjects,
+  getProject,
   deleteProject,
+  uploadFile,
+  getUploads,
+  deleteUpload,
   chat,
   initializeUserIfNeeded,
   getTikTokAuthUrl,

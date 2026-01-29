@@ -6,6 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import toast from '../utils/toast';
 import DashboardLayout from '../components/Dashboard/DashboardLayout';
 import DashboardHome from '../components/Dashboard/DashboardHome';
+import { AgentChat } from '../components/Dashboard/AgentChat';
 import ActivityLogs from '../components/Dashboard/ActivityLogs';
 import ProductDetail from '../components/Product/ProductDetail';
 import ProfileSettings from '../components/Dashboard/ProfileSettings';
@@ -72,7 +73,15 @@ function Home() {
 
   // Get location for navigation state
   const location = useLocation();
-  const initialPrompt = location.state?.initialPrompt;
+  const [initialPrompt, setInitialPrompt] = useState(location.state?.initialPrompt);
+  /** Open existing chat (full history) when coming from Assets */
+  const [initialProject, setInitialProject] = useState(null);
+
+  useEffect(() => {
+    if (location.state?.initialPrompt) {
+      setInitialPrompt(location.state.initialPrompt);
+    }
+  }, [location.state]);
 
   const [projects, setProjects] = useState([]);
   const [highlightedProjectId, setHighlightedProjectId] = useState(null);
@@ -80,6 +89,8 @@ function Home() {
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isChatActive, setIsChatActive] = useState(false);
+  /** Mở chat trực tiếp từ Assets (realtime: chuyển ngay, AgentChat tự load project) */
+  const [openProjectId, setOpenProjectId] = useState(null);
   /* eslint-enable no-unused-vars */
 
   // Save view state to localStorage
@@ -354,11 +365,29 @@ function Home() {
       {
         (view.type === 'home' || view.type === 'activity') && (
           <>
-            {dashboardTab === 'dashboard' && view.type === 'home' && (
+            {dashboardTab === 'dashboard' && view.type === 'home' && isChatActive && openProjectId ? (
+              <AgentChat
+                projectId={openProjectId}
+                onBack={() => {
+                  setOpenProjectId(null);
+                  setIsChatActive(false);
+                  setIsSidebarCollapsed(false);
+                }}
+              />
+            ) : dashboardTab === 'dashboard' && view.type === 'home' && (
               <DashboardHome
                 onCollapseSidebar={setIsSidebarCollapsed}
                 initialPrompt={initialPrompt}
-                onChatToggle={setIsChatActive}
+                initialProject={initialProject}
+                onChatToggle={(active) => {
+                  setIsChatActive(active);
+                  if (!active) {
+                    setInitialProject(null);
+                    setOpenProjectId(null);
+                  }
+                  if (active && initialPrompt && !initialProject) setTimeout(() => setInitialPrompt(null), 100);
+                  if (active && initialProject) setTimeout(() => setInitialProject(null), 150);
+                }}
               />
             )}
 
@@ -374,7 +403,17 @@ function Home() {
             {dashboardTab === 'analytics' && <Analytics />}
             {dashboardTab === 'publisher' && <Publisher />}
             {dashboardTab === 'smart-creation' && <SmartCreation />}
-            {dashboardTab === 'assets' && <Assets />}
+            {dashboardTab === 'assets' && (
+              <Assets
+                onNavigateToProject={(project) => {
+                  setOpenProjectId(project.id);
+                  setDashboardTab('dashboard');
+                  setView({ type: 'home' });
+                  setIsChatActive(true);
+                  setIsSidebarCollapsed(true);
+                }}
+              />
+            )}
 
             {dashboardTab === 'settings' && <ProfileSettings />}
             {dashboardTab === 'billing' && <BillingPlans />}

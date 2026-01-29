@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import * as functions from 'firebase-functions';
+import { uploadFileToGemini, getMimeTypeFromUrl } from './geminiFiles';
 
 const apiKey = functions.config().gemini?.api_key || process.env.GEMINI_API_KEY;
 
@@ -20,30 +21,58 @@ interface GeminiImageOptions {
   timeout?: number;
   model?: string;
   systemInstruction?: string;
+  /** File URLs (e.g. uploaded image) to use as reference for image generation */
+  fileUrls?: string[];
 }
 
 export async function callGeminiImageAPI(
   prompt: string,
   options: GeminiImageOptions = {}
 ): Promise<string> {
-  const { retries = 2, timeout = 30000, model = 'gemini-1.5-flash', systemInstruction } = options;
+  const { retries = 2, timeout = 30000, model = 'imagen-3.0-generate-001', systemInstruction, fileUrls = [] } = options;
 
   const ai = getGenAI();
   let lastError: Error | null = null;
 
+  // Upload reference files to Gemini if provided (e.g. "tạo lại ảnh với biểu cảm X" + uploaded image)
+  let fileData: Array<{ fileUri: string; mimeType: string }> = [];
+  if (fileUrls.length > 0) {
+    try {
+      fileData = await Promise.all(
+        fileUrls.map(async (url) => {
+          const mimeType = getMimeTypeFromUrl(url);
+          const fileUri = await uploadFileToGemini(url, mimeType);
+          return { fileUri, mimeType };
+        })
+      );
+    } catch (fileError: any) {
+      console.error('Error uploading files to Gemini for image generation:', fileError);
+      throw new Error(`Failed to process reference files: ${fileError.message}`);
+    }
+  }
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
+      const fullPrompt = systemInstruction ? `${systemInstruction}\n\n${prompt}` : prompt;
+      // Include reference image(s) + text so model can use them (e.g. edit/recreate with new expression)
+      const parts: any[] =
+        fileData.length > 0
+          ? [
+              ...fileData.map((f) => ({ fileData: { fileUri: f.fileUri, mimeType: f.mimeType } })),
+              { text: fullPrompt }
+            ]
+          : [{ text: fullPrompt }];
+
       const result: any = await Promise.race([
         ai.models.generateContent({
           model,
-          contents: { parts: [{ text: prompt }] },
-          config: systemInstruction ? { systemInstruction } : undefined
+          contents: { parts }
         }),
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timeout')), timeout))
       ]);
 
-      const parts = result?.candidates?.[0]?.content?.parts || [];
-      for (const part of parts) {
+      const responseParts = result?.candidates?.[0]?.content?.parts || [];
+      for (const part of responseParts) {
         if (part?.inlineData?.data) {
           const mimeType = part.inlineData.mimeType || 'image/png';
           return `data:${mimeType};base64,${part.inlineData.data}`;

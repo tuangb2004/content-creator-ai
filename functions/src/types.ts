@@ -22,7 +22,9 @@ export interface GenerateContentRequest {
   toolName?: string;
   toolCategory?: string;
   modelId?: string;
-  image?: string; // base64 encoded image
+  image?: string; // base64 encoded image (legacy)
+  /** File URLs to analyze (images, PDFs, text files). Will be uploaded to Gemini File API if provider is gemini. */
+  fileUrls?: string[]; // Array of file URLs (from Firebase Storage or public URLs)
   /** When provider is gemini: enable Google Search Grounding for real-time, factual answers. Default true. */
   useGoogleSearchGrounding?: boolean;
 }

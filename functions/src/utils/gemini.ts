@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, createUserContent, createPartFromUri } from '@google/genai';
 import * as functions from 'firebase-functions';
+import { uploadFileToGemini, getMimeTypeFromUrl } from './geminiFiles';
 
 const apiKey = functions.config().gemini?.api_key || process.env.GEMINI_API_KEY;
 
@@ -78,6 +79,8 @@ interface GeminiOptions {
   model?: string;
   /** Enable Google Search Grounding for real-time, factual answers. Uses @google/genai with tools. Default true for Gemini. */
   useGoogleSearchGrounding?: boolean;
+  /** File URLs to analyze (will be uploaded to Gemini File API) */
+  fileUrls?: string[];
 }
 
 /**
@@ -92,10 +95,11 @@ export async function callGeminiAPI(
 ): Promise<string> {
   const {
     retries = 3,
-    timeout = 30000,
+    timeout = 60000, // Increased timeout for file processing
     systemInstruction,
     model: modelId = 'gemini-2.0-flash',
-    useGoogleSearchGrounding = true
+    useGoogleSearchGrounding = true,
+    fileUrls = []
   } = options;
 
   // Get system prompt - prioritize custom systemInstruction from tool definition
@@ -115,6 +119,23 @@ export async function callGeminiAPI(
 
   const fullPrompt = `${systemPrompt}\n\n${languageRule}\n\nUser request: ${prompt}`;
 
+  // Upload files to Gemini File API if provided
+  let fileData: Array<{ fileUri: string; mimeType: string }> = [];
+  if (fileUrls && fileUrls.length > 0) {
+    try {
+      fileData = await Promise.all(
+        fileUrls.map(async (url) => {
+          const mimeType = getMimeTypeFromUrl(url);
+          const fileUri = await uploadFileToGemini(url, mimeType);
+          return { fileUri, mimeType };
+        })
+      );
+    } catch (fileError: any) {
+      console.error('Error uploading files to Gemini:', fileError);
+      throw new Error(`Failed to process files: ${fileError.message}`);
+    }
+  }
+
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -122,10 +143,27 @@ export async function callGeminiAPI(
       if (useGoogleSearchGrounding) {
         // Use @google/genai with Google Search Grounding (real-time, factual, with optional citations)
         const ai = getGenAINew();
+        
+        // Build contents with file data if available
+        // Format: contents array with parts array, each part is either text or fileData (not mixed)
+        const contents: any = fileData.length > 0
+          ? [{
+              parts: [
+                ...fileData.map(f => ({
+                  fileData: {
+                    fileUri: f.fileUri,
+                    mimeType: f.mimeType
+                  }
+                })),
+                { text: fullPrompt }
+              ]
+            }]
+          : fullPrompt;
+
         const response = await Promise.race([
           ai.models.generateContent({
             model: modelId,
-            contents: fullPrompt,
+            contents: contents,
             config: {
               tools: [{ googleSearch: {} }]
             }
@@ -142,6 +180,29 @@ export async function callGeminiAPI(
       }
 
       // Legacy path: @google/generative-ai (no grounding)
+      // Note: Legacy SDK doesn't support file_data well, so we use new SDK even without grounding
+      if (fileData.length > 0) {
+        const ai = getGenAINew();
+        const contents = createUserContent([
+          ...fileData.map(f => createPartFromUri(f.fileUri, f.mimeType)),
+          fullPrompt
+        ]);
+        const response = await Promise.race([
+          ai.models.generateContent({
+            model: modelId,
+            contents: contents
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), timeout)
+          )
+        ]);
+        const text = (response as { text?: string }).text;
+        if (!text || String(text).trim().length === 0) {
+          throw new Error('Empty response from Gemini API');
+        }
+        return String(text);
+      }
+
       const genAI = getGenAI();
       const model = genAI.getGenerativeModel({ model: modelId });
       const result = await Promise.race([

@@ -208,6 +208,7 @@ export const Icons = {
     History: (props) => <LucideIcon icon="History" {...props} />,
     MessageSquare: (props) => <LucideIcon icon="MessageSquare" {...props} />,
     ChevronDown: (props) => <LucideIcon icon="ChevronDown" {...props} />,
+    ChevronUp: (props) => <LucideIcon icon="ChevronUp" {...props} />,
     PanelLeftClose: (props) => <LucideIcon icon="PanelLeftClose" {...props} />,
     PanelLeftOpen: (props) => <LucideIcon icon="PanelLeftOpen" {...props} />,
     Cpu: (props) => <LucideIcon icon="Cpu" {...props} />,

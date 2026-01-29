@@ -15,6 +15,7 @@ import { functions } from '../config/firebase';
  * @param {string} [data.length='medium'] - Length (short, medium, long) - for text only
  * @param {string} [data.contentType='text'] - Content type: 'text' or 'image'
  * @param {string} [data.provider] - Provider: 'groq' | 'gemini' (text) or 'pollination' | 'gemini' (image)
+ * @param {Array<string>} [data.fileUrls] - File URLs to analyze (images, PDFs, text files) - for Gemini File API
  * @returns {Promise<{content: string, contentType: string, provider: string, creditsUsed: number, creditsRemaining: number}>}
  */
 export const generateContent = async (data) => {
@@ -100,6 +101,24 @@ export const getProjects = async () => {
       success: result.data.success,
       projects: result.data.projects || [],
       count: result.data.count || 0
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Get a single project by ID (for opening full chat history)
+ * @param {string} projectId
+ * @returns {Promise<{success: boolean, project: Object|null}>}
+ */
+export const getProject = async (projectId) => {
+  try {
+    const getProjectFunction = httpsCallable(functions, 'getProject');
+    const result = await getProjectFunction({ projectId });
+    return {
+      success: result.data.success,
+      project: result.data.project ?? null
     };
   } catch (error) {
     throw formatFunctionError(error);
@@ -228,6 +247,69 @@ export const saveTemplate = async (data) => {
   } catch (error) {
     console.error('Error saving template:', error);
     throw { code: 'internal', message: 'Không thể lưu mẫu. Vui lòng thử lại.' };
+  }
+};
+
+/**
+ * Upload a file to Firebase Storage
+ * @param {Object} data - File data
+ * @param {string} data.fileName - File name
+ * @param {string} data.fileType - MIME type
+ * @param {number} data.fileSize - File size in bytes
+ * @param {string} data.fileData - Base64 encoded file data
+ * @param {Object} [data.metadata] - Optional metadata
+ * @returns {Promise<{success: boolean, fileId: string, fileUrl: string}>}
+ */
+export const uploadFile = async (data) => {
+  try {
+    const uploadFileFunction = httpsCallable(functions, 'uploadFile');
+    const result = await uploadFileFunction(data);
+    return {
+      success: result.data.success,
+      fileId: result.data.fileId,
+      fileUrl: result.data.fileUrl,
+      fileName: result.data.fileName,
+      fileType: result.data.fileType,
+      fileSize: result.data.fileSize
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Get all uploads for the current user
+ * @returns {Promise<{success: boolean, uploads: Array, count: number}>}
+ */
+export const getUploads = async () => {
+  try {
+    const getUploadsFunction = httpsCallable(functions, 'getUploads');
+    const result = await getUploadsFunction({});
+    return {
+      success: result.data.success,
+      uploads: result.data.uploads || [],
+      count: result.data.count || 0
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Delete an upload
+ * @param {string} uploadId - Upload ID to delete
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export const deleteUpload = async (uploadId) => {
+  try {
+    const deleteUploadFunction = httpsCallable(functions, 'deleteUpload');
+    const result = await deleteUploadFunction({ uploadId });
+    return {
+      success: result.data.success,
+      message: result.data.message
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
   }
 };
 
