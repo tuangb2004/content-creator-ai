@@ -416,7 +416,14 @@ function Home() {
             )}
 
             {dashboardTab === 'settings' && <ProfileSettings />}
-            {dashboardTab === 'billing' && <BillingPlans />}
+            {dashboardTab === 'billing' && (
+              <BillingPlans
+                onBack={() => {
+                  setDashboardTab('dashboard');
+                  setView({ type: 'home' });
+                }}
+              />
+            )}
           </>
         )
       }

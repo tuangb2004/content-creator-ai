@@ -1,152 +1,152 @@
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 function TermsPage() {
+  const navigate = useNavigate();
   const { theme } = useTheme();
   const { t } = useLanguage();
 
   return (
-    <div className={`min-h-screen ${
-      theme === 'dark' ? 'bg-[#1C1B19] text-[#F5F2EB]' : 'bg-[#F5F2EB] text-[#2C2A26]'
-    }`}>
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-[#1C1B19] text-[#F5F2EB]' : 'bg-[#F5F2EB] text-[#2C2A26]'
+      }`}>
       <div className="max-w-4xl mx-auto px-4 py-16">
-        <h1 className={`text-4xl font-serif mb-8 ${
-          theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-        }`}>
-          Terms of Service
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 mb-8 text-sm hover:opacity-70 transition-opacity"
+        >
+          <span className="material-symbols-outlined">arrow_back</span>
+          {t.common.back}
+        </button>
+
+        <h1 className={`text-4xl font-serif mb-8 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
+          }`}>
+          {t.legal.termsTitle}
         </h1>
-        
-        <div className={`prose max-w-none ${
-          theme === 'dark' ? 'prose-invert' : ''
-        }`}>
+
+        <div className={`prose max-w-none ${theme === 'dark' ? 'prose-invert' : ''
+          }`}>
           <p className="text-sm mb-8">
-            <strong>Last Updated:</strong> January 16, 2026
+            <strong>{t.legal.lastUpdated}:</strong> January 16, 2026
           </p>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s1Title}</h2>
             <p className="mb-4 leading-relaxed">
-              By accessing and using CreatorAI Studio ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use the Service.
+              {t.legal.terms.s1Content}
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s2Title}</h2>
             <p className="mb-4 leading-relaxed">
-              CreatorAI Studio is an AI-powered content creation platform that provides tools for generating text content, managing projects, and creating marketing materials. The Service uses artificial intelligence to assist users in content creation.
+              {t.legal.terms.s2Content}
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">3. User Accounts</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s3Title}</h2>
             <p className="mb-4 leading-relaxed">
-              To access certain features of the Service, you must register for an account. You agree to:
+              {t.legal.terms.s3Content}
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
-              <li>Provide accurate, current, and complete information</li>
-              <li>Maintain and update your information to keep it accurate</li>
-              <li>Maintain the security of your password</li>
-              <li>Accept responsibility for all activities under your account</li>
-              <li>Notify us immediately of any unauthorized use</li>
+              {t.legal.terms.s3List.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
             </ul>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">4. User Content and Conduct</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s4Title}</h2>
             <p className="mb-4 leading-relaxed">
-              You retain all rights to content you create using the Service. However, you agree not to:
+              {t.legal.terms.s4Content}
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
-              <li>Use the Service for any illegal purposes</li>
-              <li>Violate any laws in your jurisdiction</li>
-              <li>Infringe on intellectual property rights</li>
-              <li>Transmit harmful code or viruses</li>
-              <li>Attempt to gain unauthorized access</li>
-              <li>Interfere with the Service's operation</li>
+              {t.legal.terms.s4List.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
             </ul>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">5. Payment and Subscription</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s5Title}</h2>
             <p className="mb-4 leading-relaxed">
-              Some features require payment. You agree to:
+              {t.legal.terms.s5Content}
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
-              <li>Pay all fees when due</li>
-              <li>Provide accurate payment information</li>
-              <li>Authorize automatic renewal (if applicable)</li>
-              <li>Understand that fees are non-refundable except as required by law</li>
+              {t.legal.terms.s5List.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
             </ul>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">6. Intellectual Property</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s6Title}</h2>
             <p className="mb-4 leading-relaxed">
-              The Service and its original content (excluding user-generated content) are the property of CreatorAI Studio and are protected by copyright, trademark, and other laws.
+              {t.legal.terms.s6Content1}
             </p>
             <p className="mb-4 leading-relaxed">
-              Content generated by AI through the Service may be used by you for commercial purposes, subject to any applicable third-party rights.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">7. Third-Party Services</h2>
-            <p className="mb-4 leading-relaxed">
-              The Service may integrate with third-party services (Google, Facebook, TikTok, etc.). Your use of these services is subject to their respective terms and privacy policies.
+              {t.legal.terms.s6Content2}
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">8. Disclaimers and Limitations</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s7Title}</h2>
             <p className="mb-4 leading-relaxed">
-              THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT GUARANTEE:
+              {t.legal.terms.s7Content}
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s8Title}</h2>
+            <p className="mb-4 leading-relaxed">
+              {t.legal.terms.s8Content}
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
-              <li>Uninterrupted or error-free service</li>
-              <li>Accuracy of AI-generated content</li>
-              <li>That the Service will meet your requirements</li>
-              <li>That defects will be corrected</li>
+              {t.legal.terms.s8List.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
             </ul>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">9. Limitation of Liability</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s9Title}</h2>
             <p className="mb-4 leading-relaxed">
-              TO THE MAXIMUM EXTENT PERMITTED BY LAW, CreatorAI Studio SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES.
+              {t.legal.terms.s9Content}
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">10. Termination</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s10Title}</h2>
             <p className="mb-4 leading-relaxed">
-              We may terminate or suspend your account immediately, without prior notice, for conduct that we believe violates these Terms or is harmful to other users, us, or third parties.
+              {t.legal.terms.s10Content}
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">11. Changes to Terms</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s11Title}</h2>
             <p className="mb-4 leading-relaxed">
-              We reserve the right to modify these Terms at any time. We will notify users of material changes via email or through the Service. Continued use after changes constitutes acceptance.
+              {t.legal.terms.s11Content}
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">12. Governing Law</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s12Title}</h2>
             <p className="mb-4 leading-relaxed">
-              These Terms shall be governed by the laws of Vietnam, without regard to its conflict of law provisions.
+              {t.legal.terms.s12Content}
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">13. Contact Information</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t.legal.terms.s13Title}</h2>
             <p className="mb-4 leading-relaxed">
-              For questions about these Terms, please contact us at:
+              {t.legal.terms.s13Content}
             </p>
             <p className="mb-2">
-              <strong>Email:</strong> support@creatorai.studio
+              <strong>{t.legal.terms.email}:</strong> support@creatorai.studio
             </p>
             <p className="mb-2">
-              <strong>Website:</strong> https://content-creator-ai-wheat.vercel.app
+              <strong>{t.legal.terms.website}:</strong> https://content-creator-ai-wheat.vercel.app
             </p>
           </section>
         </div>

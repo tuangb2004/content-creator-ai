@@ -14,7 +14,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-const BillingPlans = () => {
+const BillingPlans = ({ onBack }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { user, userData, refreshUserData } = useAuth(); // Add user to destructure
@@ -284,6 +284,16 @@ const BillingPlans = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-16 pb-24 relative">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className={`absolute top-0 left-0 p-2 rounded-full transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'}`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+        </button>
+      )}
       <div className="text-center max-w-2xl mx-auto">
         <h2 className={`text-4xl font-serif mb-4 transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
           }`}>{t?.billing?.title || 'Choose Your Power'}</h2>

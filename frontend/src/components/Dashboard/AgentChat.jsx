@@ -710,7 +710,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                     {messages.length === 0 && !isLoading && !initialPrompt && !loadingProject && (
                         <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-50 mt-20">
                             <Icons.Bot size={64} className="mb-4" />
-                            <p>Bắt đầu cuộc trò chuyện với CreatorAI</p>
+                            <p>Bắt đầu cuộc trò chuyện với Creator AI</p>
                         </div>
                     )}
                     {messages.length === 0 && loadingProject && (
@@ -1016,32 +1016,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                                 </div>
                             )}
 
-                            {inputType === 'text' && (
-                                <>
-                                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b]">
-                                        <Icons.LayoutGrid size={14} />
-                                        <span>Mẫu</span>
-                                    </button>
-                                    <div className="relative" ref={lengthMenuRef}>
-                                        <button
-                                            onClick={() => setIsLengthMenuOpen(!isLengthMenuOpen)}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isLengthMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : ''}`}
-                                        >
-                                            <Icons.Sliders size={14} />
-                                            <span>{selectedLength.label}</span>
-                                        </button>
-                                        {isLengthMenuOpen && (
-                                            <div className="absolute bottom-full left-0 mb-2 w-32 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-1 z-50">
-                                                {[{ id: 'short', label: 'Ngắn' }, { id: 'medium', label: 'Vừa' }, { id: 'long', label: 'Dài' }].map(l => (
-                                                    <button key={l.id} onClick={() => { setSelectedLength(l); setIsLengthMenuOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-200">
-                                                        {l.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </>
-                            )}
+
                         </div>
 
                         <button

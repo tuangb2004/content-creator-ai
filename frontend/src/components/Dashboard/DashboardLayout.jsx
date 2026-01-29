@@ -143,9 +143,9 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
 
         <div className="p-2 border-t border-gray-100 dark:border-gray-800 relative" ref={sidebarProfileRef}>
           {isSidebarProfileOpen && (
-            <div className={`absolute z-50 bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden animate-in fade-in duration-200 w-56 ${isSidebarCollapsed
+            <div className={`absolute z-50 bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-gray-300 dark:border-gray-600 overflow-hidden animate-in fade-in duration-200 w-52 ${isSidebarCollapsed
               ? 'bottom-full left-0 mb-2 slide-in-from-bottom-2'
-              : 'bottom-full -left-2 mb-2 slide-in-from-bottom-2'
+              : 'bottom-full left-2 mb-2 slide-in-from-bottom-2'
               }`}>
               <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
                 <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 dark:text-purple-300 font-bold text-sm shrink-0">
@@ -161,42 +161,34 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                 </div>
               </div>
 
-              <div className="p-2 space-y-0.5">
-                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
-                  <Icons.Bell size={18} className="text-black dark:text-gray-400" />
+              <div className="p-1.5 space-y-0.5">
+                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
+                  <Icons.Bell size={16} className="text-black dark:text-gray-400" />
                   Notifications
-                </button>
-                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
-                  <Icons.Folder size={18} className="text-black dark:text-gray-400" />
-                  Projects
                 </button>
                 <button
                   onClick={toggleTheme}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left"
                 >
-                  <Icons.Globe size={18} className="text-black dark:text-gray-400" />
+                  <Icons.Globe size={16} className="text-black dark:text-gray-400" />
                   Language: EN
                 </button>
-                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
-                  <Icons.Sparkles size={18} className="text-black dark:text-gray-400" />
+                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
+                  <Icons.Sparkles size={16} className="text-black dark:text-gray-400" />
                   Upgrade plan
                 </button>
-                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
-                  <Icons.Brush size={18} className="text-black dark:text-gray-400" />
-                  Personalization
-                </button>
-                <button onClick={() => onTabChange('settings')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
-                  <Icons.Settings size={18} className="text-black dark:text-gray-400" />
+                <button onClick={() => onTabChange('settings')} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
+                  <Icons.Settings size={16} className="text-black dark:text-gray-400" />
                   Settings
                 </button>
               </div>
 
               <div className="h-px bg-gray-100 dark:bg-gray-700 mx-2"></div>
 
-              <div className="p-2 space-y-0.5">
-                <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left">
+              <div className="p-1.5 space-y-0.5">
+                <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
                   <div className="flex items-center gap-3">
-                    <Icons.HelpCircle size={18} className="text-black dark:text-gray-400" />
+                    <Icons.HelpCircle size={16} className="text-black dark:text-gray-400" />
                     Help
                   </div>
                   <Icons.ChevronRight size={14} className="text-black dark:text-gray-400" />
@@ -206,9 +198,9 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                     if (onLogout) onLogout();
                     setIsSidebarProfileOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm font-medium text-black dark:text-gray-300 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left"
                 >
-                  <Icons.LogOut size={18} className="text-black dark:text-gray-400" />
+                  <Icons.LogOut size={16} className="text-black dark:text-gray-400" />
                   Log out
                 </button>
               </div>
@@ -269,15 +261,22 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
             <div className="hidden md:block"></div>
 
             <div className="flex items-center space-x-3 ml-auto">
-              <div className="hidden md:flex items-center bg-teal-50 dark:bg-teal-900/20 px-3 py-1.5 rounded-lg">
-                <Icons.Wand2 size={14} className="text-teal-600 dark:text-teal-400 mr-2" />
-                <span className="text-teal-700 dark:text-teal-300 text-sm font-bold">200</span>
+              <div className="hidden md:flex items-center h-9 bg-white dark:bg-gray-800 px-3 rounded-lg border border-gray-200 dark:border-gray-700 group hover:border-gray-300 transition-colors">
+                <Icons.Wand2 size={14} className="text-black dark:text-white mr-2" />
+                <span className="text-black dark:text-white text-sm font-bold tabular-nums">
+                  {userData?.credits !== undefined ? userData.credits.toLocaleString() : '0'}
+                </span>
                 <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
-                <button className="text-teal-600 dark:text-teal-400 text-sm font-medium hover:underline">Try for $0</button>
+                <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                  {userData?.plan === 'pro' ? 'Pro Plan' : 'Free Plan'}
+                </span>
               </div>
 
-              <button className="hidden md:flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-lg hover:bg-orange-100 transition-colors group">
-                <Icons.Shop size={16} isActive={false} />
+              <button
+                onClick={() => onTabChange('billing')}
+                className="hidden md:flex items-center h-9 gap-2 bg-white dark:bg-gray-800 text-black dark:text-white px-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm group"
+              >
+                <Icons.Shop size={16} />
                 <span className="text-sm font-bold">Earn credits</span>
               </button>
             </div>

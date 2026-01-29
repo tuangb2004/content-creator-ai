@@ -540,15 +540,9 @@ u {
   backface-visibility: hidden;
 }
 
-/* Better focus states */
+/* Better focus states handled by component-level focus rings */
 *:focus-visible {
-  outline: 2px solid #667eea;
-  outline-offset: 2px;
-  transition: outline-offset 0.2s ease;
-}
-
-.dark *:focus-visible {
-  outline-color: #764ba2;
+  outline: none;
 }
 
 /* Skeleton loader */
@@ -818,8 +812,8 @@ body.restoring-scroll [class*="animate"] {
 
 /* Carousel Animation */
 :root {
-  --card-w: 225px;
-  --card-h: 400px;
+  --card-w: 200px;
+  --card-h: 320px;
   --card-gap: 16px;
   --stride: calc(var(--card-w) + var(--card-gap));
   --start-offset: calc(50vw - (var(--card-w) / 2));
@@ -855,7 +849,7 @@ body.restoring-scroll [class*="animate"] {
   width: var(--card-w);
   height: var(--card-h);
   margin: 0 calc(var(--card-gap) / 2);
-  border-radius: 12px;
+  border-radius: 24px;
   overflow: hidden;
   position: relative;
   flex-shrink: 0;
@@ -886,54 +880,54 @@ body.restoring-scroll [class*="animate"] {
 
   0%,
   9% {
-    transform: translateX(0);
+    transform: translateX(calc(-8 * var(--stride)));
     animation-timing-function: var(--ease-out-expo);
   }
 
   12.5%,
   21.5% {
-    transform: translateX(calc(-1 * var(--stride)));
+    transform: translateX(calc(-9 * var(--stride)));
     animation-timing-function: var(--ease-out-expo);
   }
 
   25%,
   34% {
-    transform: translateX(calc(-2 * var(--stride)));
+    transform: translateX(calc(-10 * var(--stride)));
     animation-timing-function: var(--ease-out-expo);
   }
 
   37.5%,
   46.5% {
-    transform: translateX(calc(-3 * var(--stride)));
+    transform: translateX(calc(-11 * var(--stride)));
     animation-timing-function: var(--ease-out-expo);
   }
 
   50%,
   59% {
-    transform: translateX(calc(-4 * var(--stride)));
+    transform: translateX(calc(-12 * var(--stride)));
     animation-timing-function: var(--ease-out-expo);
   }
 
   62.5%,
   71.5% {
-    transform: translateX(calc(-5 * var(--stride)));
+    transform: translateX(calc(-13 * var(--stride)));
     animation-timing-function: var(--ease-out-expo);
   }
 
   75%,
   84% {
-    transform: translateX(calc(-6 * var(--stride)));
+    transform: translateX(calc(-14 * var(--stride)));
     animation-timing-function: var(--ease-out-expo);
   }
 
   87.5%,
   96.5% {
-    transform: translateX(calc(-7 * var(--stride)));
+    transform: translateX(calc(-15 * var(--stride)));
     animation-timing-function: var(--ease-out-expo);
   }
 
   100% {
-    transform: translateX(calc(-8 * var(--stride)));
+    transform: translateX(calc(-16 * var(--stride)));
   }
 }
 
@@ -999,31 +993,31 @@ body.restoring-scroll [class*="animate"] {
 }
 
 .carousel-card:nth-child(8n+2) {
-  animation-delay: 3s;
+  animation-delay: -21s;
 }
 
 .carousel-card:nth-child(8n+3) {
-  animation-delay: 6s;
+  animation-delay: -18s;
 }
 
 .carousel-card:nth-child(8n+4) {
-  animation-delay: 9s;
+  animation-delay: -15s;
 }
 
 .carousel-card:nth-child(8n+5) {
-  animation-delay: 12s;
+  animation-delay: -12s;
 }
 
 .carousel-card:nth-child(8n+6) {
-  animation-delay: 15s;
+  animation-delay: -9s;
 }
 
 .carousel-card:nth-child(8n+7) {
-  animation-delay: 18s;
+  animation-delay: -6s;
 }
 
 .carousel-card:nth-child(8n+8) {
-  animation-delay: 21s;
+  animation-delay: -3s;
 }
 
 /* Pricing Page Styles */
@@ -1041,6 +1035,53 @@ body.restoring-scroll [class*="animate"] {
 
 .dark .footer-cta-bg {
   background: linear-gradient(180deg, #111827 0%, #134e4a 100%);
+}
+
+/* ========== SCROLL REVEAL ANIMATIONS ========== */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.active,
+.reveal-left.active,
+.reveal-right.active {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+.reveal-delay-1 {
+  transition-delay: 0.1s;
+}
+
+.reveal-delay-2 {
+  transition-delay: 0.2s;
+}
+
+.reveal-delay-3 {
+  transition-delay: 0.3s;
+}
+
+.reveal-delay-4 {
+  transition-delay: 0.4s;
+}
+
+.reveal-delay-5 {
+  transition-delay: 0.5s;
 }
 
 /* ========== END CREATORAI LANDING PAGE STYLES ========== */

@@ -252,5 +252,5 @@ export const JOURNAL_ARTICLES = [
   }
 ];
 
-export const BRAND_NAME = 'CreatorAI';
+export const BRAND_NAME = 'Creator AI';
 

@@ -19,6 +19,316 @@ export const translations = {
       signin: 'Sign In',
       start: 'Get Started',
       searchPlaceholder: 'Search tools & articles...',
+      home: 'Home',
+      solutions: 'Solutions',
+      pricing: 'Pricing',
+      videoSub: 'Transform URLs to videos',
+      imageSub: 'Professional studio visuals',
+      avatarSub: 'Realistic digital doubles',
+      affiliate: 'Join Affiliate Program',
+      powerLab: 'E-commerce PowerLab',
+      kraftGeek: "KraftGeek's Story",
+      pawSmart: "Paw Smart's Story",
+      sleepShop: "Sleep Shop's Story",
+      customerStories: 'Customer Stories',
+      helpCenter: 'Help Center',
+      learn: 'Learn',
+      campaign: 'Campaign',
+      meet: 'Meet Creator AI',
+    },
+
+    // Pricing Page
+    pricing: {
+      banner: 'Sign up for your FREE trial today and unlock instant savings of 30%...',
+      claimNow: 'Claim Now',
+      hero: {
+        title: 'Work Smarter, Not Harder',
+        subtitle: 'Supercharge Your Content Creation Today',
+        description: 'Free to use, upgrade anytime.',
+        monthly: 'Monthly',
+        yearly: 'Yearly',
+        savePercent: '(-20% off)',
+        perMonth: '/month'
+      },
+      currency: {
+        prefix: '$',
+        suffix: ''
+      },
+      labels: {
+        credits: 'Credits',
+        features: 'Features',
+        bestValue: 'Best Value'
+      },
+      plans: {
+        starter: {
+          name: 'Starter',
+          price: '0',
+          sub: 'No credit card required.',
+          cta: 'Start for free',
+          credits: '20 Free Monthly Credits',
+          features: [
+            'Gemini 3 Flash Access',
+            'Basic SEO Tools',
+            'Community Support'
+          ]
+        },
+        pro: {
+          name: 'Pro Studio',
+          priceMonthly: '29',
+          priceYearly: '24',
+          sub: 'Best for professional content creators.',
+          billedYearly: 'Billed yearly. ',
+          cta: 'Upgrade to Pro',
+          credits: '2,500 Monthly Credits',
+          features: [
+            'Gemini 3 Pro Reasoning',
+            'Nano Banana Pro Access',
+            'Priority 24/7 Support'
+          ]
+        },
+        agency: {
+          name: 'Agency Elite',
+          priceMonthly: '99',
+          priceYearly: '79',
+          sub: 'For high-volume content operations.',
+          billedYearly: 'Billed yearly. ',
+          cta: 'Go Unlimited',
+          credits: '12,000 Monthly Credits',
+          features: [
+            'Unlimited Gemini 3 Pro',
+            'API & Multi-Seat Access',
+            'Dedicated Account Manager'
+          ]
+        },
+        business: {
+          name: 'Business',
+          priceMonthly: '206',
+          priceYearly: '172',
+          sub: 'Enterprise-grade for large teams.',
+          billedYearly: 'Billed yearly. ',
+          cta: 'Contact Sales',
+          creditsMonthly: '25,000 Monthly Credits',
+          creditsYearly: '300,000 Yearly Credits',
+          features: [
+            'Unlimited team members',
+            'Priority support 24/7',
+            'Custom integrations',
+            'Dedicated account manager',
+            'White-label options'
+          ]
+        }
+      },
+      whyChoose: {
+        title: 'Why Choose Creator AI',
+        item1: {
+          title: 'E-Commerce Marketplace Integration',
+          desc: 'Unlock automated dynamic marketing content with all your product listings.'
+        },
+        item2: {
+          title: 'One-Click Video Solution',
+          desc: 'Instantly craft dozens of engaging social media videos for your business needs with a product link.'
+        },
+        item3: {
+          title: 'AI-Powered Product Images',
+          desc: 'With a few clicks, transform any environment into the perfect background for showcasing your products.'
+        },
+        item4: {
+          title: 'Auto-Publishing and Analytics',
+          desc: 'Manage all your content from one calendar and track performance across channels with sophisticated analytics.'
+        }
+      },
+      faqs: {
+        title: 'FAQs',
+        q1: {
+          q: 'Are free trials available?',
+          a: 'Yes, we offer a 7-day free trial on all paid plans so you can explore the features before committing.'
+        },
+        q2: {
+          q: "What's the difference between subscription and credits?",
+          a: 'Subscriptions give you a monthly allowance of credits at a discounted rate, while credit packs are one-time purchases.'
+        },
+        q3: {
+          q: 'Which payment methods are accepted?',
+          a: 'We currently support PayOS. Other payment methods will be added in future updates.'
+        },
+        q4: {
+          q: 'Can I change my subscription plan at any time?',
+          a: 'Yes, you can upgrade or downgrade your plan at any time. Changes take effect at the next billing cycle.'
+        }
+      },
+      cta: {
+        title: 'Create With Wings',
+        subtitle: 'Supercharged Content Creation',
+        button: 'Start your free trial'
+      }
+    },
+
+    legal: {
+      termsTitle: 'Terms of Service',
+      privacyTitle: 'Privacy Policy',
+      lastUpdated: 'Last Updated',
+      terms: {
+        s1Title: '1. Acceptance of Terms',
+        s1Content: 'By accessing and using Creator AI Studio ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use the Service.',
+        s2Title: '2. Description of Service',
+        s2Content: 'Creator AI Studio is an AI-powered content creation platform that provides tools for generating text content, managing projects, and creating marketing materials. The Service uses artificial intelligence to assist users in content creation.',
+        s3Title: '3. User Accounts',
+        s3Content: 'To access certain features of the Service, you must register for an account. You agree to:',
+        s3List: [
+          'Provide accurate, current, and complete information',
+          'Maintain and update your information to keep it accurate',
+          'Maintain the security of your password',
+          'Accept responsibility for all activities under your account',
+          'Notify us immediately of any unauthorized use'
+        ],
+        s4Title: '4. User Content and Conduct',
+        s4Content: 'You retain all rights to content you create using the Service. However, you agree not to:',
+        s4List: [
+          'Use the Service for any illegal purposes',
+          'Violate any laws in your jurisdiction',
+          'Infringe on intellectual property rights',
+          'Transmit harmful code or viruses',
+          'Attempt to gain unauthorized access',
+          'Interfere with the Service\'s operation'
+        ],
+        s5Title: '5. Payment and Subscription',
+        s5Content: 'Some features require payment. You agree to:',
+        s5List: [
+          'Pay all fees when due',
+          'Provide accurate payment information',
+          'Authorize automatic renewal (if applicable)',
+          'Understand that fees are non-refundable except as required by law'
+        ],
+        s6Title: '6. Intellectual Property',
+        s6Content1: 'The Service and its original content (excluding user-generated content) are the property of CreatorAI Studio and are protected by copyright, trademark, and other laws.',
+        s6Content2: 'Content generated by AI through the Service may be used by you for commercial purposes, subject to any applicable third-party rights.',
+        s7Title: '7. Third-Party Services',
+        s7Content: 'The Service may integrate with third-party services (Google, Facebook, TikTok, etc.). Your use of these services is subject to their respective terms and privacy policies.',
+        s8Title: '8. Disclaimers and Limitations',
+        s8Content: 'THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT GUARANTEE:',
+        s8List: [
+          'Uninterrupted or error-free service',
+          'Accuracy of AI-generated content',
+          'That the Service will meet your requirements',
+          'That defects will be corrected'
+        ],
+        s9Title: '9. Limitation of Liability',
+        s9Content: 'TO THE MAXIMUM EXTENT PERMITTED BY LAW, CreatorAI Studio SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES.',
+        s10Title: '10. Termination',
+        s10Content: 'We may terminate or suspend your account immediately, without prior notice, for conduct that we believe violates these Terms or is harmful to other users, us, or third parties.',
+        s11Title: '11. Changes to Terms',
+        s11Content: 'We reserve the right to modify these Terms at any time. We will notify users of material changes via email or through the Service. Continued use after changes constitutes acceptance.',
+        s12Title: '12. Governing Law',
+        s12Content: 'These Terms shall be governed by the laws of Vietnam, without regard to its conflict of law provisions.',
+        s13Title: '13. Contact Information',
+        s13Content: 'For questions about these Terms, please contact us at:',
+        email: 'Email',
+        website: 'Website'
+      },
+      privacy: {
+        s1Title: '1. Introduction',
+        s1Content: 'Creator AI Studio ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI-powered content creation platform.',
+        s2Title: '2. Information We Collect',
+        s2_1Title: '2.1 Information You Provide',
+        s2_1List: [
+          'Account Information: Name, email address, password',
+          'Profile Information: Display name, avatar (if provided)',
+          'Payment Information: Billing details (processed securely through PayOS)',
+          'Content: Text, projects, and materials you create using our Service'
+        ],
+        s2_2Title: '2.2 Information from Third-Party Sign-In',
+        s2_2Content: 'When you sign in using Google, Facebook, or TikTok, we receive:',
+        s2_2List: [
+          'Basic profile information (name, email, profile picture)',
+          'User ID from the authentication provider'
+        ],
+        s2_3Title: '2.3 Automatically Collected Information',
+        s2_3List: [
+          'Usage Data: Features used, time spent, interactions',
+          'Device Information: Browser type, operating system, IP address',
+          'Cookies: Session cookies for authentication and preferences'
+        ],
+        s3Title: '3. How We Use Your Information',
+        s3Content: 'We use your information to:',
+        s3List: [
+          'Provide and maintain the Service',
+          'Process your transactions and manage subscriptions',
+          'Send you updates, security alerts, and support messages',
+          'Improve and personalize your experience',
+          'Analyze usage patterns and optimize the Service',
+          'Detect, prevent, and address technical issues',
+          'Comply with legal obligations'
+        ],
+        s4Title: '4. AI-Generated Content',
+        s4Content: 'Content you generate using our AI tools:',
+        s4List: [
+          'Is stored securely in your account',
+          'Remains your property',
+          'May be used to improve AI models (anonymized)',
+          'Is not shared with third parties without your consent'
+        ],
+        s5Title: '5. Information Sharing and Disclosure',
+        s5Content: 'We do not sell your personal information. We may share information:',
+        s5List: [
+          'Service Providers: Firebase (hosting), PayOS (payments), Google AI (content generation)',
+          'Legal Requirements: When required by law or to protect rights',
+          'Business Transfers: In connection with merger, sale, or acquisition',
+          'With Your Consent: When you explicitly agree'
+        ],
+        s6Title: '6. Third-Party Services',
+        s6Content: 'Our Service integrates with:',
+        s6List: [
+          'Google: Authentication, AI services',
+          'Facebook: Authentication',
+          'TikTok: Authentication',
+          'Firebase: Hosting and database',
+          'PayOS: Payment processing'
+        ],
+        s7Title: '7. Data Security',
+        s7Content1: 'We implement security measures including encryption of data, secure hashing, and regular audits.',
+        s7Content2: 'Hyperproof, no method of transmission over the Internet is 100% secure.',
+        s8Title: '8. Your Rights and Choices',
+        s8Content: 'You have the right to:',
+        s8List: [
+          'Access, Correction, Deletion of your personal data',
+          'Export your content and projects',
+          'Opt-out of marketing emails',
+          'Withdraw consent at any time'
+        ],
+        s9Title: '9. Data Retention',
+        s9Content: 'We retain your information as long as your account is active or needed to provide the Service.',
+        s10Title: '10. Children\'s Privacy',
+        s10Content: 'Our Service is not intended for children under 13.',
+        s11Title: '11. International Data Transfers',
+        s11Content: 'Your information may be transferred to countries other than your own.',
+        s12Title: '12. Changes to This Policy',
+        s12Content: 'We may update this Privacy Policy periodically.',
+        s13Title: '13. Data Deletion Request',
+        s13Content: 'You have the right to request deletion of your personal data.',
+        s13Steps: [
+          'Log in to your account',
+          'Navigate to Settings → Account',
+          'Click "Delete Account"',
+          'Confirm deletion'
+        ]
+      }
+    },
+
+    footer: {
+      description: 'Powered by AI, Creator AI supercharges your content creation.',
+      solutions: 'Solutions',
+      videoSolution: '1-Click Video Solution',
+      productImages: 'AI Product Images',
+      avatarsAndVoices: 'Avatars & Voices',
+      publishingAndAnalytics: 'Auto Publishing & Analytics',
+      resources: 'Resources',
+      helpCenter: 'Help Center',
+      customerStories: 'Customer Stories',
+      legal: 'Legal',
+      termsOfService: 'Terms of Service',
+      privacyPolicy: 'Privacy Policy',
+      bottomTagline: 'Ready to create?',
+      signUpFree: 'Sign up for free',
     },
 
     // Common
@@ -55,7 +365,7 @@ export const translations = {
       loginWithFacebook: 'Continue with Facebook',
       loginWithTikTok: 'Continue with TikTok',
       welcomeBack: 'Welcome Back',
-      joinCreatorAI: 'Join CreatorAI',
+      joinCreatorAI: 'Join Creator AI',
       signInToContinue: 'Sign in to Continue',
       createAccount: 'Create Account',
       accessStudio: 'Access your creative studio.',
@@ -88,6 +398,9 @@ export const translations = {
       iveVerified: 'I\'ve verified',
       processing: 'Processing...',
       back: 'Back',
+      resendEmail: 'Resend Email',
+      useAnotherEmail: 'Use another email',
+      verificationSentSuccess: 'Verification email resent!',
       agreeTerms: 'By clicking continue, you agree to our',
       and: 'and',
       completingGoogleSignIn: 'Completing Google sign in...',
@@ -109,20 +422,38 @@ export const translations = {
       failedToSendReset: 'Failed to send reset email',
       emailNotVerified: 'Email not verified',
       youCanCloseThisTab: 'You can close this tab. Your original tab will automatically log you in.',
+      show: 'Show',
+      hide: 'Hide',
+      signingIn: 'Signing in...',
+      creatingAccount: 'Creating account...',
+      sending: 'Sending...',
+      confirm: 'Confirm',
+      requestSent: 'Request Sent!',
+      checkEmailReset: 'Check your inbox for the reset link.',
+      backToSignIn: 'Back to Sign In',
+      enterEmail: 'Enter email',
+      enterPassword: 'Enter password',
+      createPassword: 'Create password',
+      enterName: 'Enter your name',
+      loginCancelled: 'Login cancelled',
+      avatar: 'Avatar',
+      talkingPhoto: 'AI talking photo',
+      marketingVideo: 'Marketing video',
+      productShowcase: 'Product showcase',
     },
 
     // Landing Page
     landing: {
       hero: {
-        title: 'Create Amazing Content',
-        titleHighlight: 'With AI',
+        title: 'Creator',
+        titleHighlight: 'AI',
         subtitle: 'Generate blog posts, social media captions, images, and more in seconds. Powered by FREE AI - No credit card required.',
         getStarted: 'Get Started Free',
         signIn: 'Sign In',
         badge: 'AI-Powered Content Suite',
         headline_1: 'Create',
         headline_2: 'everything.',
-        subheadline: 'From viral tweets to SEO articles.\nCreatorAI creates tailored content for your brand in seconds.',
+        subheadline: 'From viral tweets to SEO articles.\nCreator AI creates tailored content for your brand in seconds.',
         cta: 'Start Creating',
       },
       features: {
@@ -148,6 +479,87 @@ export const translations = {
         templates: 'Content Templates',
         noFees: 'No Hidden Fees',
       },
+      masterpieces: {
+        title: 'AI Masterpieces',
+        subtitle: 'A continuous stream of high-fidelity, AI-generated creations',
+      },
+      videoSolution: {
+        tag: 'Link to Video',
+        titlePart1: 'Transform any URL into engaging videos in',
+        titlePart2: 'moments',
+        desc: 'Simply paste your website link and define your key message. Creator AI automatically generates multiple professional video variations to showcase your product instantly.',
+        cta: 'Try it now →',
+      },
+      avatarVideo: {
+        tag: 'Avatar Video',
+        titlePart1: 'Convert Scripts to Video with a Diverse',
+        titlePart2: 'Avatar Library',
+        desc: 'Choose from our extensive collection of realistic AI avatars or create your digital twin. Break language barriers and connect globally with multi-lingual support.',
+        cta: 'Try it now →',
+      },
+      imageStudio: {
+        tag: 'Image Studio',
+        titlePart1: 'Generate studio-quality visuals instantly with',
+        titlePart2: 'AI tools',
+        desc: 'Seamlessly transform any environment into the perfect professional backdrop. Create brand-consistent imagery that stands out in seconds.',
+        cta: 'Try it now →',
+      },
+      smartTools: {
+        titlePart1: 'Smart Tools Designed to',
+        titlePart2: 'Supercharge Your Workflow',
+        customAvatar: {
+          title: 'Custom Avatar',
+          desc: 'Design your own unique digital persona for a truly personalized brand presence.',
+        },
+        imageEditor: {
+          title: 'Image Editor',
+          desc: 'Your all-in-one suite for crafting and refining professional images with ease.',
+        },
+        quickCut: {
+          title: 'Quick Cut',
+          desc: 'Accelerate your editing process by transcribing and trimming video directly via text.',
+        },
+        removeBg: {
+          title: 'Remove Background',
+          desc: 'Instantly isolate subjects and remove backgrounds with a single click.',
+        },
+        tryItNow: 'Try it now',
+      },
+      ctaBanner: {
+        titlePart1: 'Create With Wings',
+        titlePart2: 'Supercharged Content Creation',
+        cta: 'Start your free trial →',
+      },
+      freeTrial: {
+        titlePart1: 'Experience the Freedom to',
+        titlePart2: 'Create',
+        titlePart3: 'and',
+        titlePart4: 'Publish Content',
+        price: '$0',
+        item1: 'Unlimited access to Creator AI during free trial.',
+        item2: 'Unlock 600 credits to create up to 600 seconds of video or 200 images.',
+        item3: 'Explore our AI features and the full catalog of pre-cleared commercial templates.',
+        item4: 'No financial obligation or credit card is required.',
+        cta: 'Start your free trial →',
+        viewPlans: 'View All Plans',
+        generating: 'GENERATING...',
+      },
+      businessImpact: {
+        titlePart1: 'Driving Business Impact Can',
+        titlePart2: 'Be Easier',
+        item1: {
+          desc: 'Reduce production costs by',
+          val: '20%',
+        },
+        item2: {
+          desc: 'Increase organic reach on Instagram by',
+          val: '98%',
+        },
+        item3: {
+          desc: 'Reduce content production time by',
+          val: '80%',
+        },
+      },
     },
 
     // Tools
@@ -167,7 +579,7 @@ export const translations = {
     // About
     about: {
       title_1: 'The Operating System \n for Creators.',
-      desc_1: 'CreatorAI was built to solve the "Blank Page Problem." We believe that creativity is not a lightning strike, but a workflow. By combining Large Language Models with intuitive design, we give you a studio that never sleeps.',
+      desc_1: 'Creator AI was built to solve the "Blank Page Problem." We believe that creativity is not a lightning strike, but a workflow. By combining Large Language Models with intuitive design, we give you a studio that never sleeps.',
       desc_2: 'Whether you are a solo marketer managing 5 channels or a founder building a personal brand, our tools adapt to your voice, scaling your output without diluting your message.',
       tech_badge: 'Technology',
       tech_title: 'Powered by \n Multi-Model AI',
@@ -199,7 +611,17 @@ export const translations = {
       subscribed: 'Subscribed',
       termsOfService: 'Terms of Service',
       privacyPolicy: 'Privacy Policy',
-      rights: 'Created by @chanelluuh',
+      solutions: 'Solutions',
+      videoSolution: 'One-click Video Solution',
+      productImages: 'AI Product Images',
+      avatarsAndVoices: 'AI Avatars and Voices',
+      publishingAndAnalytics: 'Publishing and Analytics',
+      resources: 'Resources',
+      helpCenter: 'Help Center',
+      customerStories: 'Customer Stories',
+      legal: 'Legal',
+      bottomTagline: 'Unleash your creativity with wings - supercharge your content now!',
+      signUpFree: 'Sign up for free',
     },
     // Terms of Service
     terms: {
@@ -207,11 +629,11 @@ export const translations = {
       lastUpdated: 'Last Updated: October 27, 2025',
       section1: {
         title: '1. Acceptance of Terms',
-        content: 'By accessing and using CreatorAI ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. In addition, when using these particular services, you shall be subject to any posted guidelines or rules applicable to such services.',
+        content: 'By accessing and using Creator AI ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. In addition, when using these particular services, you shall be subject to any posted guidelines or rules applicable to such services.',
       },
       section2: {
         title: '2. AI-Generated Content',
-        content: 'CreatorAI utilizes artificial intelligence (Google Gemini models) to generate text and images. You acknowledge that:',
+        content: 'Creator AI utilizes artificial intelligence (Google Gemini models) to generate text and images. You acknowledge that:',
         point1: 'Output may not always be accurate, unique, or suitable for your specific needs.',
         point2: 'You are responsible for reviewing and verifying all generated content before publication.',
         point3: 'We do not claim copyright ownership over the content you generate; however, the legal status of AI-generated works varies by jurisdiction.',
@@ -222,11 +644,11 @@ export const translations = {
       },
       section4: {
         title: '4. Intellectual Property',
-        content: 'The interface, code, and design of CreatorAI are the proprietary property of CreatorAI Labs. You are granted a limited license only for purposes of viewing and using the material on this website.',
+        content: 'The interface, code, and design of Creator AI are the proprietary property of Creator AI Labs. You are granted a limited license only for purposes of viewing and using the material on this website.',
       },
       section5: {
         title: '5. Limitation of Liability',
-        content: 'In no event shall CreatorAI, nor any of its officers, directors, and employees, be held liable for anything arising out of or in any way connected with your use of this website.',
+        content: 'In no event shall Creator AI, nor any of its officers, directors, and employees, be held liable for anything arising out of or in any way connected with your use of this website.',
       },
       section6: {
         title: '6. Changes to Terms',
@@ -246,7 +668,7 @@ export const translations = {
       },
       section2: {
         title: '2. Use of AI Technology',
-        content: 'CreatorAI uses Google\'s Gemini API to process your prompts and generate content. When you use our tools, the text or images you provide as input are sent to Google\'s servers for processing.',
+        content: 'Creator AI uses Google\'s Gemini API to process your prompts and generate content. When you use our tools, the text or images you provide as input are sent to Google\'s servers for processing.',
         warning: 'We recommend not inputting sensitive personal data (PII), confidential business information, or trade secrets into the generation prompts.',
       },
       section3: {
@@ -734,7 +1156,7 @@ export const translations = {
     // Command Center  
     commandCenter: {
       title: 'Command Center',
-      subtitle: 'Access the full depth of CreatorAI tools.',
+      subtitle: 'Access the full depth of Creator AI tools.',
       searchPlaceholder: 'Search tools, capabilities...',
 
       filters: {
@@ -958,6 +1380,316 @@ export const translations = {
       signin: 'Đăng nhập',
       start: 'Bắt đầu',
       searchPlaceholder: 'Tìm kiếm công cụ & bài viết...',
+      home: 'Trang chủ',
+      solutions: 'Giải pháp',
+      pricing: 'Giá cả',
+      videoSub: 'Biến URL thành video',
+      imageSub: 'Hình ảnh studio chuyên nghiệp',
+      avatarSub: 'Bản sao kỹ thuật số chân thực',
+      affiliate: 'Tham gia chương trình liên kết',
+      powerLab: 'E-commerce PowerLab',
+      kraftGeek: 'Câu chuyện KraftGeek',
+      pawSmart: 'Câu chuyện Paw Smart',
+      sleepShop: 'Câu chuyện Sleep Shop',
+      customerStories: 'Câu chuyện khách hàng',
+      helpCenter: 'Trung tâm hỗ trợ',
+      learn: 'Tìm hiểu',
+      campaign: 'Chiến dịch',
+      meet: 'Khám phá Creator AI',
+    },
+
+    // Pricing Page
+    pricing: {
+      banner: 'Đăng ký dùng thử MIỄN PHÍ ngay hôm nay và nhận ưu đãi tiết kiệm 30%...',
+      claimNow: 'Nhận Ngay',
+      hero: {
+        title: 'Làm Việc Thông Minh, Không Phải Vất Vả',
+        subtitle: 'Tăng Tốc Sáng Tạo Nội Dung Ngay Hôm Nay',
+        description: 'Sử dụng miễn phí, nâng cấp bất cứ lúc nào.',
+        monthly: 'Hàng tháng',
+        yearly: 'Hàng năm',
+        savePercent: '(-20% ưu đãi)',
+        perMonth: '/tháng'
+      },
+      currency: {
+        prefix: '',
+        suffix: '₫'
+      },
+      labels: {
+        credits: 'Tín dụng',
+        features: 'Tính năng',
+        bestValue: 'Giá tốt nhất'
+      },
+      plans: {
+        starter: {
+          name: 'Khởi đầu',
+          price: '0',
+          sub: 'Không cần thẻ tín dụng.',
+          cta: 'Bắt đầu miễn phí',
+          credits: '20 Tín dụng Miễn phí Hàng tháng',
+          features: [
+            'Truy cập Gemini 3 Flash',
+            'Công cụ SEO Cơ bản',
+            'Hỗ trợ cộng đồng'
+          ]
+        },
+        pro: {
+          name: 'Pro Studio',
+          priceMonthly: '725.000',
+          priceYearly: '600.000',
+          sub: 'Tốt nhất cho những người sáng tạo chuyên nghiệp.',
+          billedYearly: 'Thanh toán hàng năm. ',
+          cta: 'Nâng cấp lên Pro',
+          credits: '2,500 Tín dụng Hàng tháng',
+          features: [
+            'Gemini 3 Pro Reasoning',
+            'Truy cập Nano Banana Pro',
+            'Hỗ trợ Ưu tiên 24/7'
+          ]
+        },
+        agency: {
+          name: 'Agency Elite',
+          priceMonthly: '2.475.000',
+          priceYearly: '1.975.000',
+          sub: 'Dành cho các hoạt động nội dung quy mô lớn.',
+          billedYearly: 'Thanh toán hàng năm. ',
+          cta: 'Sử dụng Không giới hạn',
+          credits: '12,000 Tín dụng Hàng tháng',
+          features: [
+            'Gemini 3 Pro Không giới hạn',
+            'Truy cập API & Nhiều người dùng',
+            'Quản lý tài khoản chuyên trách'
+          ]
+        },
+        business: {
+          name: 'Doanh nghiệp',
+          priceMonthly: '5.150.000',
+          priceYearly: '4.300.000',
+          sub: 'Cấp độ doanh nghiệp cho các đội nhóm lớn.',
+          billedYearly: 'Thanh toán hàng năm. ',
+          cta: 'Liên hệ kinh doanh',
+          creditsMonthly: '25,000 Tín dụng Hàng tháng',
+          creditsYearly: '300,000 Tín dụng Hàng năm',
+          features: [
+            'Không giới hạn thành viên nhóm',
+            'Hỗ trợ ưu tiên 24/7',
+            'Tích hợp tùy chỉnh',
+            'Quản lý tài khoản chuyên trách',
+            'Tùy chọn White-label'
+          ]
+        }
+      },
+      whyChoose: {
+        title: 'Tại Sao Chọn Creator AI',
+        item1: {
+          title: 'Tích hợp Sàn Thương mại Điện tử',
+          desc: 'Khai thác nội dung tiếp thị động tự động với tất cả danh sách sản phẩm của bạn.'
+        },
+        item2: {
+          title: 'Giải pháp Video Một cú nhấp',
+          desc: 'Tạo ngay hàng chục video mạng xã hội hấp dẫn cho nhu cầu kinh doanh của bạn chỉ với một liên kết sản phẩm.'
+        },
+        item3: {
+          title: 'Hình ảnh Sản phẩm bằng AI',
+          desc: 'Chỉ với vài cú nhấp chuột, biến bất kỳ môi trường nào thành bối cảnh hoàn hảo để trưng bày sản phẩm của bạn.'
+        },
+        item4: {
+          title: 'Tự động Đăng bài và Thống kê',
+          desc: 'Quản lý tất cả nội dung từ một lịch duy nhất và theo dõi hiệu suất trên các kênh với bộ phân tích tinh vi.'
+        }
+      },
+      faqs: {
+        title: 'Câu hỏi thường gặp',
+        q1: {
+          q: 'Có bản dùng thử miễn phí không?',
+          a: 'Có, chúng tôi cung cấp bản dùng thử miễn phí 7 ngày cho tất cả các gói trả phí để bạn có thể khám phá các tính năng trước khi cam kết.'
+        },
+        q2: {
+          q: 'Sự khác biệt giữa đăng ký gói và mua tín dụng là gì?',
+          a: 'Gói đăng ký cung cấp cho bạn hạn mức tín dụng hàng tháng với mức giá ưu đãi, trong khi các gói tín dụng là mua một lần.'
+        },
+        q3: {
+          q: 'Những phương thức thanh toán nào được chấp nhận?',
+          a: 'Hiện tại chúng tôi hỗ trợ cổng PayOS. Các phương thức thanh toán khác sẽ được nâng cấp thêm trong tương lai.'
+        },
+        q4: {
+          q: 'Tôi có thể thay đổi gói đăng ký bất cứ lúc nào không?',
+          a: 'Có, bạn có thể nâng cấp hoặc hạ cấp gói của mình bất cứ lúc nào. Thay đổi sẽ có hiệu lực vào chu kỳ thanh toán tiếp theo.'
+        }
+      },
+      cta: {
+        title: 'Sáng Tạo Có Cánh',
+        subtitle: 'Tăng Tốc Sáng Tạo Nội Dung',
+        button: 'Bắt đầu dùng thử miễn phí'
+      }
+    },
+
+    legal: {
+      termsTitle: 'Điều khoản dịch vụ',
+      privacyTitle: 'Chính sách bảo mật',
+      lastUpdated: 'Cập nhật lần cuối',
+      terms: {
+        s1Title: '1. Chấp thuận các Điều khoản',
+        s1Content: 'Bằng cách truy cập và sử dụng Creator AI Studio ("Dịch vụ"), bạn chấp nhận và đồng ý bị ràng buộc bởi các điều khoản và quy định của thỏa thuận này. Nếu bạn không đồng ý với các Điều khoản Dịch vụ này, vui lòng không sử dụng Dịch vụ.',
+        s2Title: '2. Mô tả Dịch vụ',
+        s2Content: 'Creator AI Studio là một nền tảng sáng tạo nội dung dựa trên AI cung cấp các công cụ để tạo nội dung văn bản, quản lý dự án và tạo tài liệu tiếp thị. Dịch vụ sử dụng trí tuệ nhân tạo để hỗ trợ người dùng trong việc sáng tạo nội dung.',
+        s3Title: '3. Tài khoản Người dùng',
+        s3Content: 'Để truy cập một số tính năng của Dịch vụ, bạn phải đăng ký tài khoản. Bạn đồng ý:',
+        s3List: [
+          'Cung cấp thông tin chính xác, hiện tại và đầy đủ',
+          'Duy trì và cập nhật thông tin của bạn để giữ cho nó chính xác',
+          'Duy trì bảo mật mật khẩu của bạn',
+          'Chịu trách nhiệm cho tất cả các hoạt động dưới tài khoản của bạn',
+          'Thông báo cho chúng tôi ngay lập tức về bất kỳ việc sử dụng trái phép nào'
+        ],
+        s4Title: '4. Nội dung và Hành vi Người dùng',
+        s4Content: 'Bạn giữ tất cả các quyền đối với nội dung bạn tạo bằng Dịch vụ. Tuy nhiên, bạn đồng ý không:',
+        s4List: [
+          'Sử dụng Dịch vụ cho bất kỳ mục đích bất hợp pháp nào',
+          'Vi phạm bất kỳ luật nào trong phạm vi quyền hạn của bạn',
+          'Xâm phạm quyền sở hữu trí tuệ',
+          'Truyền mã độc hoặc vi-rút',
+          'Cố gắng truy cập trái phép',
+          'Can thiệp vào hoạt động của Dịch vụ'
+        ],
+        s5Title: '5. Thanh toán và Đăng ký',
+        s5Content: 'Một số tính năng yêu cầu thanh toán. Bạn đồng ý:',
+        s5List: [
+          'Thanh toán tất cả các khoản phí khi đến hạn',
+          'Cung cấp thông tin thanh toán chính xác',
+          'Ủy quyền gia hạn tự động (nếu có)',
+          'Hiểu rằng các khoản phí không được hoàn lại trừ khi pháp luật yêu cầu'
+        ],
+        s6Title: '6. Sở hữu Trí tuệ',
+        s6Content1: 'Dịch vụ và nội dung gốc của nó (ngoại trừ nội dung do người dùng tạo) là tài sản của CreatorAI Studio và được bảo vệ bởi luật bản quyền, nhãn hiệu và các luật khác.',
+        s6Content2: 'Nội dung do AI tạo ra thông qua Dịch vụ có thể được bạn sử dụng cho mục đích thương mại, tuân theo các quyền của bên thứ ba hiện hành.',
+        s7Title: '7. Dịch vụ của Bên Thứ ba',
+        s7Content: 'Dịch vụ có thể tích hợp với các dịch vụ của bên thứ ba (Google, Facebook, TikTok, v.v.). Việc bạn sử dụng các dịch vụ này tuân theo các điều khoản và chính sách bảo mật tương ứng của họ.',
+        s8Title: '8. Tuyên bố và Giới hạn',
+        s8Content: 'DỊCH VỤ ĐƯỢC CUNG CẤP "NGUYÊN TRẠNG" MÀ KHÔNG CÓ BẤT KỲ ĐẢM BẢO NÀO. CHÚNG TÔI KHÔNG ĐẢM BẢO:',
+        s8List: [
+          'Dịch vụ không bị gián đoạn hoặc không có lỗi',
+          'Độ chính xác của nội dung do AI tạo ra',
+          'Dịch vụ sẽ đáp ứng các yêu cầu của bạn',
+          'Các khiếm khuyết sẽ được khắc phục'
+        ],
+        s9Title: '9. Giới hạn Trách nhiệm',
+        s9Content: 'TRONG PHẠM VI TỐI ĐA ĐƯỢC PHÁP LUẬT CHO PHÉP, CreatorAI Studio SẼ KHÔNG CHỊU TRÁCH NHIỆM CHO BẤT KỲ THIỆT HẠI GIÁN TIẾP, NGẪU NHIÊN, ĐẶC BIỆT, HẬU QUẢ HOẶC TRỪNG PHẠT NÀO.',
+        s10Title: '10. Chấm dứt',
+        s10Content: 'Chúng tôi có thể chấm dứt hoặc đình chỉ tài khoản của bạn ngay lập tức, mà không cần thông báo trước, đối với hành vi mà chúng tôi tin rằng vi phạm các Điều khoản này hoặc có hại cho người dùng khác, chúng tôi hoặc bên thứ ba.',
+        s11Title: '11. Thay đổi Điều khoản',
+        s11Content: 'Chúng tôi có quyền sửa đổi các Điều khoản này bất cứ lúc nào. Chúng tôi sẽ thông báo cho người dùng về những thay đổi quan trọng qua email hoặc qua Dịch vụ. Việc tiếp tục sử dụng sau khi thay đổi cấu thành sự chấp nhận.',
+        s12Title: '12. Luật điều chỉnh',
+        s12Content: 'Các Điều khoản này sẽ được điều chỉnh bởi luật pháp Việt Nam.',
+        s13Title: '13. Thông tin Liên hệ',
+        s13Content: 'Đối với các câu hỏi về các Điều khoản này, vui lòng liên hệ với chúng tôi tại:',
+        email: 'Email',
+        website: 'Trang web'
+      },
+      privacy: {
+        s1Title: '1. Giới thiệu',
+        s1Content: 'Creator AI Studio ("chúng tôi", "của chúng tôi") cam kết bảo vệ quyền riêng tư của bạn. Chính sách Bảo mật này giải thích cách chúng tôi thu thập, sử dụng, tiết lộ và bảo vệ thông tin của bạn.',
+        s2Title: '2. Thông tin Chúng tôi Thu thập',
+        s2_1Title: '2.1 Thông tin Bạn cung cấp',
+        s2_1List: [
+          'Thông tin tài khoản: Tên, địa chỉ email, mật khẩu',
+          'Thông tin cấu hình: Tên hiển thị, ảnh đại diện (nếu có)',
+          'Thông tin thanh toán: Chi tiết thanh toán (được xử lý an toàn qua PayOS)',
+          'Nội dung: Văn bản, dự án và tài liệu bạn tạo bằng Dịch vụ của chúng tôi'
+        ],
+        s2_2Title: '2.2 Thông tin từ Đăng nhập của Bên Thứ ba',
+        s2_2Content: 'Khi bạn đăng nhập bằng Google, Facebook hoặc TikTok, chúng tôi nhận được:',
+        s2_2List: [
+          'Thông tin hồ sơ cơ bản (tên, email, ảnh hồ sơ)',
+          'ID người dùng từ nhà cung cấp xác thực'
+        ],
+        s2_3Title: '2.3 Thông tin được Thu thập Tự động',
+        s2_3List: [
+          'Dữ liệu sử dụng: Các tính năng đã sử dụng, thời gian dành cho Dịch vụ, tương tác',
+          'Thông tin thiết bị: Loại trình duyệt, hệ điều hành, địa chỉ IP',
+          'Cookies: Cookies phiên để xác thực và lưu tùy chọn'
+        ],
+        s3Title: '3. Cách Chúng tôi Sử dụng Thông tin của Bạn',
+        s3Content: 'Chúng tôi sử dụng thông tin của bạn để:',
+        s3List: [
+          'Cung cấp và duy trì Dịch vụ',
+          'Xử lý các giao dịch và quản lý đăng ký của bạn',
+          'Gửi cho bạn các cập nhật, cảnh báo bảo mật và thông báo hỗ trợ',
+          'Cải thiện và cá nhân hóa trải nghiệm của bạn',
+          'Phân tích các mẫu sử dụng và tối ưu hóa Dịch vụ',
+          'Phát hiện, ngăn chặn và giải quyết các vấn đề kỹ thuật',
+          'Tuân thủ các nghĩa vụ pháp lý'
+        ],
+        s4Title: '4. Nội dung do AI tạo ra',
+        s4Content: 'Nội dung bạn tạo bằng các công cụ AI của chúng tôi:',
+        s4List: [
+          'Được lưu trữ an toàn trong tài khoản của bạn',
+          'Vẫn là tài sản của bạn',
+          'Có thể được sử dụng để cải thiện các mô hình AI (ẩn danh)',
+          'Không được chia sẻ với bên thứ ba mà không có sự đồng ý của bạn'
+        ],
+        s5Title: '5. Chia sẻ và Tiết lộ Thông tin',
+        s5Content: 'Chúng tôi không bán thông tin cá nhân của bạn. Chúng tôi có thể chia sẻ thông tin:',
+        s5List: [
+          'Nhà cung cấp dịch vụ: Firebase, PayOS, Google AI',
+          'Yêu cầu pháp lý: Khi luật pháp yêu cầu hoặc để bảo vệ quyền lợi',
+          'Chuyển nhượng kinh doanh: Liên quan đến việc sáp nhập hoặc bán tài sản',
+          'Với sự đồng ý của bạn: Khi bạn đồng ý rõ ràng'
+        ],
+        s6Title: '6. Dịch vụ của Bên Thứ ba',
+        s6Content: 'Dịch vụ của chúng tôi tích hợp với:',
+        s6List: [
+          'Google: Xác thực, dịch vụ AI',
+          'Facebook: Xác thực',
+          'TikTok: Xác thực',
+          'Firebase: Hosting và cơ sở dữ liệu',
+          'PayOS: Xử lý thanh toán'
+        ],
+        s7Title: '7. Bảo mật Dữ liệu',
+        s7Content1: 'Chúng tôi triển khai các biện pháp bảo mật bao gồm mã hóa dữ liệu, băm bảo mật và kiểm tra định kỳ.',
+        s7Content2: 'Tuy nhiên, không có phương thức truyền tải nào qua Internet là an toàn 100%.',
+        s8Title: '8. Quyền và Lựa chọn của Bạn',
+        s8Content: 'Bạn có quyền:',
+        s8List: [
+          'Truy cập, Chỉnh sửa, Xóa dữ liệu cá nhân của bạn',
+          'Xuất nội dung và dự án của bạn',
+          'Hủy đăng ký nhận email tiếp thị',
+          'Rút lại sự đồng ý bất cứ lúc nào'
+        ],
+        s9Title: '9. Lưu trữ Dữ liệu',
+        s9Content: 'Chúng tôi lưu trữ thông tin của bạn khi tài khoản của bạn đang hoạt động.',
+        s10Title: '10. Quyền riêng tư của Trẻ em',
+        s10Content: 'Dịch vụ của chúng tôi không dành cho trẻ em dưới 13 tuổi.',
+        s11Title: '11. Chuyển dữ liệu Quốc tế',
+        s11Content: 'Thông tin của bạn có thể được chuyển đến các quốc gia khác ngoài quốc gia của bạn.',
+        s12Title: '12. Thay đổi Chính sách này',
+        s12Content: 'Chúng tôi có thể cập nhật Chính sách Bảo mật này định kỳ.',
+        s13Title: '13. Yêu cầu Xóa Dữ liệu',
+        s13Content: 'Bạn có quyền yêu cầu xóa dữ liệu cá nhân của mình.',
+        s13Steps: [
+          'Đăng nhập vào tài khoản của bạn',
+          'Điều hướng đến Cài đặt → Tài khoản',
+          'Nhấp vào "Xóa tài khoản"',
+          'Xác nhận xóa'
+        ]
+      }
+    },
+
+    footer: {
+      description: 'Được hỗ trợ bởi AI, Creator AI tăng sức mạnh cho quá trình sáng tạo nội dung của bạn.',
+      solutions: 'Giải pháp',
+      videoSolution: 'Giải pháp Video 1-Click',
+      productImages: 'Hình ảnh Sản phẩm AI',
+      avatarsAndVoices: 'Avatar & Giọng nói',
+      publishingAndAnalytics: 'Tự động Đăng bài & Thống kê',
+      resources: 'Tài nguyên',
+      helpCenter: 'Trung tâm hỗ trợ',
+      customerStories: 'Câu chuyện khách hàng',
+      legal: 'Pháp lý',
+      termsOfService: 'Điều khoản dịch vụ',
+      privacyPolicy: 'Chính sách bảo mật',
+      bottomTagline: 'Sẵn sàng sáng tạo?',
+      signUpFree: 'Đăng ký miễn phí',
     },
 
     // Common
@@ -994,7 +1726,7 @@ export const translations = {
       loginWithFacebook: 'Tiếp tục với Facebook',
       loginWithTikTok: 'Tiếp tục với TikTok',
       welcomeBack: 'Chào mừng trở lại',
-      joinCreatorAI: 'Tham gia CreatorAI',
+      joinCreatorAI: 'Tham gia Creator AI',
       signInToContinue: 'Đăng nhập để tiếp tục',
       createAccount: 'Tạo tài khoản',
       accessStudio: 'Truy cập studio sáng tạo của bạn.',
@@ -1025,6 +1757,9 @@ export const translations = {
       iveVerified: 'Tôi đã xác minh',
       processing: 'Đang xử lý...',
       back: 'Quay lại',
+      resendEmail: 'Gửi lại email',
+      useAnotherEmail: 'Sử dụng email khác',
+      verificationSentSuccess: 'Đã gửi lại email xác minh!',
       agreeTerms: 'Bằng cách nhấp tiếp tục, bạn đồng ý với',
       and: 'và',
       completingGoogleSignIn: 'Đang hoàn tất đăng nhập Google...',
@@ -1045,20 +1780,38 @@ export const translations = {
       errorOccurred: 'Đã xảy ra lỗi',
       failedToSendReset: 'Không thể gửi email đặt lại',
       emailNotVerified: 'Email chưa được xác minh',
+      show: 'Hiện',
+      hide: 'Ẩn',
+      signingIn: 'Đang đăng nhập...',
+      creatingAccount: 'Đang tạo tài khoản...',
+      sending: 'Đang gửi...',
+      confirm: 'Xác nhận',
+      requestSent: 'Yêu cầu đã gửi!',
+      checkEmailReset: 'Kiểm tra hộp thư của bạn để nhận liên kết đặt lại.',
+      backToSignIn: 'Quay lại đăng nhập',
+      enterEmail: 'Nhập email',
+      enterPassword: 'Nhập mật khẩu',
+      createPassword: 'Tạo mật khẩu',
+      enterName: 'Nhập tên của bạn',
+      loginCancelled: 'Đã hủy đăng nhập',
+      avatar: 'Avatar',
+      talkingPhoto: 'Ảnh biết nói AI',
+      marketingVideo: 'Video marketing',
+      productShowcase: 'Giới thiệu sản phẩm',
     },
 
     // Landing Page
     landing: {
       hero: {
-        title: 'Tạo Nội Dung Tuyệt Vời',
-        titleHighlight: 'Với AI',
+        title: 'Creator',
+        titleHighlight: 'AI',
         subtitle: 'Tạo bài blog, caption mạng xã hội, hình ảnh và nhiều hơn nữa chỉ trong vài giây. Sử dụng AI MIỄN PHÍ - Không cần thẻ tín dụng.',
         getStarted: 'Bắt Đầu Miễn Phí',
         signIn: 'Đăng Nhập',
         badge: 'BỘ CÔNG CỤ NỘI DUNG AI',
         headline_1: 'Sáng tạo',
         headline_2: 'mọi thứ.',
-        subheadline: 'Từ các tweet lan truyền đến bài viết SEO.\nCreatorAI tạo nội dung phù hợp cho thương hiệu của bạn trong vài giây.',
+        subheadline: 'Từ các tweet lan truyền đến bài viết SEO.\nCreator AI tạo nội dung phù hợp cho thương hiệu của bạn trong vài giây.',
         cta: 'BẮT ĐẦU NGAY',
       },
       features: {
@@ -1084,6 +1837,87 @@ export const translations = {
         templates: 'Mẫu Nội Dung',
         noFees: 'Không Phí Ẩn',
       },
+      masterpieces: {
+        title: 'Kiệt Tác AI',
+        subtitle: 'Dòng chảy liên tục các sáng tạo chất lượng cao do AI tạo ra',
+      },
+      videoSolution: {
+        tag: 'Liên kết Video',
+        titlePart1: 'Biến URL bất kỳ thành video hấp dẫn chỉ trong',
+        titlePart2: 'tích tắc',
+        desc: 'Chỉ cần dán liên kết trang web và xác định thông điệp chính. Creator AI tự động tạo nhiều biến thể video chuyên nghiệp để giới thiệu sản phẩm của bạn ngay lập tức.',
+        cta: 'Thử ngay →',
+      },
+      avatarVideo: {
+        tag: 'Video Avatar',
+        titlePart1: 'Chuyển đổi kịch bản thành video với',
+        titlePart2: 'Thư viện Avatar đa dạng',
+        desc: 'Chọn từ bộ sưu tập avatar AI chân thực phong phú hoặc tạo bản sao kỹ thuật số của bạn. Phá vỡ rào cản ngôn ngữ và kết nối toàn cầu với hỗ trợ đa ngôn ngữ.',
+        cta: 'Thử ngay →',
+      },
+      imageStudio: {
+        tag: 'Studio Hình Ảnh',
+        titlePart1: 'Tạo hình ảnh chất lượng studio ngay lập tức với',
+        titlePart2: 'công cụ AI',
+        desc: 'Biến mọi môi trường thành phông nền chuyên nghiệp hoàn hảo một cách liền mạch. Tạo hình ảnh nhất quán với thương hiệu và nổi bật chỉ trong vài giây.',
+        cta: 'Thử ngay →',
+      },
+      smartTools: {
+        titlePart1: 'Các công cụ thông minh được thiết kế để',
+        titlePart2: 'Siêu nạp quy trình của bạn',
+        customAvatar: {
+          title: 'Avatar Tùy Chỉnh',
+          desc: 'Thiết kế nhân vật kỹ thuật số độc đáo của riêng bạn cho sự hiện diện thương hiệu thực sự cá nhân hóa.',
+        },
+        imageEditor: {
+          title: 'Trình Biên Tập Ảnh',
+          desc: 'Bộ công cụ tất cả trong một để tạo và chỉnh sửa hình ảnh chuyên nghiệp một cách dễ dàng.',
+        },
+        quickCut: {
+          title: 'Cắt Nhanh',
+          desc: 'Tăng tốc quy trình chỉnh sửa của bạn bằng cách phiên âm và cắt video trực tiếp thông qua văn bản.',
+        },
+        removeBg: {
+          title: 'Xóa Phông Nền',
+          desc: 'Tách chủ thể và xóa phông nền ngay lập tức chỉ với một cú nhấp chuột.',
+        },
+        tryItNow: 'Thử ngay',
+      },
+      ctaBanner: {
+        titlePart1: 'Sáng tạo với Đôi Cánh',
+        titlePart2: 'Siêu Nạp Sáng Tạo Nội Dung',
+        cta: 'Bắt đầu dùng thử miễn phí →',
+      },
+      freeTrial: {
+        titlePart1: 'Trải nghiệm sự tự do để',
+        titlePart2: 'Sáng tạo',
+        titlePart3: 'và',
+        titlePart4: 'Xuất bản Nội dung',
+        price: '0đ',
+        item1: 'Truy cập không giới hạn vào Creator AI trong thời gian dùng thử.',
+        item2: 'Mở khóa 600 credits để tạo tới 600 giây video hoặc 200 hình ảnh.',
+        item3: 'Khám phá các tính năng AI và danh mục đầy đủ các mẫu thương mại.',
+        item4: 'Không yêu cầu nghĩa vụ tài chính hoặc thẻ tín dụng.',
+        cta: 'Bắt đầu dùng thử miễn phí →',
+        viewPlans: 'Xem Tất Cả Các Gói',
+        generating: 'ĐANG TẠO...',
+      },
+      businessImpact: {
+        titlePart1: 'Thúc đẩy Tác động Kinh doanh',
+        titlePart2: 'Dễ dàng hơn',
+        item1: {
+          desc: 'Giảm chi phí sản xuất',
+          val: '20%',
+        },
+        item2: {
+          desc: 'Tăng phạm vi tiếp cận tự nhiên trên Instagram',
+          val: '98%',
+        },
+        item3: {
+          desc: 'Giảm thời gian sản xuất nội dung',
+          val: '80%',
+        },
+      },
     },
 
     // Tools
@@ -1103,7 +1937,7 @@ export const translations = {
     // About
     about: {
       title_1: 'Hệ điều hành cho \n Nhà sáng tạo.',
-      desc_1: 'CreatorAI được xây dựng để giải quyết vấn đề "Trang giấy trắng". Chúng tôi tin rằng sự sáng tạo không phải là tia chớp bất chợt, mà là một quy trình. Bằng cách kết hợp các Mô hình Ngôn ngữ Lớn với thiết kế trực quan, chúng tôi mang đến cho bạn một studio không bao giờ ngủ.',
+      desc_1: 'Creator AI được xây dựng để giải quyết vấn đề "Trang giấy trắng". Chúng tôi tin rằng sự sáng tạo không phải là tia chớp bất chợt, mà là một quy trình. Bằng cách kết hợp các Mô hình Ngôn ngữ Lớn với thiết kế trực quan, chúng tôi mang đến cho bạn một studio không bao giờ ngủ.',
       desc_2: 'Cho dù bạn là một nhà tiếp thị solo quản lý 5 kênh hay một nhà sáng lập xây dựng thương hiệu cá nhân, các công cụ của chúng tôi đều thích ứng với giọng văn của bạn, mở rộng quy mô đầu ra mà không làm loãng thông điệp.',
       tech_badge: 'Công nghệ',
       tech_title: 'Vận hành bởi \n AI đa mô hình',
@@ -1135,7 +1969,17 @@ export const translations = {
       subscribed: 'Đã đăng ký',
       termsOfService: 'Điều Khoản Dịch Vụ',
       privacyPolicy: 'Chính Sách Bảo Mật',
-      rights: 'Được tạo bởi @chanelluuh',
+      solutions: 'Giải Pháp',
+      videoSolution: 'Giải pháp Video 1-click',
+      productImages: 'Hình ảnh Sản phẩm AI',
+      avatarsAndVoices: 'Avatar và Giọng nói AI',
+      publishingAndAnalytics: 'Xuất bản và Phân tích',
+      resources: 'Tài nguyên',
+      helpCenter: 'Trung tâm Hỗ trợ',
+      customerStories: 'Câu chuyện Khách hàng',
+      legal: 'Pháp lý',
+      bottomTagline: 'Giải phóng sự sáng tạo với đôi cánh - tăng tốc nội dung của bạn ngay!',
+      signUpFree: 'Đăng ký miễn phí',
     },
     // Terms of Service
     terms: {
@@ -1143,11 +1987,11 @@ export const translations = {
       lastUpdated: 'Cập nhật lần cuối: 27 tháng 10, 2025',
       section1: {
         title: '1. Chấp Nhận Điều Khoản',
-        content: 'Bằng cách truy cập và sử dụng CreatorAI ("Dịch vụ"), bạn chấp nhận và đồng ý bị ràng buộc bởi các điều khoản và quy định của thỏa thuận này. Ngoài ra, khi sử dụng các dịch vụ cụ thể này, bạn sẽ phải tuân theo bất kỳ hướng dẫn hoặc quy tắc nào được đăng áp dụng cho các dịch vụ đó.',
+        content: 'Bằng cách truy cập và sử dụng Creator AI ("Dịch vụ"), bạn chấp nhận và đồng ý bị ràng buộc bởi các điều khoản và quy định của thỏa thuận này. Ngoài ra, khi sử dụng các dịch vụ cụ thể này, bạn sẽ phải tuân theo bất kỳ hướng dẫn hoặc quy tắc nào được đăng áp dụng cho các dịch vụ đó.',
       },
       section2: {
         title: '2. Nội Dung Được Tạo Bởi AI',
-        content: 'CreatorAI sử dụng trí tuệ nhân tạo (mô hình Google Gemini) để tạo văn bản và hình ảnh. Bạn thừa nhận rằng:',
+        content: 'Creator AI sử dụng trí tuệ nhân tạo (mô hình Google Gemini) để tạo văn bản và hình ảnh. Bạn thừa nhận rằng:',
         point1: 'Kết quả có thể không phải lúc nào cũng chính xác, độc đáo hoặc phù hợp với nhu cầu cụ thể của bạn.',
         point2: 'Bạn có trách nhiệm xem xét và xác minh tất cả nội dung được tạo trước khi xuất bản.',
         point3: 'Chúng tôi không tuyên bố quyền sở hữu bản quyền đối với nội dung bạn tạo; tuy nhiên, tình trạng pháp lý của các tác phẩm được tạo bởi AI khác nhau tùy theo khu vực pháp lý.',
@@ -1158,11 +2002,11 @@ export const translations = {
       },
       section4: {
         title: '4. Sở Hữu Trí Tuệ',
-        content: 'Giao diện, mã nguồn và thiết kế của CreatorAI là tài sản độc quyền của CreatorAI Labs. Bạn được cấp giấy phép hạn chế chỉ cho mục đích xem và sử dụng tài liệu trên trang web này.',
+        content: 'Giao diện, mã nguồn và thiết kế của Creator AI là tài sản độc quyền của Creator AI Labs. Bạn được cấp giấy phép hạn chế chỉ cho mục đích xem và sử dụng tài liệu trên trang web này.',
       },
       section5: {
         title: '5. Giới Hạn Trách Nhiệm',
-        content: 'Trong mọi trường hợp, CreatorAI, cũng như bất kỳ giám đốc, nhân viên nào của công ty, sẽ không chịu trách nhiệm về bất cứ điều gì phát sinh từ hoặc bằng cách nào đó liên quan đến việc bạn sử dụng trang web này.',
+        content: 'Trong mọi trường hợp, Creator AI, cũng như bất kỳ giám đốc, nhân viên nào của công ty, sẽ không chịu trách nhiệm về bất cứ điều gì phát sinh từ hoặc bằng cách nào đó liên quan đến việc bạn sử dụng trang web này.',
       },
       section6: {
         title: '6. Thay Đổi Điều Khoản',
@@ -1182,7 +2026,7 @@ export const translations = {
       },
       section2: {
         title: '2. Sử Dụng Công Nghệ AI',
-        content: 'CreatorAI sử dụng API Gemini của Google để xử lý lời nhắc của bạn và tạo nội dung. Khi bạn sử dụng các công cụ của chúng tôi, văn bản hoặc hình ảnh bạn cung cấp làm đầu vào sẽ được gửi đến máy chủ của Google để xử lý.',
+        content: 'Creator AI sử dụng API Gemini của Google để xử lý lời nhắc của bạn và tạo nội dung. Khi bạn sử dụng các công cụ của chúng tôi, văn bản hoặc hình ảnh bạn cung cấp làm đầu vào sẽ được gửi đến máy chủ của Google để xử lý.',
         warning: 'Chúng tôi khuyến nghị không nhập dữ liệu cá nhân nhạy cảm (PII), thông tin kinh doanh bí mật hoặc bí mật thương mại vào các lời nhắc tạo nội dung.',
       },
       section3: {
@@ -1670,7 +2514,7 @@ export const translations = {
     // Command Center
     commandCenter: {
       title: 'Trung Tâm Điều Khiển',
-      subtitle: 'Truy cập toàn bộ công cụ CreatorAI.',
+      subtitle: 'Truy cập toàn bộ công cụ Creator AI.',
       searchPlaceholder: 'Tìm công cụ, khả năng...',
 
       filters: {
