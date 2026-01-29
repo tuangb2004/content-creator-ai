@@ -77,14 +77,16 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
           onTabChange(item.id);
           setMobileMenuOpen(false);
         }}
-        className={`w-full flex items-center group ${isSidebarCollapsed ? 'justify-center px-2' : 'space-x-3 px-3'} py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+        className={`w-full flex items-center group ${isSidebarCollapsed ? 'justify-center px-2' : 'space-x-3 px-3'} py-2 rounded-lg text-sm transition-all duration-200 ${isActive
           ? 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white'
           : 'text-black dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white'
           }`}
         title={isSidebarCollapsed ? item.label : ''}
       >
-        <Icon size={20} className={`transition-all duration-200 ${isActive ? 'stroke-[2.5]' : 'stroke-[2] group-hover:stroke-[2.5]'}`} />
-        {!isSidebarCollapsed && <span>{item.label}</span>}
+        <Icon size={20} isActive={isActive} className="shrink-0" />
+        {!isSidebarCollapsed && (
+          <span className={isActive ? 'font-semibold' : 'font-normal group-hover:font-semibold'}>{item.label}</span>
+        )}
       </button>
     );
   };
@@ -274,8 +276,8 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                 <button className="text-teal-600 dark:text-teal-400 text-sm font-medium hover:underline">Try for $0</button>
               </div>
 
-              <button className="hidden md:flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-lg hover:bg-orange-100 transition-colors">
-                <Icons.Store size={16} />
+              <button className="hidden md:flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-lg hover:bg-orange-100 transition-colors group">
+                <Icons.Shop size={16} isActive={false} />
                 <span className="text-sm font-bold">Earn credits</span>
               </button>
             </div>

@@ -23,6 +23,8 @@ export interface GenerateContentRequest {
   toolCategory?: string;
   modelId?: string;
   image?: string; // base64 encoded image
+  /** When provider is gemini: enable Google Search Grounding for real-time, factual answers. Default true. */
+  useGoogleSearchGrounding?: boolean;
 }
 
 export interface GenerateContentResponse {

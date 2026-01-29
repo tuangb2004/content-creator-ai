@@ -12,6 +12,22 @@ interface StabilityOptions {
   style_preset?: string;
 }
 
+const STABILITY_MAX_PROMPT_LENGTH = 2000;
+
+/**
+ * Sanitize prompt for Stability AI: must be 1–2000 characters.
+ */
+function sanitizePromptForStability(prompt: string): string {
+  const trimmed = (prompt || '').trim();
+  if (trimmed.length === 0) {
+    throw new Error('Prompt is empty. Stability AI requires a text prompt between 1 and 2000 characters.');
+  }
+  if (trimmed.length > STABILITY_MAX_PROMPT_LENGTH) {
+    return trimmed.slice(0, STABILITY_MAX_PROMPT_LENGTH - 3) + '...';
+  }
+  return trimmed;
+}
+
 /**
  * Call Stability AI API for image generation
  * Stability AI provides high-quality image generation
@@ -33,6 +49,7 @@ export async function callStabilityAPI(
     throw new Error('Stability AI API key is required. Please set STABILITY_API_KEY in .env file.');
   }
 
+  const sanitizedPrompt = sanitizePromptForStability(prompt);
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -43,7 +60,7 @@ export async function callStabilityAPI(
       const requestBody: any = {
         text_prompts: [
           {
-            text: prompt,
+            text: sanitizedPrompt,
             weight: 1
           }
         ],

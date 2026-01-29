@@ -41,7 +41,8 @@ export const generateContent = functions.https.onCall(
       toolId,
       toolName,
       toolCategory,
-      modelId
+      modelId,
+      useGoogleSearchGrounding
     } = data;
 
     // 3. Rate limiting
@@ -177,7 +178,7 @@ export const generateContent = functions.https.onCall(
         if (finalProvider === 'groq') {
           content = await callGroqAPI(prompt, template, tone, length, { retries: 3, systemInstruction });
         } else if (finalProvider === 'gemini') {
-          content = await callGeminiAPI(prompt, template, tone, length, { retries: 3, systemInstruction, model: modelId });
+          content = await callGeminiAPI(prompt, template, tone, length, { retries: 3, systemInstruction, model: modelId, useGoogleSearchGrounding });
         } else {
           throw new Error(`Invalid text provider: ${finalProvider}`);
         }

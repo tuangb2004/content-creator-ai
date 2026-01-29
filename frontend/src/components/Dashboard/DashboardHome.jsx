@@ -3,17 +3,30 @@ import { Icons } from '../Icons';
 import { AgentChat } from './AgentChat';
 import { getProjects } from '../../services/firebaseFunctions';
 
+const VIDEO_RATIOS = [
+  { id: '16:9', label: '16:9', width: 'w-8', height: 'h-4' },
+  { id: '4:3', label: '4:3', width: 'w-6', height: 'h-4' },
+  { id: '1:1', label: '1:1', width: 'w-5', height: 'h-5' },
+  { id: '3:4', label: '3:4', width: 'w-4', height: 'h-5' },
+  { id: '9:16', label: '9:16', width: 'w-3', height: 'h-5' },
+];
+
+const VIDEO_LANGUAGES = [
+  { id: 'EN', label: 'English' },
+  { id: 'VI', label: 'Tiếng Việt' },
+];
+
 const MODELS = {
   image: [
-    { id: 'nano-pro', name: 'Nano Banana Pro', desc: 'Pro image quality', icon: Icons.Aperture },
-    { id: 'nano', name: 'Nano Banana', desc: 'Fast & efficient', icon: Icons.Aperture },
-    { id: 'sdxl', name: 'SDXL 1.0', desc: 'High quality stable diffusion', icon: Icons.Image },
+    { id: 'nano-pro', name: 'Nano Banana Pro', desc: 'Pro image quality', icon: Icons.Banana },
+    { id: 'nano', name: 'Nano Banana', desc: 'Fast & efficient', icon: Icons.Banana },
+    { id: 'sdxl', name: 'SDXL 1.0', desc: 'High quality stable diffusion', icon: Icons.Stability },
   ],
   text: [
-    { id: 'groq', name: 'Groq Llama 3', desc: 'Siêu nhanh & thông minh', icon: Icons.Zap },
-    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: 'Fastest & smartest model', icon: Icons.Sparkles },
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Next-gen performance', icon: Icons.Zap },
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Reasoning & complexity', icon: Icons.Cpu },
+    { id: 'groq', name: 'Groq Llama 3', desc: 'Siêu nhanh & thông minh', icon: Icons.Groq },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: 'Fastest & smartest model', icon: Icons.Gemini },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Next-gen performance', icon: Icons.Gemini },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Reasoning & complexity', icon: Icons.Gemini },
   ],
   video: [
     { id: 'nano-video', name: 'Nano Video', desc: 'Smooth generation', icon: Icons.Video },
@@ -91,6 +104,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
   const [selectedRatio, setSelectedRatio] = useState('1:1');
   const [isAutoRatio, setIsAutoRatio] = useState(true);
   const [showBanner, setShowBanner] = useState(true);
+  const [isVideoRatioLangMenuOpen, setIsVideoRatioLangMenuOpen] = useState(false);
+  const [videoAspectRatio, setVideoAspectRatio] = useState('9:16');
+  const [videoLanguage, setVideoLanguage] = useState('EN');
 
   // Animation States
   const [isChatMode, setIsChatMode] = useState(false);
@@ -98,12 +114,15 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
   const [isReturning, setIsReturning] = useState(false);
   const [translateY, setTranslateY] = useState(0);
   const [promptForChat, setPromptForChat] = useState('');
+  const [morphOffsetY, setMorphOffsetY] = useState(null); // for Home → AgentChat: form starts here then animates down
 
   // Refs
   const menuRef = useRef(null);
   const modelMenuRef = useRef(null);
   const ratioMenuRef = useRef(null);
+  const videoRatioLangMenuRef = useRef(null);
   const inputRef = useRef(null);
+  const holdTimeoutRef = useRef(null);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -117,6 +136,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
       if (ratioMenuRef.current && !ratioMenuRef.current.contains(event.target)) {
         setIsRatioMenuOpen(false);
       }
+      if (videoRatioLangMenuRef.current && !videoRatioLangMenuRef.current.contains(event.target)) {
+        setIsVideoRatioLangMenuOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -127,45 +149,47 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
 
   // Handle Back Navigation Animation
   useEffect(() => {
-    if (isReturning) {
-      // Use double rAF to ensure browser paints the initial transformed state
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setIsTransitioning(false);
-        });
+    if (!isReturning) return;
+
+    let rafId2;
+    const rafId1 = requestAnimationFrame(() => {
+      rafId2 = requestAnimationFrame(() => {
+        // Brief hold at bottom so transition up is visible and smooth
+        holdTimeoutRef.current = setTimeout(() => setIsTransitioning(false), 60);
       });
+    });
 
-      // Reset returning state after animation completes
-      const timer = setTimeout(() => {
-        setIsReturning(false);
-      }, 300);
+    const returnDuration = 400;
+    const doneTimer = setTimeout(() => setIsReturning(false), returnDuration + 150);
 
-      return () => clearTimeout(timer);
-    }
+    return () => {
+      cancelAnimationFrame(rafId1);
+      if (rafId2) cancelAnimationFrame(rafId2);
+      if (holdTimeoutRef.current) clearTimeout(holdTimeoutRef.current);
+      clearTimeout(doneTimer);
+    };
   }, [isReturning]);
 
   const handleSend = () => {
-    if (inputValue.trim()) {
-      // Calculate precise position to bottom
-      if (inputRef.current) {
-        const rect = inputRef.current.getBoundingClientRect();
-        // AgentChat padding is p-6 (24px) or md:p-8 (32px).
-        const paddingBottom = window.innerWidth >= 768 ? 32 : 24;
-        const targetTop = window.innerHeight - rect.height - paddingBottom;
-        const distance = targetTop - rect.top;
-        setTranslateY(distance);
-      }
+    if (!inputValue.trim()) return;
 
-      setIsTransitioning(true);
-      if (onChatToggle) onChatToggle(true);
-      if (onCollapseSidebar) onCollapseSidebar(true);
+    // Same pattern as "back": switch view first, then animate (no DOM swap in the middle).
+    const rect = inputRef.current?.getBoundingClientRect();
+    const fromBottom = 44; // AgentChat: pb-4 + disclaimer block
+    const offsetY = rect
+      ? rect.top - (window.innerHeight - fromBottom - rect.height)
+      : 0;
+    // Preserve "distance to bottom" so when user goes back, Dashboard form starts at bottom (translateY) then animates up
+    const distanceToBottom = rect
+      ? (window.innerHeight - fromBottom - rect.height) - rect.top
+      : 400;
 
-      // Wait for animation (700ms) before switching components
-      setTimeout(() => {
-        setPromptForChat(inputValue);
-        setIsChatMode(true);
-      }, 700);
-    }
+    if (onChatToggle) onChatToggle(true);
+    if (onCollapseSidebar) onCollapseSidebar(true);
+    setTranslateY(distanceToBottom);
+    setMorphOffsetY(offsetY);
+    setPromptForChat(inputValue);
+    setIsChatMode(true);
   };
 
   const handleKeyDown = (e) => {
@@ -180,6 +204,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
     setIsTransitioning(true); // Start at "chat position" (translateY)
     setIsChatMode(false);
     setInputValue('');
+    setMorphOffsetY(null);
     if (onChatToggle) onChatToggle(false);
     if (onCollapseSidebar) onCollapseSidebar(false);
   };
@@ -188,8 +213,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
     return (
       <AgentChat
         initialPrompt={promptForChat}
-        initialInputType={inputType} // Pass selected type
-        initialModel={selectedModel} // Pass selected model
+        initialInputType={inputType}
+        initialModel={selectedModel}
+        initialMorphOffsetY={morphOffsetY}
         onBack={handleBackToDashboard}
       />
     );
@@ -238,11 +264,15 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
         </h1>
       </div>
 
-      {/* Input Area */}
+      {/* Input Area - GPU layer and smooth easing for morph */}
       <div
         ref={inputRef}
-        className={`max-w-3xl mx-auto mb-8 relative z-20 transition-transform cubic-bezier(0.4, 0, 0.2, 1) ${isReturning ? 'duration-300' : 'duration-700'}`}
-        style={{ transform: isTransitioning ? `translateY(${translateY}px)` : 'none' }}
+        className="max-w-3xl mx-auto mb-8 relative z-20"
+        style={{
+          transform: isTransitioning ? `translate3d(0, ${translateY}px, 0)` : 'none',
+          willChange: isTransitioning || isReturning ? 'transform' : 'auto',
+          transition: `transform ${isReturning ? 400 : 800}ms cubic-bezier(0.32, 0.72, 0, 1)`,
+        }}
       >
 
         {/* Toggle Tabs - Minimalist Style */}
@@ -265,7 +295,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
                     : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 font-medium'
                   }`}
               >
-                <Icon size={18} className={`transition-colors duration-300 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`} />
+                <Icon size={18} isActive={isActive} className={`transition-colors duration-300 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`} />
                 <span className="text-sm tracking-tight capitalize">
                   {item.label}
                 </span>
@@ -279,12 +309,12 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
           })}
         </div>
 
-        <div className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-[2.5rem] p-6 shadow-lg hover:shadow-xl transition-shadow relative z-20">
+        <div className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-[2.5rem] p-6 shadow-lg transition-all duration-200 relative z-20 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-xl focus-within:border-gray-400 dark:focus-within:border-gray-500 focus-within:ring-2 focus-within:ring-gray-200/80 dark:focus-within:ring-gray-600/50 focus-within:shadow-xl">
           <textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full h-16 bg-transparent border-0 focus:border-0 focus:ring-0 ring-0 focus:outline-none outline-none appearance-none text-lg text-gray-600 dark:text-gray-300 placeholder-gray-400 resize-none leading-relaxed shadow-none"
+            className="w-full h-16 bg-transparent border-0 focus:border-0 focus:ring-0 ring-0 focus:outline-none outline-none appearance-none text-lg text-gray-600 dark:text-gray-300 placeholder-gray-400 focus:placeholder-gray-500 dark:focus:placeholder-gray-400 resize-none leading-relaxed shadow-none transition-colors duration-200"
             placeholder={
               inputType === 'video'
                 ? "Hãy mô tả video bạn muốn tạo. Thêm liên kết, hình ảnh hoặc tài liệu để có kết quả chính xác hơn."
@@ -300,9 +330,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
-                  className={`w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 flex items-center justify-center transition-all ${isPlusMenuOpen ? 'bg-gray-100 dark:bg-gray-700 rotate-45' : ''}`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isPlusMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
                 >
-                  <Icons.Plus size={16} />
+                  <Icons.PlusCircle size={24} isActive={isPlusMenuOpen} />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -366,24 +396,59 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
               {/* Context Specific Toolbar Buttons */}
               {inputType === 'video' && (
                 <>
-                  <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 flex items-center justify-center transition-colors">
-                    <Icons.Box size={16} />
+                  <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
+                    <Icons.Box size={16} isActive={false} />
                   </button>
                   <div className="relative">
-                    <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 flex items-center justify-center transition-colors">
-                      <Icons.Lightbulb size={16} />
+                    <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
+                      <Icons.Lightbulb size={16} isActive={false} />
                     </button>
                     <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1e293b]"></span>
                   </div>
 
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
-                    <Icons.Sliders size={14} />
-                    <span>9:16</span>
-                    <span className="text-gray-400 dark:text-gray-600 mx-1">|</span>
-                    <span className="text-black/60">EN</span>
-                  </button>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
-                    <Icons.Clock size={14} />
+                  <div className="relative" ref={videoRatioLangMenuRef}>
+                    <button
+                      onClick={() => setIsVideoRatioLangMenuOpen(!isVideoRatioLangMenuOpen)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isVideoRatioLangMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
+                    >
+                      <Icons.TuningSquare size={14} isActive={isVideoRatioLangMenuOpen} />
+                      <span>{videoAspectRatio}</span>
+                      <span className="text-gray-400 dark:text-gray-600 mx-1">|</span>
+                      <span className="text-black/60 dark:text-gray-400">{videoLanguage}</span>
+                    </button>
+                    {isVideoRatioLangMenuOpen && (
+                      <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-3 tracking-tight">Tỷ lệ khung hình</h3>
+                        <div className="flex flex-wrap gap-2 mb-5">
+                          {VIDEO_RATIOS.map((r) => (
+                            <button
+                              key={r.id}
+                              onClick={() => setVideoAspectRatio(r.id)}
+                              className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${videoAspectRatio === r.id ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 dark:border-purple-400 text-purple-700 dark:text-purple-300' : 'bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'}`}
+                            >
+                              <span className={`block border-2 border-current rounded-sm ${r.width} ${r.height}`} />
+                              <span className="text-xs font-semibold">{r.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                        <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-2 tracking-tight">Ngôn ngữ</h3>
+                        <div className="space-y-0.5">
+                          {VIDEO_LANGUAGES.map((lang) => (
+                            <button
+                              key={lang.id}
+                              onClick={() => setVideoLanguage(lang.id)}
+                              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${videoLanguage === lang.id ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300'}`}
+                            >
+                              {lang.label}
+                              {videoLanguage === lang.id && <Icons.CheckCircle size={16} className="text-purple-500 shrink-0" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
+                    <Icons.Clock size={14} isActive={false} />
                     <span>Schedule</span>
                   </button>
                 </>
@@ -393,9 +458,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
                 <div className="relative" ref={modelMenuRef}>
                   <button
                     onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors ${isModelMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isModelMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
                   >
-                    {inputType === 'text' ? <Icons.Cpu size={14} /> : <Icons.Box size={14} />}
+                    <selectedModel.icon size={14} isActive />
                     <span>{selectedModel.name}</span>
                   </button>
 
@@ -411,7 +476,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
                           className={`flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer text-left transition-colors group ${selectedModel.id === model.id ? 'bg-gray-50 dark:bg-gray-700/50' : ''}`}
                         >
                           <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-white transition-colors">
-                            <model.icon size={20} />
+                            <model.icon size={20} isActive={selectedModel.id === model.id} />
                           </div>
                           <div>
                             <div className="font-bold text-sm text-black dark:text-white mb-0.5">{model.name}</div>
@@ -430,9 +495,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
                   <div className="relative" ref={ratioMenuRef}>
                     <button
                       onClick={() => setIsRatioMenuOpen(!isRatioMenuOpen)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors ${isRatioMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isRatioMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
                     >
-                      <Icons.Ratio size={14} />
+                      <Icons.Pip size={14} isActive={isRatioMenuOpen} />
                       <span>{isAutoRatio ? 'Tỉ lệ' : selectedRatio}</span>
                     </button>
 
@@ -489,21 +554,16 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
                       </div>
                     )}
                   </div>
-
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
-                    <Icons.Square size={14} />
-                    <span>Canvas</span>
-                  </button>
                 </>
               )}
 
               {inputType === 'text' && (
                 <>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b]">
                     <Icons.LayoutGrid size={14} />
                     <span>Mẫu</span>
                   </button>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b]">
                     <Icons.Sliders size={14} />
                     <span>Độ dài</span>
                   </button>
@@ -513,7 +573,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, onChatTog
 
             <button
               onClick={handleSend}
-              className={`w-8 h-8 rounded-full transition-colors flex items-center justify-center ${inputValue.trim() ? 'bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'}`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] ${inputValue.trim() ? 'bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 active:scale-95 focus-visible:ring-gray-400 dark:focus-visible:ring-gray-500' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'}`}
               disabled={!inputValue.trim()}
             >
               <Icons.ArrowUp size={16} />

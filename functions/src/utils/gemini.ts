@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import * as functions from 'firebase-functions';
 
 const apiKey = functions.config().gemini?.api_key || process.env.GEMINI_API_KEY;
@@ -7,7 +8,7 @@ if (!apiKey) {
   console.warn('GEMINI_API_KEY is not configured. Gemini API will not be available.');
 }
 
-// Lazy initialization - only create when API key is available
+// Lazy initialization - only create when API key is available (legacy SDK, no grounding)
 let genAI: GoogleGenerativeAI | null = null;
 function getGenAI(): GoogleGenerativeAI {
   if (!genAI) {
@@ -17,6 +18,18 @@ function getGenAI(): GoogleGenerativeAI {
     genAI = new GoogleGenerativeAI(apiKey);
   }
   return genAI;
+}
+
+// New SDK for Google Search Grounding (supported models: gemini-2.0-flash, gemini-2.5-flash, gemini-2.5-pro)
+let genAINew: GoogleGenAI | null = null;
+function getGenAINew(): GoogleGenAI {
+  if (!genAINew) {
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not configured.');
+    }
+    genAINew = new GoogleGenAI({ apiKey });
+  }
+  return genAINew;
 }
 
 // System prompts for different templates
@@ -63,6 +76,8 @@ interface GeminiOptions {
   timeout?: number;
   systemInstruction?: string; // Custom system instruction (takes priority over template-based prompt)
   model?: string;
+  /** Enable Google Search Grounding for real-time, factual answers. Uses @google/genai with tools. Default true for Gemini. */
+  useGoogleSearchGrounding?: boolean;
 }
 
 /**
@@ -75,63 +90,86 @@ export async function callGeminiAPI(
   length: string = 'medium',
   options: GeminiOptions = {}
 ): Promise<string> {
-  const { retries = 3, timeout = 30000, systemInstruction, model: modelId = 'gemini-2.0-flash' } = options;
-
-  const genAI = getGenAI();
-  // Standard SDK with v1beta is needed for these project-specific experimental models
-  const model = genAI.getGenerativeModel({ model: modelId });
+  const {
+    retries = 3,
+    timeout = 30000,
+    systemInstruction,
+    model: modelId = 'gemini-2.0-flash',
+    useGoogleSearchGrounding = true
+  } = options;
 
   // Get system prompt - prioritize custom systemInstruction from tool definition
   const systemPrompt = systemInstruction
-    ? systemInstruction // Use custom system instruction from tool (most specific)
+    ? systemInstruction
     : (systemPrompts[template]
       ? systemPrompts[template](tone, length)
-      : systemPrompts.blog(tone, length)); // Fallback to template-based prompt
+      : systemPrompts.blog(tone, length));
 
-  const fullPrompt = `${systemPrompt}\n\nUser request: ${prompt}`;
+  // Force response language to match user: avoid mixing Vietnamese and English
+  const languageRule = [
+    'CRITICAL: Respond ONLY in the same language as the user\'s message.',
+    'If the user writes in Vietnamese, respond entirely in Vietnamese. Do not switch to English.',
+    'If the user writes in English, respond entirely in English. Do not switch to Vietnamese.',
+    'Never mix languages in a single response.'
+  ].join(' ');
+
+  const fullPrompt = `${systemPrompt}\n\n${languageRule}\n\nUser request: ${prompt}`;
 
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
+      if (useGoogleSearchGrounding) {
+        // Use @google/genai with Google Search Grounding (real-time, factual, with optional citations)
+        const ai = getGenAINew();
+        const response = await Promise.race([
+          ai.models.generateContent({
+            model: modelId,
+            contents: fullPrompt,
+            config: {
+              tools: [{ googleSearch: {} }]
+            }
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), timeout)
+          )
+        ]);
+        const text = (response as { text?: string }).text;
+        if (!text || String(text).trim().length === 0) {
+          throw new Error('Empty response from Gemini API');
+        }
+        return String(text);
+      }
+
+      // Legacy path: @google/generative-ai (no grounding)
+      const genAI = getGenAI();
+      const model = genAI.getGenerativeModel({ model: modelId });
       const result = await Promise.race([
         model.generateContent(fullPrompt),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Request timeout')), timeout)
         )
       ]);
-
       const response = await result.response;
       const text = response.text();
-
       if (!text || text.trim().length === 0) {
         throw new Error('Empty response from Gemini API');
       }
-
       return text;
     } catch (error: any) {
       lastError = error;
       console.error(`Gemini API attempt ${attempt}/${retries} failed:`, error.message);
 
-      // Don't retry on certain errors
       if (error.message?.includes('API key') || error.message?.includes('401')) {
         throw new Error('Invalid Gemini API key. Please check your configuration.');
       }
-
       if (error.message?.includes('429')) {
-        // Rate limit - wait before retry
         if (attempt < retries) {
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
           continue;
         }
       }
-
-      // Last attempt - throw error
-      if (attempt === retries) {
-        break;
-      }
-
-      // Wait before retry
+      if (attempt === retries) break;
       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
   }

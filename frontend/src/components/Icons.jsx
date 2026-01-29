@@ -39,6 +39,38 @@ import chartSquareSvg from '../assets/svg/chart-square-svgrepo-com.svg';
 import cropSvg from '../assets/svg/crop-minimalistic-svgrepo-com.svg';
 import magicStickSvg from '../assets/svg/magic-stick-3-svgrepo-com.svg';
 import stickerSmileSvg from '../assets/svg/sticker-smile-circle-2-svgrepo-com.svg';
+import plusSvg from '../assets/svg/plus-svgrepo-com.svg';
+import tuningSvg from '../assets/svg/tuning-2-svgrepo-com.svg';
+import geminiOutlineSvg from '../assets/svg/gemini.svg';
+import geminiFilledSvg from '../assets/svg/gemini (1).svg';
+import shopSvg from '../assets/svg/shop-svgrepo-com.svg';
+import bananaSvg from '../assets/svg/banana-illustration-svgrepo-com.svg';
+import groqOutlineSvg from '../assets/svg/groq.svg';
+import groqFilledSvg from '../assets/svg/groq (1).svg';
+import facebookSvg from '../assets/svg/facebook.svg';
+import googleSvg from '../assets/svg/google.svg';
+import stabilitySvg from '../assets/svg/stability.svg';
+
+// Filled variants (1) – shown on hover and when active
+import homeFilledSvg from '../assets/svg/home-svgrepo-com (1).svg';
+import clapperboardFilledSvg from '../assets/svg/clapperboard-edit-svgrepo-com (1).svg';
+import galleryEditFilledSvg from '../assets/svg/gallery-edit-svgrepo-com (1).svg';
+import chartSquareFilledSvg from '../assets/svg/chart-square-svgrepo-com (1).svg';
+import calendarFilledSvg from '../assets/svg/calendar-add-svgrepo-com (1).svg';
+import magicStickFilledSvg from '../assets/svg/magic-stick-3-svgrepo-com (1).svg';
+import lightbulbFilledSvg from '../assets/svg/lightbulb-bolt-svgrepo-com (1).svg';
+import layersFilledSvg from '../assets/svg/layers-minimalistic-svgrepo-com (1).svg';
+import trashFilledSvg from '../assets/svg/trash-bin-2-svgrepo-com (1).svg';
+import plusCircleFilledSvg from '../assets/svg/plus-circle-svgrepo-com (1).svg';
+import stickerSmileFilledSvg from '../assets/svg/sticker-smile-circle-2-svgrepo-com (1).svg';
+import boxFilledSvg from '../assets/svg/box-minimalistic-svgrepo-com (1).svg';
+import clapperboardPlayFilledSvg from '../assets/svg/clapperboard-play-svgrepo-com (1).svg';
+import galleryFilledSvg from '../assets/svg/gallery-svgrepo-com (1).svg';
+import notebookFilledSvg from '../assets/svg/notebook-svgrepo-com (1).svg';
+import pipFilledSvg from '../assets/svg/pip-svgrepo-com (1).svg';
+import tuningFilledSvg from '../assets/svg/tuning-2-svgrepo-com (1).svg';
+import clockFilledSvg from '../assets/svg/clock-circle-svgrepo-com (1).svg';
+import shopFilledSvg from '../assets/svg/shop-svgrepo-com (1).svg';
 
 const SvgIcon = ({ src, size = 24, className = "" }) => {
     return (
@@ -59,48 +91,80 @@ const LucideIcon = ({ icon, size = 24, className = "" }) => {
     return <Icon size={size} className={className} />;
 };
 
+/** Outline by default; shows filled on group-hover or when isActive. Parent must have class "group". */
+const DualSvgIcon = ({ outlineSrc, filledSrc, size = 24, className = "", isActive = false }) => {
+    const imgClass = "transition-opacity duration-200 pointer-events-none object-contain object-center";
+    const baseStyle = { display: 'block', width: size, height: size, filter: 'currentColor' };
+    return (
+        <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>
+            <img
+                src={outlineSrc}
+                alt=""
+                style={{ ...baseStyle, position: 'absolute', left: 0, top: 0 }}
+                className={`${imgClass} ${isActive ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'} ${className}`}
+            />
+            <img
+                src={filledSrc}
+                alt=""
+                style={{ ...baseStyle, position: 'absolute', left: 0, top: 0 }}
+                className={`${imgClass} opacity-0 ${isActive ? 'opacity-100' : 'group-hover:opacity-100'} ${className}`}
+            />
+        </span>
+    );
+};
+
 export const Icons = {
     // SVG Assets – use imported URLs so production build serves correct paths
     Logo: (props) => <SvgIcon src={logoSvg} {...props} />,
     Bell: (props) => <SvgIcon src={bellSvg} {...props} />,
-    Box: (props) => <SvgIcon src={boxSvg} {...props} />,
-    Calendar: (props) => <SvgIcon src={calendarSvg} {...props} />,
-    Clapperboard: (props) => <SvgIcon src={clapperboardSvg} {...props} />,
-    ClapperboardPlay: (props) => <SvgIcon src={clapperboardPlaySvg} {...props} />,
-    Clock: (props) => <SvgIcon src={clockSvg} {...props} />,
+    Box: (props) => <DualSvgIcon outlineSrc={boxSvg} filledSrc={boxFilledSvg} isActive={props.isActive} {...props} />,
+    Calendar: (props) => <DualSvgIcon outlineSrc={calendarSvg} filledSrc={calendarFilledSvg} isActive={props.isActive} {...props} />,
+    Clapperboard: (props) => <DualSvgIcon outlineSrc={clapperboardSvg} filledSrc={clapperboardFilledSvg} isActive={props.isActive} {...props} />,
+    ClapperboardPlay: (props) => <DualSvgIcon outlineSrc={clapperboardPlaySvg} filledSrc={clapperboardPlayFilledSvg} isActive={props.isActive} {...props} />,
+    Clock: (props) => <DualSvgIcon outlineSrc={clockSvg} filledSrc={clockFilledSvg} isActive={props.isActive} {...props} />,
     Copy: (props) => <SvgIcon src={copySvg} {...props} />,
     Download: (props) => <SvgIcon src={downloadSvg} {...props} />,
     Eye: (props) => <SvgIcon src={eyeSvg} {...props} />,
     Heart: (props) => <SvgIcon src={heartSvg} {...props} />,
-    Layers: (props) => <SvgIcon src={layersSvg} {...props} />,
-    Lightbulb: (props) => <SvgIcon src={lightbulbSvg} {...props} />,
+    Layers: (props) => <DualSvgIcon outlineSrc={layersSvg} filledSrc={layersFilledSvg} isActive={props.isActive} {...props} />,
+    Lightbulb: (props) => <DualSvgIcon outlineSrc={lightbulbSvg} filledSrc={lightbulbFilledSvg} isActive={props.isActive} {...props} />,
     Link: (props) => <SvgIcon src={linkSvg} {...props} />,
     LogOut: (props) => <SvgIcon src={logoutSvg} {...props} />,
     Mic: (props) => <SvgIcon src={micSvg} {...props} />,
     Moon: (props) => <SvgIcon src={moonSvg} {...props} />,
-    Notebook: (props) => <SvgIcon src={notebookSvg} {...props} />,
+    Notebook: (props) => <DualSvgIcon outlineSrc={notebookSvg} filledSrc={notebookFilledSvg} isActive={props.isActive} {...props} />,
     PieChart: (props) => <SvgIcon src={pieChartSvg} {...props} />,
     Pin: (props) => <SvgIcon src={pinSvg} {...props} />,
-    Pip: (props) => <SvgIcon src={pipSvg} {...props} />,
+    Pip: (props) => <DualSvgIcon outlineSrc={pipSvg} filledSrc={pipFilledSvg} isActive={props.isActive} {...props} />,
     RefreshCw: (props) => <SvgIcon src={refreshSvg} {...props} />,
     Share2: (props) => <SvgIcon src={shareSvg} {...props} />,
     Sliders: (props) => <SvgIcon src={slidersSvg} {...props} />,
     Sun: (props) => <SvgIcon src={sunSvg} {...props} />,
-    Trash2: (props) => <SvgIcon src={trashSvg} {...props} />,
+    Trash2: (props) => <DualSvgIcon outlineSrc={trashSvg} filledSrc={trashFilledSvg} isActive={props.isActive} {...props} />,
     User: (props) => <SvgIcon src={userSvg} {...props} />,
     Video: (props) => <LucideIcon icon="Video" {...props} />,
     Filter: (props) => <SvgIcon src={filterSvg} {...props} />,
     Globe: (props) => <SvgIcon src={earthSvg} {...props} />,
-    Image: (props) => <SvgIcon src={galleryEditSvg} {...props} />,
-    Gallery: (props) => <SvgIcon src={gallerySvg} {...props} />,
+    Image: (props) => <DualSvgIcon outlineSrc={galleryEditSvg} filledSrc={galleryEditFilledSvg} isActive={props.isActive} {...props} />,
+    Gallery: (props) => <DualSvgIcon outlineSrc={gallerySvg} filledSrc={galleryFilledSvg} isActive={props.isActive} {...props} />,
     Maximize2: (props) => <SvgIcon src={maximizeSvg} {...props} />,
-    Home: (props) => <SvgIcon src={homeSvg} {...props} />,
-    BarChart2: (props) => <SvgIcon src={chartSquareSvg} {...props} />,
+    Home: (props) => <DualSvgIcon outlineSrc={homeSvg} filledSrc={homeFilledSvg} isActive={props.isActive} {...props} />,
+    BarChart2: (props) => <DualSvgIcon outlineSrc={chartSquareSvg} filledSrc={chartSquareFilledSvg} isActive={props.isActive} {...props} />,
     Ratio: (props) => <SvgIcon src={cropSvg} {...props} />,
     Crop: (props) => <SvgIcon src={cropSvg} {...props} />,
-    Wand2: (props) => <SvgIcon src={magicStickSvg} {...props} />,
-    Users: (props) => <SvgIcon src={stickerSmileSvg} {...props} />,
-    Cloud: (props) => <SvgIcon src={layersSvg} {...props} />,
+    Wand2: (props) => <DualSvgIcon outlineSrc={magicStickSvg} filledSrc={magicStickFilledSvg} isActive={props.isActive} {...props} />,
+    Users: (props) => <DualSvgIcon outlineSrc={stickerSmileSvg} filledSrc={stickerSmileFilledSvg} isActive={props.isActive} {...props} />,
+    Cloud: (props) => <DualSvgIcon outlineSrc={layersSvg} filledSrc={layersFilledSvg} isActive={props.isActive} {...props} />,
+    PlusCircle: (props) => <DualSvgIcon outlineSrc={plusSvg} filledSrc={plusCircleFilledSvg} isActive={props.isActive} {...props} />,
+    PlusSimple: (props) => <SvgIcon src={plusSvg} {...props} />,
+    TuningSquare: (props) => <DualSvgIcon outlineSrc={tuningSvg} filledSrc={tuningFilledSvg} isActive={props.isActive} {...props} />,
+    Gemini: (props) => <DualSvgIcon outlineSrc={geminiOutlineSvg} filledSrc={geminiFilledSvg} isActive={props.isActive} {...props} />,
+    Shop: (props) => <DualSvgIcon outlineSrc={shopSvg} filledSrc={shopFilledSvg} isActive={props.isActive} {...props} />,
+    Banana: (props) => <SvgIcon src={bananaSvg} {...props} />,
+    Groq: (props) => <DualSvgIcon outlineSrc={groqOutlineSvg} filledSrc={groqFilledSvg} isActive={props.isActive} {...props} />,
+    Facebook: (props) => <SvgIcon src={facebookSvg} {...props} />,
+    Google: (props) => <SvgIcon src={googleSvg} {...props} />,
+    Stability: (props) => <SvgIcon src={stabilitySvg} {...props} />,
 
     // Lucide Fallbacks
     LayoutGrid: (props) => <LucideIcon icon="LayoutGrid" {...props} />,

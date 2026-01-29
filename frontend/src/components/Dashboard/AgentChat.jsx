@@ -5,11 +5,17 @@ import { useAuth } from '../../contexts/AuthContext';
 import ShareTemplateModal from '../Templates/ShareTemplateModal';
 import toast from '../../utils/toast';
 
-export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialModel, onBack }) => {
+const MORPH_DURATION = 400;
+const MORPH_EASING = 'cubic-bezier(0.32, 0.72, 0, 1)';
+
+export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialModel, initialMorphOffsetY, onBack }) => {
     const { user } = useAuth();
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Form morph: start at Home position then animate down (same pattern as back)
+    const [formOffsetY, setFormOffsetY] = useState(initialMorphOffsetY ?? 0);
 
     // Toolbar States (Mirrored from DashboardHome)
     const [inputType, setInputType] = useState(initialInputType);
@@ -19,6 +25,9 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
     const [isRatioMenuOpen, setIsRatioMenuOpen] = useState(false);
     const [selectedRatio, setSelectedRatio] = useState('1:1');
     const [isAutoRatio, setIsAutoRatio] = useState(true);
+    const [isVideoRatioLangMenuOpen, setIsVideoRatioLangMenuOpen] = useState(false);
+    const [videoAspectRatio, setVideoAspectRatio] = useState('9:16');
+    const [videoLanguage, setVideoLanguage] = useState('EN');
 
     // New Feature States
     const [isLengthMenuOpen, setIsLengthMenuOpen] = useState(false);
@@ -28,17 +37,28 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
     const [shareContent, setShareContent] = useState('');
     const fileInputRef = useRef(null);
 
+    const VIDEO_RATIOS = [
+        { id: '16:9', label: '16:9', width: 'w-8', height: 'h-4' },
+        { id: '4:3', label: '4:3', width: 'w-6', height: 'h-4' },
+        { id: '1:1', label: '1:1', width: 'w-5', height: 'h-5' },
+        { id: '3:4', label: '3:4', width: 'w-4', height: 'h-5' },
+        { id: '9:16', label: '9:16', width: 'w-3', height: 'h-5' },
+    ];
+    const VIDEO_LANGUAGES = [
+        { id: 'EN', label: 'English' },
+        { id: 'VI', label: 'Tiếng Việt' },
+    ];
     const MODELS = {
         image: [
-            { id: 'nano-pro', name: 'Nano Banana Pro', desc: 'Pro image quality', icon: Icons.Aperture },
-            { id: 'nano', name: 'Nano Banana', desc: 'Fast & efficient', icon: Icons.Aperture },
-            { id: 'sdxl', name: 'SDXL 1.0', desc: 'High quality stable diffusion', icon: Icons.Image },
+            { id: 'nano-pro', name: 'Nano Banana Pro', desc: 'Pro image quality', icon: Icons.Banana },
+            { id: 'nano', name: 'Nano Banana', desc: 'Fast & efficient', icon: Icons.Banana },
+            { id: 'sdxl', name: 'SDXL 1.0', desc: 'High quality stable diffusion', icon: Icons.Stability },
         ],
         text: [
-            { id: 'groq', name: 'Groq Llama 3', desc: 'Siêu nhanh & thông minh', icon: Icons.Zap },
-            { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: 'Fastest & smartest model', icon: Icons.Sparkles },
-            { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Next-gen performance', icon: Icons.Zap },
-            { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Reasoning & complexity', icon: Icons.Cpu },
+            { id: 'groq', name: 'Groq Llama 3', desc: 'Siêu nhanh & thông minh', icon: Icons.Groq },
+            { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: 'Fastest & smartest model', icon: Icons.Gemini },
+            { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Next-gen performance', icon: Icons.Gemini },
+            { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Reasoning & complexity', icon: Icons.Gemini },
         ],
         video: [
             { id: 'nano-video', name: 'Nano Video', desc: 'Smooth generation', icon: Icons.Video },
@@ -47,6 +67,7 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
     };
 
     const currentModels = MODELS[inputType] || MODELS.image;
+    const effectiveModel = (selectedModel && currentModels.find(m => m.id === selectedModel.id)) ? selectedModel : currentModels[0];
 
     // History Sidebar State
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -82,6 +103,7 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
     const modelMenuRef = useRef(null);
     const ratioMenuRef = useRef(null);
     const lengthMenuRef = useRef(null);
+    const videoRatioLangMenuRef = useRef(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -98,6 +120,23 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
         }
     }, [initialPrompt]);
 
+    const morphHoldRef = useRef(null);
+    // Animate form from Home position down to final (same as back: brief hold then transition)
+    useEffect(() => {
+        if (initialMorphOffsetY == null || initialMorphOffsetY === 0) return;
+        let rafId2;
+        const rafId1 = requestAnimationFrame(() => {
+            rafId2 = requestAnimationFrame(() => {
+                morphHoldRef.current = setTimeout(() => setFormOffsetY(0), 60);
+            });
+        });
+        return () => {
+            cancelAnimationFrame(rafId1);
+            if (rafId2) cancelAnimationFrame(rafId2);
+            if (morphHoldRef.current) clearTimeout(morphHoldRef.current);
+        };
+    }, [initialMorphOffsetY]);
+
     // Close menu when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -112,6 +151,9 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
             }
             if (lengthMenuRef.current && !lengthMenuRef.current.contains(event.target)) {
                 setIsLengthMenuOpen(false);
+            }
+            if (videoRatioLangMenuRef.current && !videoRatioLangMenuRef.current.contains(event.target)) {
+                setIsVideoRatioLangMenuOpen(false);
             }
         };
 
@@ -157,13 +199,14 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
         setInputValue('');
         setIsLoading(true);
 
+        const model = (selectedModel && (MODELS[inputType] || MODELS.image).find(m => m.id === selectedModel.id)) ? selectedModel : (MODELS[inputType] || MODELS.image)[0];
         try {
             // Determine provider
             let provider = 'gemini'; // Default
             if (inputType === 'text') {
-                provider = selectedModel?.id === 'groq' ? 'groq' : 'gemini';
+                provider = model?.id === 'groq' ? 'groq' : 'gemini';
             } else if (inputType === 'image') {
-                provider = selectedModel?.id === 'sdxl' ? 'stability' : 'gemini'; // Nano = Gemini
+                provider = model?.id === 'sdxl' ? 'stability' : 'gemini'; // Nano = Gemini
             }
 
             // Call Backend API
@@ -171,7 +214,7 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
                 prompt: text,
                 contentType: inputType,
                 provider: provider,
-                modelId: selectedModel?.id,
+                modelId: model?.id,
                 length: selectedLength?.id,
                 ratio: isAutoRatio ? undefined : selectedRatio,
                 image: uploadedImage
@@ -265,10 +308,10 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
                     </button>
                 </div>
 
-                {selectedModel && (
+                {effectiveModel && (
                     <div className="pointer-events-auto flex items-center gap-2.5 px-3.5 py-1.5 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm border border-gray-100 dark:border-gray-800 rounded-full text-xs font-bold text-gray-700 dark:text-gray-300 shadow-sm transition-all hover:bg-white dark:hover:bg-gray-900">
-                        <selectedModel.icon size={14} className="text-purple-500" />
-                        <span>{selectedModel.name}</span>
+                        <effectiveModel.icon size={14} isActive className="text-purple-500" />
+                        <span>{effectiveModel.name}</span>
                         <Icons.ChevronDown size={12} className="text-gray-400 ml-0.5" />
                     </div>
                 )}
@@ -386,19 +429,26 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 pb-4 pt-4 px-4 md:px-8 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#0f172a] dark:via-[#0f172a]/95 z-10">
-                <div className="max-w-3xl mx-auto relative bg-white dark:bg-[#1e293b] rounded-[2rem] shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 p-4 pb-3 transition-all duration-300">
+                <div
+                    className="max-w-3xl mx-auto relative bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-[2.5rem] p-6 shadow-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-xl focus-within:border-gray-400 dark:focus-within:border-gray-500 focus-within:ring-2 focus-within:ring-gray-200/80 dark:focus-within:ring-gray-600/50 focus-within:shadow-xl"
+                    style={{
+                        transform: `translate3d(0, ${formOffsetY}px, 0)`,
+                        transition: `transform ${MORPH_DURATION}ms ${MORPH_EASING}`,
+                        willChange: formOffsetY !== 0 ? 'transform' : 'auto',
+                    }}
+                >
                     <textarea
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder={
                             inputType === 'video'
-                                ? "Mô tả video bạn muốn tạo..."
+                                ? "Hãy mô tả video bạn muốn tạo. Thêm liên kết, hình ảnh hoặc tài liệu để có kết quả chính xác hơn."
                                 : inputType === 'image'
-                                    ? 'Mô tả hình ảnh bạn muốn thiết kế...'
-                                    : 'Đặt câu hỏi hoặc yêu cầu viết nội dung...'
+                                    ? 'Mô tả hình ảnh bạn muốn thiết kế và sử dụng "/" để đánh dấu văn bản cần thêm'
+                                    : 'Mô tả nội dung bạn muốn viết hoặc chỉnh sửa...'
                         }
-                        className="w-full h-16 bg-transparent border-none focus:ring-0 focus:border-none focus:outline-none resize-none text-lg text-gray-600 dark:text-gray-300 placeholder-gray-400 leading-relaxed ring-0 outline-none shadow-none appearance-none"
+                        className="w-full h-16 bg-transparent border-0 focus:border-0 focus:ring-0 ring-0 focus:outline-none outline-none appearance-none text-lg text-gray-600 dark:text-gray-300 placeholder-gray-400 focus:placeholder-gray-500 dark:focus:placeholder-gray-400 resize-none leading-relaxed shadow-none transition-colors duration-200"
                         rows={1}
                         autoFocus
                     />
@@ -417,34 +467,26 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
 
                     <div className="flex items-center justify-between mt-4 px-1 transition-opacity duration-100">
                         <div className="flex items-center gap-2 relative">
-                            {/* Plus Button with Menu (Shared) */}
+                            {/* Plus Button with Menu (Shared - match Home) */}
                             <div className="relative" ref={menuRef}>
                                 <button
                                     onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
-                                    className={`w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 flex items-center justify-center transition-all ${isPlusMenuOpen ? 'bg-gray-100 dark:bg-gray-700 rotate-45' : ''}`}
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isPlusMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
                                 >
-                                    <Icons.Plus size={16} />
+                                    <Icons.PlusCircle size={24} isActive={isPlusMenuOpen} />
                                 </button>
 
-                                {/* Dropdown Menu */}
                                 {isPlusMenuOpen && (
                                     <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
                                         <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
                                             <Icons.Monitor size={18} className="text-black/60" />
-                                            <input
-                                                type="file"
-                                                className="hidden"
-                                                ref={fileInputRef}
-                                                accept="image/*"
-                                                onChange={handleFileUpload}
-                                            />
+                                            <input type="file" className="hidden" ref={fileInputRef} accept="image/*" onChange={handleFileUpload} />
                                             <span onClick={() => fileInputRef.current?.click()}>Tải lên từ máy tính</span>
                                         </button>
                                         <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
                                             <Icons.Folder size={18} className="text-black/60" />
                                             Chọn từ Tài nguyên
                                         </button>
-
                                         <div className="relative group">
                                             <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors">
                                                 <div className="flex items-center gap-3">
@@ -453,32 +495,91 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
                                                 </div>
                                                 <Icons.ChevronRight size={14} className="text-black/40" />
                                             </button>
+                                            <div className="absolute top-0 left-full ml-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 translate-x-[-10px] group-hover:translate-x-0">
+                                                <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                                                    <Icons.Link size={18} className="text-black/60" />
+                                                    Nhập từ liên kết sản phẩm
+                                                </button>
+                                                <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                                                    <Icons.Box size={18} className="text-black/60" />
+                                                    Tải lên từ Dropbox
+                                                </button>
+                                                <div className="relative group/qr">
+                                                    <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                                                        <div className="flex items-center gap-3">
+                                                            <Icons.Smartphone size={18} className="text-black/60" />
+                                                            Tải lên từ điện thoại
+                                                        </div>
+                                                        <Icons.ChevronRight size={14} className="text-black/40" />
+                                                    </button>
+                                                    <div className="absolute top-0 left-full ml-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-6 invisible opacity-0 group-hover/qr:visible group-hover/qr:opacity-100 transition-all duration-200 translate-x-[-10px] group-hover/qr:translate-x-0 flex flex-col items-center text-center">
+                                                        <h3 className="font-bold text-black dark:text-white mb-4">Quét mã QR để tải lên</h3>
+                                                        <div className="bg-white p-2 rounded-lg shadow-inner mb-4">
+                                                            <Icons.QrCode size={120} className="text-black" />
+                                                        </div>
+                                                        <p className="text-xs text-black/60 dark:text-gray-400">Sử dụng camera điện thoại để quét mã và tải ảnh lên</p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Context Specific Toolbar Buttons */}
                             {inputType === 'video' && (
                                 <>
-                                    <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 flex items-center justify-center transition-colors">
-                                        <Icons.Box size={16} />
+                                    <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
+                                        <Icons.Box size={16} isActive={false} />
                                     </button>
                                     <div className="relative">
-                                        <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 flex items-center justify-center transition-colors">
-                                            <Icons.Lightbulb size={16} />
+                                        <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
+                                            <Icons.Lightbulb size={16} isActive={false} />
                                         </button>
                                         <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1e293b]"></span>
                                     </div>
-
-                                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
-                                        <Icons.Sliders size={14} />
-                                        <span>9:16</span>
-                                        <span className="text-gray-400 dark:text-gray-600 mx-1">|</span>
-                                        <span className="text-black/60">EN</span>
-                                    </button>
-                                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
-                                        <Icons.Clock size={14} />
+                                    <div className="relative" ref={videoRatioLangMenuRef}>
+                                        <button
+                                            onClick={() => setIsVideoRatioLangMenuOpen(!isVideoRatioLangMenuOpen)}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isVideoRatioLangMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
+                                        >
+                                            <Icons.TuningSquare size={14} isActive={isVideoRatioLangMenuOpen} />
+                                            <span>{videoAspectRatio}</span>
+                                            <span className="text-gray-400 dark:text-gray-600 mx-1">|</span>
+                                            <span className="text-black/60 dark:text-gray-400">{videoLanguage}</span>
+                                        </button>
+                                        {isVideoRatioLangMenuOpen && (
+                                            <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                                <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-3 tracking-tight">Tỷ lệ khung hình</h3>
+                                                <div className="flex flex-wrap gap-2 mb-5">
+                                                    {VIDEO_RATIOS.map((r) => (
+                                                        <button
+                                                            key={r.id}
+                                                            onClick={() => setVideoAspectRatio(r.id)}
+                                                            className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${videoAspectRatio === r.id ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 dark:border-purple-400 text-purple-700 dark:text-purple-300' : 'bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'}`}
+                                                        >
+                                                            <span className={`block border-2 border-current rounded-sm ${r.width} ${r.height}`} />
+                                                            <span className="text-xs font-semibold">{r.label}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-2 tracking-tight">Ngôn ngữ</h3>
+                                                <div className="space-y-0.5">
+                                                    {VIDEO_LANGUAGES.map((lang) => (
+                                                        <button
+                                                            key={lang.id}
+                                                            onClick={() => setVideoLanguage(lang.id)}
+                                                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${videoLanguage === lang.id ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300'}`}
+                                                        >
+                                                            {lang.label}
+                                                            {videoLanguage === lang.id && <Icons.CheckCircle size={16} className="text-purple-500 shrink-0" />}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
+                                        <Icons.Clock size={14} isActive={false} />
                                         <span>Schedule</span>
                                     </button>
                                 </>
@@ -488,26 +589,21 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
                                 <div className="relative" ref={modelMenuRef}>
                                     <button
                                         onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors ${isModelMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isModelMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
                                     >
-                                        {inputType === 'text' ? <Icons.Cpu size={14} /> : <Icons.Box size={14} />}
-                                        <span>{selectedModel?.name || 'Mô hình'}</span>
+                                        <effectiveModel.icon size={14} isActive />
+                                        <span>{effectiveModel.name}</span>
                                     </button>
-
-                                    {/* Model Dropdown Menu */}
                                     {isModelMenuOpen && (
                                         <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
                                             {currentModels.map((model) => (
                                                 <button
                                                     key={model.id}
-                                                    onClick={() => {
-                                                        setSelectedModel(model);
-                                                        setIsModelMenuOpen(false);
-                                                    }}
-                                                    className={`flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer text-left transition-colors group ${selectedModel.id === model.id ? 'bg-gray-50 dark:bg-gray-700/50' : ''}`}
+                                                    onClick={() => { setSelectedModel(model); setIsModelMenuOpen(false); }}
+                                                    className={`flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer text-left transition-colors group ${effectiveModel.id === model.id ? 'bg-gray-50 dark:bg-gray-700/50' : ''}`}
                                                 >
                                                     <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-white transition-colors">
-                                                        <model.icon size={20} />
+                                                        <model.icon size={20} isActive={effectiveModel.id === model.id} />
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-sm text-black dark:text-white mb-0.5">{model.name}</div>
@@ -520,66 +616,43 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
                                 </div>
                             )}
 
-                            {/* Feature Pills - Ratio (Only for Image/Video) */}
-                            {(inputType === 'image' || inputType === 'video') && (
+                            {inputType === 'image' && (
                                 <div className="relative" ref={ratioMenuRef}>
                                     <button
                                         onClick={() => setIsRatioMenuOpen(!isRatioMenuOpen)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors ${isRatioMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isRatioMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
                                     >
-                                        <Icons.Ratio size={14} />
+                                        <Icons.Pip size={14} isActive={isRatioMenuOpen} />
                                         <span>{isAutoRatio ? 'Tỉ lệ' : selectedRatio}</span>
                                     </button>
-
-                                    {/* Ratio Dropdown Menu */}
                                     {isRatioMenuOpen && (
-                                        <div className="absolute bottom-full left-0 mb-2 w-72 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200 text-left">
+                                        <div className="absolute bottom-full left-0 mb-2 w-72 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
                                             <div className="flex items-center justify-between mb-5">
                                                 <span className="font-bold text-sm text-gray-900 dark:text-white tracking-tight">Tỉ lệ khung hình</span>
                                                 <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-full border border-gray-100 dark:border-gray-700">
                                                     <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Auto</span>
-                                                    <button
-                                                        onClick={() => setIsAutoRatio(!isAutoRatio)}
-                                                        className={`w-8 h-4.5 rounded-full p-0.5 transition-colors ${isAutoRatio ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'}`}
-                                                    >
-                                                        <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform ${isAutoRatio ? 'translate-x-3.5' : 'translate-x-0'}`}></div>
+                                                    <button onClick={() => setIsAutoRatio(!isAutoRatio)} className={`w-8 h-4.5 rounded-full p-0.5 transition-colors ${isAutoRatio ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                                                        <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm transform transition-transform ${isAutoRatio ? 'translate-x-3.5' : 'translate-x-0'}`}></div>
                                                     </button>
                                                 </div>
                                             </div>
-
                                             <div className={`grid grid-cols-4 gap-2 transition-opacity duration-200 ${isAutoRatio ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
                                                 {ratios.map((ratio) => (
                                                     <button
                                                         key={ratio.label}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setSelectedRatio(ratio.label);
-                                                            setIsRatioMenuOpen(false);
-                                                        }}
-                                                        className={`flex flex-col items-center justify-center gap-2 p-2 rounded-xl transition-all border ${selectedRatio === ratio.label
-                                                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
-                                                            : 'bg-white dark:bg-gray-800/40 border-gray-100 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                                                            }`}
+                                                        onClick={() => { setSelectedRatio(ratio.label); setIsRatioMenuOpen(false); }}
+                                                        className={`flex flex-col items-center justify-center gap-2 p-2 rounded-xl transition-all border ${selectedRatio === ratio.label ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800' : 'bg-white dark:bg-gray-800/40 border-gray-100 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}
                                                     >
                                                         <div className="h-8 flex items-center justify-center">
-                                                            <div className={`${ratio.width} ${ratio.height} border-[1.5px] rounded-sm transition-colors ${selectedRatio === ratio.label
-                                                                ? 'border-purple-600 dark:border-purple-400 bg-purple-100/50 dark:bg-purple-400/20'
-                                                                : 'border-gray-400 dark:border-gray-500'
-                                                                }`}></div>
+                                                            <div className={`${ratio.width} ${ratio.height} border-[1.5px] rounded-sm transition-colors ${selectedRatio === ratio.label ? 'border-purple-600 dark:border-purple-400 bg-purple-100/50 dark:bg-purple-400/20' : 'border-gray-400 dark:border-gray-500'}`}></div>
                                                         </div>
-                                                        <span className={`text-[10px] font-bold ${selectedRatio === ratio.label
-                                                            ? 'text-purple-600 dark:text-purple-400'
-                                                            : 'text-gray-500 dark:text-gray-400'
-                                                            }`}>{ratio.label}</span>
+                                                        <span className={`text-[10px] font-bold ${selectedRatio === ratio.label ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>{ratio.label}</span>
                                                     </button>
                                                 ))}
                                             </div>
-
                                             {isAutoRatio && (
                                                 <div className="mt-4 p-2.5 bg-purple-50/50 dark:bg-purple-900/10 rounded-xl border border-purple-100/50 dark:border-purple-800/30">
-                                                    <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium leading-relaxed">
-                                                        Chế độ tự động sẽ chọn tỉ lệ tối ưu dựa trên nội dung bạn mô tả.
-                                                    </p>
+                                                    <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium leading-relaxed">Chế độ tự động sẽ chọn tỉ lệ tối ưu dựa trên nội dung bạn mô tả.</p>
                                                 </div>
                                             )}
                                         </div>
@@ -587,40 +660,24 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
                                 </div>
                             )}
 
-                            {inputType === 'image' && (
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
-                                    <Icons.Square size={14} />
-                                    <span>Canvas</span>
-                                </button>
-                            )}
-
                             {inputType === 'text' && (
                                 <>
-                                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors">
+                                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b]">
                                         <Icons.LayoutGrid size={14} />
                                         <span>Mẫu</span>
                                     </button>
                                     <div className="relative" ref={lengthMenuRef}>
                                         <button
                                             onClick={() => setIsLengthMenuOpen(!isLengthMenuOpen)}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-300 text-xs font-bold transition-colors ${isLengthMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isLengthMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : ''}`}
                                         >
                                             <Icons.Sliders size={14} />
                                             <span>{selectedLength.label}</span>
                                         </button>
-
                                         {isLengthMenuOpen && (
                                             <div className="absolute bottom-full left-0 mb-2 w-32 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-1 z-50">
-                                                {[
-                                                    { id: 'short', label: 'Ngắn' },
-                                                    { id: 'medium', label: 'Vừa' },
-                                                    { id: 'long', label: 'Dài' }
-                                                ].map(l => (
-                                                    <button
-                                                        key={l.id}
-                                                        onClick={() => { setSelectedLength(l); setIsLengthMenuOpen(false); }}
-                                                        className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-200"
-                                                    >
+                                                {[{ id: 'short', label: 'Ngắn' }, { id: 'medium', label: 'Vừa' }, { id: 'long', label: 'Dài' }].map(l => (
+                                                    <button key={l.id} onClick={() => { setSelectedLength(l); setIsLengthMenuOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-200">
                                                         {l.label}
                                                     </button>
                                                 ))}
@@ -634,7 +691,7 @@ export const AgentChat = ({ initialPrompt, initialInputType = 'image', initialMo
                         <button
                             onClick={() => handleSend(inputValue)}
                             disabled={(!inputValue.trim() && !uploadedImage) || isLoading}
-                            className={`w-8 h-8 rounded-full transition-colors flex items-center justify-center ${(inputValue.trim() || uploadedImage) && !isLoading ? 'bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'}`}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] ${(inputValue.trim() || uploadedImage) && !isLoading ? 'bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 active:scale-95 focus-visible:ring-gray-400 dark:focus-visible:ring-gray-500' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'}`}
                         >
                             <Icons.ArrowUp size={16} />
                         </button>
