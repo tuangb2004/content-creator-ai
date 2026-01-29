@@ -243,10 +243,10 @@ export const saveProject = functions.https.onCall(
           const msg = m as ChatMessage & { attachedFiles?: unknown };
           const attachedFiles = Array.isArray(msg.attachedFiles)
             ? msg.attachedFiles.map((f: { url?: unknown; name?: unknown; type?: unknown }) => ({
-                url: typeof f?.url === 'string' ? f.url : '',
-                name: typeof f?.name === 'string' ? f.name : undefined,
-                type: typeof f?.type === 'string' ? f.type : undefined,
-              })).filter((f) => f.url)
+              url: typeof f?.url === 'string' ? f.url : '',
+              name: typeof f?.name === 'string' ? f.name : undefined,
+              type: typeof f?.type === 'string' ? f.type : undefined,
+            })).filter((f) => f.url)
             : null;
           return {
             id: typeof msg.id === 'string' ? msg.id : undefined,
@@ -292,7 +292,13 @@ export const saveProject = functions.https.onCall(
           }
         }
         if (normalizedMessages && normalizedMessages.length > 0) {
-          updateData.messages = normalizedMessages;
+          updateData.messages = await Promise.all(normalizedMessages.map(async (msg) => {
+            if (msg.role === 'model' && msg.mediaUrl) {
+              const uploaded = await uploadImageDataUrl(msg.mediaUrl, `projects/${userId}/${existingProjectId}`);
+              return { ...msg, mediaUrl: uploaded };
+            }
+            return msg;
+          }));
         }
         const normalizedMetadata = normalizeMetadata();
         if (normalizedMetadata) {
@@ -331,7 +337,13 @@ export const saveProject = functions.https.onCall(
         projectData.content = normalizedContent;
       }
       if (normalizedMessages && normalizedMessages.length > 0) {
-        projectData.messages = normalizedMessages;
+        projectData.messages = await Promise.all(normalizedMessages.map(async (msg) => {
+          if (msg.role === 'model' && msg.mediaUrl) {
+            const uploaded = await uploadImageDataUrl(msg.mediaUrl, `projects/${userId}/${docRef.id}`);
+            return { ...msg, mediaUrl: uploaded };
+          }
+          return msg;
+        }));
       }
 
       const normalizedMetadata = normalizeMetadata();
