@@ -4,17 +4,18 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../Icons';
 import Logo from '../../assets/svg/Logo.svg';
+import NotificationDropdown from './NotificationDropdown';
 
 const navItems = [
-  { id: 'dashboard', label: 'Home', icon: 'Home' },
-  { id: 'video-generator', label: 'Video generator', icon: 'Clapperboard', section: 'creation' },
-  { id: 'image-studio', label: 'Image studio', icon: 'Image', section: 'creation' },
-  { id: 'inspiration', label: 'Inspiration', icon: 'Lightbulb', section: 'creation' },
-  { id: 'avatars', label: 'Avatars and voices', icon: 'Users', section: 'creation' },
-  { id: 'analytics', label: 'Analytics', icon: 'BarChart2', section: 'management' },
-  { id: 'publisher', label: 'Publisher', icon: 'Calendar', section: 'management' },
-  { id: 'smart-creation', label: 'Smart creation', icon: 'Wand2', section: 'space' },
-  { id: 'assets', label: 'Assets', icon: 'Cloud', section: 'space' },
+  { id: 'dashboard', icon: 'Home' },
+  { id: 'video-generator', icon: 'Clapperboard', section: 'creation' },
+  { id: 'image-studio', icon: 'Image', section: 'creation' },
+  { id: 'inspiration', icon: 'Lightbulb', section: 'creation' },
+  { id: 'avatars', icon: 'Users', section: 'creation' },
+  { id: 'analytics', icon: 'BarChart2', section: 'management' },
+  { id: 'publisher', icon: 'Calendar', section: 'management' },
+  { id: 'smart-creation', icon: 'Wand2', section: 'space' },
+  { id: 'assets', icon: 'Cloud', section: 'space' },
 ];
 
 const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail, isSidebarCollapsed: controlledCollapsed, onSidebarToggle, hideHeader = false }) => {
@@ -39,8 +40,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
 
   const { user, userData } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  // eslint-disable-next-line no-unused-vars
-  const { t } = useLanguage();
+  const { t, language, changeLanguage } = useLanguage();
 
   const isDarkMode = theme === 'dark';
 
@@ -67,12 +67,32 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
     };
   }, []);
 
+  // Helper to get translated label
+  const getNavLabel = (id) => {
+    const key = id.replace(/-/g, ''); // video-generator -> videogenerator
+    // Handle special cases or generic mapping
+    const map = {
+      'dashboard': t.dashboard.nav.dashboard,
+      'video-generator': t.dashboard.nav.videoGenerator,
+      'image-studio': t.dashboard.nav.imageStudio,
+      'inspiration': t.dashboard.nav.inspiration,
+      'avatars': t.dashboard.nav.avatars,
+      'analytics': t.dashboard.nav.analytics,
+      'publisher': t.dashboard.nav.publisher,
+      'smart-creation': t.dashboard.nav.smartCreation,
+      'assets': t.dashboard.nav.assets
+    };
+    return map[id] || id; // Fallback to id if translation missing
+  };
+
   const renderNavItem = (item) => {
     const Icon = Icons[item.icon] || Icons.HelpCircle;
     const isActive = activeTab === item.id;
+    const label = getNavLabel(item.id);
+
     return (
       <button
-        key={item.label}
+        key={item.id}
         onClick={() => {
           onTabChange(item.id);
           setMobileMenuOpen(false);
@@ -81,11 +101,11 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
           ? 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white'
           : 'text-black dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white'
           }`}
-        title={isSidebarCollapsed ? item.label : ''}
+        title={isSidebarCollapsed ? label : ''}
       >
         <Icon size={20} isActive={isActive} className="shrink-0" />
         {!isSidebarCollapsed && (
-          <span className={isActive ? 'font-semibold' : 'font-normal group-hover:font-semibold'}>{item.label}</span>
+          <span className={`truncate ${isActive ? 'font-semibold' : 'font-normal group-hover:font-semibold'}`}>{label}</span>
         )}
       </button>
     );
@@ -117,7 +137,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
           </div>
 
           <div>
-            {!isSidebarCollapsed && <h3 className="px-3 text-xs font-medium text-black dark:text-gray-400 mb-2">Creation</h3>}
+            {!isSidebarCollapsed && <h3 className="px-3 text-xs font-medium text-black dark:text-gray-400 mb-2">{t.dashboard.sections?.creation || 'Creation'}</h3>}
             {isSidebarCollapsed && <div className="h-px bg-gray-100 dark:bg-gray-700 my-4 mx-2"></div>}
             <div className="space-y-1">
               {navItems.filter(i => i.section === 'creation').map(renderNavItem)}
@@ -125,7 +145,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
           </div>
 
           <div>
-            {!isSidebarCollapsed && <h3 className="px-3 text-xs font-medium text-black dark:text-gray-400 mb-2">Management</h3>}
+            {!isSidebarCollapsed && <h3 className="px-3 text-xs font-medium text-black dark:text-gray-400 mb-2">{t.dashboard.sections?.management || 'Management'}</h3>}
             {isSidebarCollapsed && <div className="h-px bg-gray-100 dark:bg-gray-700 my-4 mx-2"></div>}
             <div className="space-y-1">
               {navItems.filter(i => i.section === 'management').map(renderNavItem)}
@@ -133,7 +153,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
           </div>
 
           <div>
-            {!isSidebarCollapsed && <h3 className="px-3 text-xs font-medium text-black dark:text-gray-400 mb-2">Space</h3>}
+            {!isSidebarCollapsed && <h3 className="px-3 text-xs font-medium text-black dark:text-gray-400 mb-2">{t.dashboard.sections?.space || 'Space'}</h3>}
             {isSidebarCollapsed && <div className="h-px bg-gray-100 dark:bg-gray-700 my-4 mx-2"></div>}
             <div className="space-y-1">
               {navItems.filter(i => i.section === 'space').map(renderNavItem)}
@@ -162,24 +182,34 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
               </div>
 
               <div className="p-1.5 space-y-0.5">
+                <button
+                  onClick={() => {
+                    onTabChange('profile');
+                    setIsSidebarProfileOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left"
+                >
+                  <Icons.User size={16} className="text-black dark:text-gray-400" />
+                  {t.dashboard.profile?.myProfile || 'Hồ sơ của tôi'}
+                </button>
                 <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
                   <Icons.Bell size={16} className="text-black dark:text-gray-400" />
-                  Notifications
+                  {t.dashboard.profile?.notifications || 'Notifications'}
                 </button>
                 <button
-                  onClick={toggleTheme}
+                  onClick={() => changeLanguage(language === 'en' ? 'vi' : 'en')}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left"
                 >
                   <Icons.Globe size={16} className="text-black dark:text-gray-400" />
-                  Language: EN
+                  {t.settings.language}: {language === 'en' ? 'EN' : 'VI'}
                 </button>
                 <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
                   <Icons.Sparkles size={16} className="text-black dark:text-gray-400" />
-                  Upgrade plan
+                  {t.dashboard.profile?.upgrade || 'Upgrade plan'}
                 </button>
                 <button onClick={() => onTabChange('settings')} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
                   <Icons.Settings size={16} className="text-black dark:text-gray-400" />
-                  Settings
+                  {t.dashboard.profile?.settings || 'Settings'}
                 </button>
               </div>
 
@@ -189,7 +219,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                 <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
                   <div className="flex items-center gap-3">
                     <Icons.HelpCircle size={16} className="text-black dark:text-gray-400" />
-                    Help
+                    {t.dashboard.profile?.help || 'Help'}
                   </div>
                   <Icons.ChevronRight size={14} className="text-black dark:text-gray-400" />
                 </button>
@@ -201,7 +231,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left"
                 >
                   <Icons.LogOut size={16} className="text-black dark:text-gray-400" />
-                  Log out
+                  {t.dashboard.profile?.signout || 'Log out'}
                 </button>
               </div>
             </div>
@@ -223,10 +253,12 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                 <div className="font-semibold text-sm text-black dark:text-white whitespace-nowrap overflow-hidden text-ellipsis">
                   {userDisplayName}
                 </div>
-                <div className="text-xs text-black dark:text-gray-400 truncate">Miễn phí</div>
+                <div className="text-xs text-black dark:text-gray-400 truncate">
+                  {userData?.plan === 'pro' ? (t.dashboard.profile?.proPlan || 'Pro Plan') : (t.dashboard.profile?.freePlan || 'Free Plan')}
+                </div>
               </div>
               <button className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-black dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
-                Upgrade
+                {t.common?.upgrade || 'Upgrade'}
               </button>
             </div>
           ) : (
@@ -268,7 +300,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                 </span>
                 <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
                 <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">
-                  {userData?.plan === 'pro' ? 'Pro Plan' : 'Free Plan'}
+                  {userData?.plan === 'pro' ? (t.dashboard.profile?.proPlan || 'Pro Plan') : (t.dashboard.profile?.freePlan || 'Free Plan')}
                 </span>
               </div>
 
@@ -277,8 +309,11 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                 className="hidden md:flex items-center h-9 gap-2 bg-white dark:bg-gray-800 text-black dark:text-white px-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm group"
               >
                 <Icons.Shop size={16} />
-                <span className="text-sm font-bold">Earn credits</span>
+                <span className="text-sm font-bold">{t.dashboard.earnCredits || 'Earn credits'}</span>
               </button>
+
+              {/* Notifications */}
+              <NotificationDropdown />
             </div>
           </header>
         )}

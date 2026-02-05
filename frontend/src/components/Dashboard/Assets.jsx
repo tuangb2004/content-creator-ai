@@ -2,19 +2,20 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../config/firebase';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../Icons';
 import UploadModal from './UploadModal';
 import { getUploads } from '../../services/firebaseFunctions';
 
-const mapDocToProject = (doc) => {
+const mapDocToProject = (doc, t, language) => {
     const p = { id: doc.id, ...doc.data() };
-    let cleanTitle = p.title || 'Sáng tạo mới';
+    let cleanTitle = p.title || t.dashboard.assets.newCreation;
     if (typeof cleanTitle === 'string' && (cleanTitle.trim().startsWith('{') || cleanTitle.trim().startsWith('"'))) {
         try {
             const parsed = JSON.parse(cleanTitle);
             if (typeof parsed === 'string') cleanTitle = parsed;
             else if (typeof parsed === 'object' && parsed !== null) {
-                cleanTitle = parsed.prompt || parsed.text || parsed.title || Object.values(parsed).find(v => typeof v === 'string') || 'Sáng tạo mới';
+                cleanTitle = parsed.prompt || parsed.text || parsed.title || Object.values(parsed).find(v => typeof v === 'string') || t.dashboard.assets.newCreation;
             }
         } catch (e) { /* ignore */ }
     }
@@ -22,9 +23,9 @@ const mapDocToProject = (doc) => {
     return {
         id: p.id,
         title: (cleanTitle || '').length > 50 ? (cleanTitle || '').substring(0, 50) + '...' : (cleanTitle || ''),
-        fullTitle: cleanTitle || 'Sáng tạo mới',
+        fullTitle: cleanTitle || t.dashboard.assets.newCreation,
         type: p.type || 'text',
-        date: new Date(createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }),
+        date: new Date(createdAt).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }),
         imageUrl: p.content?.imageUrl || p.content?.previewUrl,
         content: p.content,
         _createdAt: createdAt
@@ -32,7 +33,8 @@ const mapDocToProject = (doc) => {
 };
 
 const Assets = ({ onNavigateToProject, onSelectFile }) => {
-    const { user } = useAuth();
+    const { user, userData } = useAuth();
+    const { t, language } = useLanguage();
     const [activeTab, setActiveTab] = useState('Creations');
     const [projects, setProjects] = useState([]);
     const [uploads, setUploads] = useState([]);
@@ -52,7 +54,7 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
         const projectsRef = collection(db, 'projects');
         const q = query(projectsRef, where('userId', '==', user.uid));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const mapped = snapshot.docs.map(doc => mapDocToProject(doc));
+            const mapped = snapshot.docs.map(doc => mapDocToProject(doc, t, language));
             mapped.sort((a, b) => (b._createdAt || 0) - (a._createdAt || 0));
             setProjects(mapped);
             setIsLoading(false);
@@ -118,7 +120,7 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
 
     const handleDeleteSelected = async () => {
         if (selectedIds.size === 0) return;
-        if (!confirm(`Bạn có chắc muốn xóa ${selectedIds.size} mục đã chọn?`)) return;
+        if (!confirm(t.dashboard.assets.confirmDelete.replace('{count}', selectedIds.size))) return;
 
         setIsDeleting(true);
         try {
@@ -129,7 +131,7 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
             setSelectedIds(new Set());
         } catch (error) {
             console.error("Error deleting documents: ", error);
-            alert("Đã xảy ra lỗi khi xóa mục.");
+            alert(t.dashboard.assets.deleteError);
         } finally {
             setIsDeleting(false);
         }
@@ -162,7 +164,7 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white font-mono tracking-tight">
-                    7251b37f-1c52-4374-8c10-14a98e4d2842's space
+                    {language === 'vi' ? `${t.dashboard.assets.creations} ${t.dashboard.assets.title} ${user?.displayName || userData?.firstName || user?.email?.split('@')[0] || 'User'}` : `${user?.displayName || userData?.firstName || user?.email?.split('@')[0] || 'User'}${t.dashboard.assets.title}`}
                     <span className="ml-3 text-xs text-gray-400 font-normal font-sans">0B / 500GB</span>
                 </h1>
                 <div className="flex items-center gap-4">
@@ -171,14 +173,14 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
                         className="bg-black dark:bg-white text-white dark:text-black font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm hover:opacity-90 transition-opacity"
                     >
                         <Icons.Cloud size={16} />
-                        Upload
+                        {t.dashboard.assets.upload}
                         <Icons.ChevronRight size={14} className="rotate-90" />
                     </button>
 
                     <div className="flex items-center gap-4 text-gray-500">
                         <button className="flex items-center gap-1 text-sm font-medium hover:text-gray-900 dark:hover:text-white">
                             <Icons.List size={16} />
-                            Modified
+                            {t.dashboard.assets.modified}
                             <Icons.ChevronRight size={12} className="rotate-90" />
                         </button>
                         <button className="hover:text-gray-900 dark:hover:text-white">
@@ -199,7 +201,7 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                             }`}
                     >
-                        {tab}
+                        {t.dashboard.assets[tab.toLowerCase()]}
                     </button>
                 ))}
             </div>
@@ -289,8 +291,8 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
                                 <Icons.Wand2 className="absolute -top-4 -right-4 text-teal-400 animate-bounce" size={24} fill="currentColor" />
                                 <div className="absolute top-10 -left-6 w-3 h-3 bg-blue-400 rounded-full opacity-50"></div>
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No exported videos or images yet.</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">Start creating content to see your assets here.</p>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t.dashboard.assets.noCreations}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t.dashboard.assets.startCreating}</p>
                         </div>
                     )}
                 </div>
@@ -301,9 +303,9 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
                 <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl px-6 py-3 flex items-center gap-6 animate-in slide-in-from-bottom-4 duration-200">
                     <div className="flex items-center gap-2 border-r border-gray-200 dark:border-gray-700 pr-6">
                         <span className="text-sm font-bold text-gray-900 dark:text-white">{selectedIds.size}</span>
-                        <span className="text-sm text-gray-500">selected</span>
+                        <span className="text-sm text-gray-500">{t.dashboard.assets.selected}</span>
                         <button onClick={() => setSelectedIds(new Set())} className="ml-2 text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white underline decoration-dotted">
-                            Clear
+                            {t.dashboard.assets.clear}
                         </button>
                     </div>
                     <div className="flex items-center gap-2">
@@ -373,14 +375,14 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
                                 <Icons.Wand2 className="absolute -top-4 -right-4 text-teal-400 animate-bounce" size={24} fill="currentColor" />
                                 <div className="absolute top-10 -left-6 w-3 h-3 bg-blue-400 rounded-full opacity-50"></div>
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Chưa có file nào được tải lên</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Tải lên file để sử dụng khi tạo nội dung</p>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t.dashboard.assets.noUploads}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{t.dashboard.assets.uploadToUse}</p>
                             <button
                                 onClick={() => setIsUploadModalOpen(true)}
                                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
                             >
                                 <Icons.Cloud size={16} />
-                                Tải lên file
+                                {t.dashboard.assets.upload}
                             </button>
                         </div>
                     )}
@@ -397,8 +399,8 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
                         <Icons.Wand2 className="absolute -top-4 -right-4 text-teal-400 animate-bounce" size={24} fill="currentColor" />
                         <div className="absolute top-10 -left-6 w-3 h-3 bg-blue-400 rounded-full opacity-50"></div>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No exported videos or images yet.</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">Start creating content to see your assets here.</p>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t.dashboard.assets.noCreations}</h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">{t.dashboard.assets.startCreating}</p>
                 </div>
             )}
 

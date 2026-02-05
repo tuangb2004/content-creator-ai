@@ -7,6 +7,8 @@ import toast from '../../utils/toast';
 import SelectFileModal from './SelectFileModal';
 import { useAuth } from '../../contexts/AuthContext';
 import ShareTemplateModal from '../Templates/ShareTemplateModal';
+import ShareModal from './ShareModal';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -108,7 +110,7 @@ const FileCard = ({ file, onRemove, showRemove = false, onImageClick }) => {
                 <p className="text-xs text-gray-500 dark:text-gray-400">{fileDisplayType(file)}</p>
             </div>
             {showRemove && onRemove && (
-                <button type="button" onClick={onRemove} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 absolute top-2 right-2" title="Xóa">
+                <button type="button" onClick={onRemove} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 absolute top-2 right-2" title={t.common.delete || 'Delete'}>
                     <Icons.X size={16} />
                 </button>
             )}
@@ -117,6 +119,7 @@ const FileCard = ({ file, onRemove, showRemove = false, onImageClick }) => {
 };
 
 const MessageItem = ({ msg, onShare, onImageClick }) => {
+    const { t } = useLanguage();
     const [isExpanded, setIsExpanded] = useState(false);
     const isUser = msg.role === 'user';
 
@@ -181,7 +184,7 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
                             <button
                                 onClick={() => setIsExpanded(!isExpanded)}
                                 className="absolute top-2 right-2 p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors bg-white/50 dark:bg-black/20 rounded-full backdrop-blur-[1px] z-10"
-                                title={isExpanded ? "Thu gọn" : "Mở rộng"}
+                                title={isExpanded ? (t.common.hide || "Hide") : (t.common.show || "Show")}
                             >
                                 <Icons.ChevronDown size={14} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                             </button>
@@ -215,20 +218,20 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
                     {/* AI Action Buttons */}
                     {!isUser && !msg.isError && (
                         <div className="flex items-center gap-1 mt-2 -ml-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
-                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Thích">
+                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={t.dashboard.chat.thumbsUp}>
                                 <Icons.ThumbsUp size={16} />
                             </button>
-                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Không thích">
+                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={t.dashboard.chat.thumbsDown}>
                                 <Icons.ThumbsDown size={16} />
                             </button>
                             <button
-                                onClick={() => onShare(msg.content)}
+                                onClick={() => onShare(msg)}
                                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                title="Chia sẻ mẫu"
+                                title={msg.mediaUrl ? 'Chia sẻ lên Cảm Hứng' : t.dashboard.chat.shareTemplate}
                             >
                                 <Icons.Share2 size={16} />
                             </button>
-                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Thêm">
+                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={t.common.more || 'More'}>
                                 <Icons.MoreVertical size={16} />
                             </button>
                         </div>
@@ -256,6 +259,7 @@ const normalizeMessages = (raw) => {
 };
 
 export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialProjectId, initialInputType = 'image', initialModel, initialMorphOffsetY, initialFileUrls = [], onBack }) => {
+    const { t } = useLanguage();
     const { user } = useAuth();
     const [messages, setMessages] = useState(() => (initialMessages?.length > 0 ? normalizeMessages(initialMessages) : []));
     const [projectId, setProjectId] = useState(initialProjectId || null);
@@ -283,10 +287,11 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
 
     // New Feature States
     const [isLengthMenuOpen, setIsLengthMenuOpen] = useState(false);
-    const [selectedLength, setSelectedLength] = useState({ id: 'medium', label: 'Vừa' });
+    const [selectedLength, setSelectedLength] = useState({ id: 'medium', label: t.textGen?.lengths?.medium?.split(' ')[0] || 'Medium' });
     const [uploadedImage, setUploadedImage] = useState(null);
     const [showShareModal, setShowShareModal] = useState(false);
     const [shareContent, setShareContent] = useState('');
+    const [sharePrompt, setSharePrompt] = useState('');
     const [isSelectingFromAssets, setIsSelectingFromAssets] = useState(false);
     const [lightboxImage, setLightboxImage] = useState(null);
     const fileInputRef = useRef(null);
@@ -305,7 +310,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
             if (result.success) {
                 const mapped = result.projects.map(p => ({
                     id: p.id,
-                    title: p.title || 'Untitled',
+                    title: p.title || t.dashboard.chat.newCreation,
                     type: p.type || 'text',
                     date: new Date(p.createdAt?._seconds * 1000 || Date.now()).toLocaleDateString()
                 }));
@@ -355,8 +360,8 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                 if (p.messages && p.messages.length > 0) {
                     setMessages(normalizeMessages(p.messages));
                 } else {
-                    const userContent = p.title || p.metadata?.prompt || 'Sáng tạo mới';
-                    const aiContent = p.content?.text || (p.content?.imageUrl ? 'Dưới đây là hình ảnh được tạo dựa trên mô tả của bạn.' : '');
+                    const userContent = p.title || p.metadata?.prompt || t.dashboard.chat.newCreation;
+                    const aiContent = p.content?.text || (p.content?.imageUrl ? 'Generated Image' : '');
                     setMessages(normalizeMessages([
                         { id: 'u1', role: 'user', content: userContent },
                         { id: 'a1', role: 'model', content: aiContent, mediaUrl: p.content?.imageUrl }
@@ -443,7 +448,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
         // Upload to Storage
         try {
             const reader = new FileReader();
-            toast.loading('Đang tải ảnh lên...', { id: 'uploading' });
+            toast.loading(t.dashboard.chat.uploadingImage, { id: 'uploading' });
             reader.onloadend = async () => {
                 try {
                     const base64 = reader.result.split(',')[1];
@@ -479,9 +484,27 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
         setUploadedFiles(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleShareClick = (content) => {
-        setShareContent(content);
-        setShowShareModal(true);
+    // State for community share modal (image/video)
+    const [showCommunityShareModal, setShowCommunityShareModal] = useState(false);
+    const [shareMediaData, setShareMediaData] = useState(null);
+
+    const handleShareClick = (msg) => {
+        // If message has media, open community share modal
+        if (msg.mediaUrl) {
+            setShareMediaData({
+                mediaUrl: msg.mediaUrl,
+                prompt: messages.find(m => m.role === 'user' && messages.indexOf(m) < messages.indexOf(msg))?.content || '',
+                type: msg.inputType === 'video' ? 'video' : 'image',
+                model: msg.modelId,
+            });
+            setShowCommunityShareModal(true);
+        } else {
+            // For text content, extract prompt from previous user message
+            const promptMsg = messages.find(m => m.role === 'user' && messages.indexOf(m) < messages.indexOf(msg));
+            setShareContent(msg.content);
+            setSharePrompt(promptMsg?.content || '');
+            setShowShareModal(true);
+        }
     };
 
     const handleSend = async (text) => {
@@ -656,7 +679,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                     <button
                         onClick={onBack}
                         className="p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-400 transition-all active:scale-95 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm border border-gray-100 dark:border-gray-800"
-                        title="Quay lại"
+                        title={t.dashboard.chat.back}
                     >
                         <Icons.ArrowRight className="rotate-180" size={20} />
                     </button>
@@ -665,7 +688,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                         className={`p-2.5 rounded-full transition-all active:scale-95 flex items-center justify-center backdrop-blur-sm border ${isHistoryOpen
                             ? 'bg-purple-100 text-purple-600 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800'
                             : 'bg-white/50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-                        title="Lịch sử chat"
+                        title={t.dashboard.chat.history}
                     >
                         <Icons.Clock size={20} />
                     </button>
@@ -678,7 +701,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
             {isHistoryOpen && (
                 <div className="absolute top-4 left-6 bottom-32 w-72 bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 z-40 animate-in slide-in-from-left-4 duration-300 flex flex-col overflow-hidden">
                     <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                        <h3 className="font-bold text-sm text-gray-900 dark:text-white">Lịch sử</h3>
+                        <h3 className="font-bold text-sm text-gray-900 dark:text-white">{t.dashboard.chat.history}</h3>
                         <button onClick={() => setIsHistoryOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                             <Icons.X size={16} />
                         </button>
@@ -710,7 +733,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                     {messages.length === 0 && !isLoading && !initialPrompt && !loadingProject && (
                         <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-50 mt-20">
                             <Icons.Bot size={64} className="mb-4" />
-                            <p>Bắt đầu cuộc trò chuyện với Creator AI</p>
+                            <p>{t.dashboard.chat.startChat}</p>
                         </div>
                     )}
                     {messages.length === 0 && loadingProject && (
@@ -720,7 +743,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                             </div>
-                            <p className="text-sm">Đang tải đoạn chat...</p>
+                            <p className="text-sm">{t.dashboard.chat.loadingChat}</p>
                         </div>
                     )}
 
@@ -1036,8 +1059,13 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
 
             <ShareTemplateModal
                 isOpen={showShareModal}
-                onClose={() => setShowShareModal(false)}
+                onClose={() => {
+                    setShowShareModal(false);
+                    setShareContent('');
+                    setSharePrompt('');
+                }}
                 initialContent={shareContent}
+                prompt={sharePrompt}
                 user={user}
             />
 
@@ -1048,6 +1076,19 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                     setUploadedFiles(prev => [...prev, file]);
                     toast.success('Đã chọn file từ Tài nguyên');
                 }}
+            />
+
+            {/* Community Share Modal */}
+            <ShareModal
+                isOpen={showCommunityShareModal}
+                onClose={() => {
+                    setShowCommunityShareModal(false);
+                    setShareMediaData(null);
+                }}
+                mediaUrl={shareMediaData?.mediaUrl}
+                prompt={shareMediaData?.prompt}
+                type={shareMediaData?.type}
+                model={shareMediaData?.model}
             />
 
             {/* Lightbox: xem full ảnh, nút X thoát */}

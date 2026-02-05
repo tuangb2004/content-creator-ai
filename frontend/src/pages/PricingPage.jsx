@@ -224,7 +224,7 @@ const PricingPage = () => {
                                 </ul>
                             </div>
                             <div>
-                                <p className="font-bold text-gray-900 dark:text-white mb-3 text-sm">Features</p>
+                                <p className="font-bold text-gray-900 dark:text-white mb-3 text-sm">{t.pricing.labels.features}</p>
                                 <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                                     {t.pricing.plans.starter.features.map((f, i) => (
                                         <li key={i} className="flex items-center">

@@ -139,7 +139,7 @@ export async function incrementCredits(userId: string, amount: number, metadata?
 export async function setCredits(userId: string, credits: number, metadata?: { reason?: string; planName?: string }): Promise<void> {
   const db = getDb();
   const userRef = db.collection('users').doc(userId);
-  
+
   // Get current credits before update
   const userDoc = await userRef.get();
   const creditsBefore = userDoc.exists ? (userDoc.data() as UserData).credits || 0 : 0;
@@ -185,7 +185,7 @@ export async function initializeUser(userId: string, email: string): Promise<voi
     await userRef.set({
       email,
       plan: 'free',
-      credits: 20, // Free tier: 20 credits (matches Starter plan)
+      credits: 5, // Free tier: 5 credits (1 image trial)
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     });

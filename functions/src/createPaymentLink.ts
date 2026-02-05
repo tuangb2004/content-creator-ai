@@ -18,16 +18,15 @@ interface CreatePaymentLinkRequest {
 }
 
 /**
- * Map plan names to credits
- * Updated to match frontend BillingPlans.jsx
+ * Map plan names to credits (2.000đ/credit – khớp BillingPlans: Pro 100, Agency 300, Business 600/tháng)
  */
 const PLAN_CREDITS: Record<string, number> = {
-  pro_monthly: 2500,        // 2,500 credits/month
-  pro_yearly: 30000,        // 2,500 * 12 months = 30,000 credits
-  agency_monthly: 12000,    // 12,000 credits/month
-  agency_yearly: 144000,    // 12,000 * 12 months = 144,000 credits
-  business_monthly: 25000,  // 25,000 credits/month
-  business_yearly: 300000,  // 25,000 * 12 months = 300,000 credits
+  pro_monthly: 100,
+  pro_yearly: 1200,        // 100 * 12
+  agency_monthly: 300,
+  agency_yearly: 3600,     // 300 * 12
+  business_monthly: 600,
+  business_yearly: 7200,   // 600 * 12
 };
 
 /**
@@ -135,7 +134,7 @@ export const createPaymentLinkFunction = functions.https.onCall(
     const orderCode = (timestamp % 1000000) * 10 + Math.floor(Math.random() * 10);
 
     // 5. Get credits for plan
-    const credits = PLAN_CREDITS[planName] || 2000;
+    const credits = PLAN_CREDITS[planName] ?? 100;
 
     // 6. Create payment link
     try {

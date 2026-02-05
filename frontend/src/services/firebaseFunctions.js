@@ -250,6 +250,8 @@ export const saveTemplate = async (data) => {
   }
 };
 
+
+
 /**
  * Upload a file to Firebase Storage
  * @param {Object} data - File data
@@ -316,9 +318,9 @@ export const deleteUpload = async (uploadId) => {
 /**
  * Get templates (Client-side)
  */
-export const getTemplates = async ({ userId, isPublic, category } = {}) => {
+export const getTemplates = async ({ userId, isPublic, category, limit } = {}) => {
   try {
-    const { collection, query, where, orderBy, getDocs } = await import('firebase/firestore');
+    const { collection, query, where, orderBy, getDocs, limit: firestoreLimit } = await import('firebase/firestore');
     const { db } = await import('../config/firebase');
 
     let q = collection(db, 'templates');
@@ -337,11 +339,15 @@ export const getTemplates = async ({ userId, isPublic, category } = {}) => {
     // Sort by newest
     // Note: Firestore requires composite index for query with equality filter + sort by different field
     // If index missing, it will throw error with link to create index.
-    // For now, let's keep it simple or handle index error.
+    // We already deployed indexes for this.
     try {
       constraints.push(orderBy('createdAt', 'desc'));
     } catch (e) {
       // Fallback if no index
+    }
+
+    if (limit) {
+      constraints.push(firestoreLimit(Math.min(limit, 50)));
     }
 
     const qFinal = query(q, ...constraints);
@@ -358,3 +364,444 @@ export const getTemplates = async ({ userId, isPublic, category } = {}) => {
   }
 };
 
+// ============================================================================
+// COMMUNITY POSTS
+// ============================================================================
+
+/**
+ * Create a new post in the community
+ * @param {Object} data - Post data
+ * @param {string} data.type - 'image' | 'video' | 'text'
+ * @param {string} data.mediaUrl - URL of the media
+ * @param {string} data.prompt - The prompt used to generate
+ * @param {string} data.title - Post title
+ * @param {string} [data.description] - Optional description
+ * @param {string} [data.model] - Model used
+ * @param {string} [data.category] - Category
+ * @param {Array<string>} [data.tags] - Tags
+ * @returns {Promise<{success: boolean, postId: string}>}
+ */
+export const createPost = async (data) => {
+  try {
+    const createPostFunction = httpsCallable(functions, 'createPost');
+    const result = await createPostFunction(data);
+    return {
+      success: result.data.success,
+      postId: result.data.postId,
+      message: result.data.message,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Get posts from community feed
+ * @param {Object} [options] - Filter options
+ * @param {string} [options.type] - 'image' | 'video' | 'text'
+ * @param {string} [options.category] - Category filter
+ * @param {string} [options.authorId] - Get posts by specific user
+ * @param {boolean} [options.savedByMe] - Get user's saved posts
+ * @param {boolean} [options.likedByMe] - Get user's liked posts
+ * @param {number} [options.limit] - Max posts to return
+ * @param {string} [options.startAfter] - Post ID for pagination
+ * @returns {Promise<{success: boolean, posts: Array, count: number, hasMore: boolean}>}
+ */
+export const getPosts = async (options = {}) => {
+  try {
+    const getPostsFunction = httpsCallable(functions, 'getPosts');
+    const result = await getPostsFunction(options);
+    return {
+      success: result.data.success,
+      posts: result.data.posts || [],
+      count: result.data.count || 0,
+      hasMore: result.data.hasMore || false,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Get a single post by ID
+ * @param {string} postId - Post ID
+ * @returns {Promise<{success: boolean, post: Object}>}
+ */
+export const getPost = async (postId) => {
+  try {
+    const getPostFunction = httpsCallable(functions, 'getPost');
+    const result = await getPostFunction({ postId });
+    return {
+      success: result.data.success,
+      post: result.data.post,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Like or unlike a post (toggle)
+ * @param {string} postId - Post ID
+ * @returns {Promise<{success: boolean, liked: boolean}>}
+ */
+export const likePost = async (postId) => {
+  try {
+    const likePostFunction = httpsCallable(functions, 'likePost');
+    const result = await likePostFunction({ postId });
+    return {
+      success: result.data.success,
+      liked: result.data.liked,
+      message: result.data.message,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Save or unsave a post to favorites (toggle)
+ * @param {string} postId - Post ID
+ * @returns {Promise<{success: boolean, saved: boolean}>}
+ */
+export const savePostToFavorites = async (postId) => {
+  try {
+    const savePostFunction = httpsCallable(functions, 'savePost');
+    const result = await savePostFunction({ postId });
+    return {
+      success: result.data.success,
+      saved: result.data.saved,
+      message: result.data.message,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Delete a post (owner only)
+ * @param {string} postId - Post ID
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export const deletePostById = async (postId) => {
+  try {
+    const deletePostFunction = httpsCallable(functions, 'deletePost');
+    const result = await deletePostFunction({ postId });
+    return {
+      success: result.data.success,
+      message: result.data.message,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Increment post usage count (when prompt is copied)
+ * @param {string} postId - Post ID
+ * @returns {Promise<{success: boolean}>}
+ */
+export const incrementPostUsage = async (postId) => {
+  try {
+    const incrementFunction = httpsCallable(functions, 'incrementPostUsage');
+    const result = await incrementFunction({ postId });
+    return { success: result.data.success };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Get top creators for the week
+ * @param {number} [limit] - Max creators to return
+ * @returns {Promise<{success: boolean, creators: Array}>}
+ */
+export const getTopCreators = async (limit = 10) => {
+  try {
+    const getTopCreatorsFunction = httpsCallable(functions, 'getTopCreators');
+    const result = await getTopCreatorsFunction({ limit });
+    return {
+      success: result.data.success,
+      creators: result.data.creators || [],
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+// ============================================================================
+// COMMENTS
+// ============================================================================
+
+/**
+ * Add a comment to a post
+ * @param {string} postId - Post ID
+ * @param {string} content - Comment content
+ * @param {string} [parentId] - Parent comment ID for replies
+ * @returns {Promise<{success: boolean, commentId: string, comment: Object}>}
+ */
+export const addComment = async (postId, content, parentId) => {
+  try {
+    const addCommentFunction = httpsCallable(functions, 'addComment');
+    const result = await addCommentFunction({ postId, content, parentId });
+    return {
+      success: result.data.success,
+      commentId: result.data.commentId,
+      comment: result.data.comment,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Get comments for a post
+ * @param {string} postId - Post ID
+ * @param {number} [limit] - Max comments to return
+ * @returns {Promise<{success: boolean, comments: Array, count: number}>}
+ */
+export const getComments = async (postId, limit = 50) => {
+  try {
+    const getCommentsFunction = httpsCallable(functions, 'getComments');
+    const result = await getCommentsFunction({ postId, limit });
+    return {
+      success: result.data.success,
+      comments: result.data.comments || [],
+      count: result.data.count || 0,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Like or unlike a comment (toggle)
+ * @param {string} commentId - Comment ID
+ * @param {string} postId - Post ID
+ * @returns {Promise<{success: boolean, liked: boolean}>}
+ */
+export const likeCommentById = async (commentId, postId) => {
+  try {
+    const likeCommentFunction = httpsCallable(functions, 'likeComment');
+    const result = await likeCommentFunction({ commentId, postId });
+    return {
+      success: result.data.success,
+      liked: result.data.liked,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Delete a comment (owner only)
+ * @param {string} commentId - Comment ID
+ * @param {string} postId - Post ID
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export const deleteCommentById = async (commentId, postId) => {
+  try {
+    const deleteCommentFunction = httpsCallable(functions, 'deleteComment');
+    const result = await deleteCommentFunction({ commentId, postId });
+    return {
+      success: result.data.success,
+      message: result.data.message,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+// ============================================================================
+// USER PROFILES
+// ============================================================================
+
+/**
+ * Get user profile
+ * @param {string} userId - User ID
+ * @returns {Promise<{success: boolean, profile: Object}>}
+ */
+export const getUserProfile = async (userId) => {
+  try {
+    const getUserProfileFunction = httpsCallable(functions, 'getUserProfile');
+    const result = await getUserProfileFunction({ userId });
+    return {
+      success: result.data.success,
+      profile: result.data.profile,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Update user profile
+ * @param {Object} data - Profile data (bio, website, socialLinks)
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export const updateUserProfile = async (data) => {
+  try {
+    const updateUserProfileFunction = httpsCallable(functions, 'updateUserProfile');
+    const result = await updateUserProfileFunction(data);
+    return {
+      success: result.data.success,
+      message: result.data.message,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Get posts by user
+ * @param {string} userId - User ID
+ * @param {number} [limit] - Max posts to return
+ * @param {string} [lastPostId] - For pagination
+ * @returns {Promise<{success: boolean, posts: Array, hasMore: boolean}>}
+ */
+export const getUserPosts = async (userId, limit = 20, lastPostId) => {
+  try {
+    const getUserPostsFunction = httpsCallable(functions, 'getUserPosts');
+    const result = await getUserPostsFunction({ userId, limit, lastPostId });
+    return {
+      success: result.data.success,
+      posts: result.data.posts || [],
+      hasMore: result.data.hasMore,
+      lastPostId: result.data.lastPostId,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Follow or unfollow a user (toggle)
+ * @param {string} userId - User ID to follow/unfollow
+ * @returns {Promise<{success: boolean, following: boolean}>}
+ */
+export const followUserById = async (userId) => {
+  try {
+    const followUserFunction = httpsCallable(functions, 'followUser');
+    const result = await followUserFunction({ userId });
+    return {
+      success: result.data.success,
+      following: result.data.following,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Get followers of a user
+ * @param {string} userId - User ID
+ * @param {number} [limit] - Max followers to return
+ * @returns {Promise<{success: boolean, followers: Array, count: number}>}
+ */
+export const getFollowers = async (userId, limit = 50) => {
+  try {
+    const getFollowersFunction = httpsCallable(functions, 'getFollowers');
+    const result = await getFollowersFunction({ userId, limit });
+    return {
+      success: result.data.success,
+      followers: result.data.followers || [],
+      count: result.data.count,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Get users that a user is following
+ * @param {string} userId - User ID
+ * @param {number} [limit] - Max users to return
+ * @returns {Promise<{success: boolean, following: Array, count: number}>}
+ */
+export const getFollowingList = async (userId, limit = 50) => {
+  try {
+    const getFollowingFunction = httpsCallable(functions, 'getFollowing');
+    const result = await getFollowingFunction({ userId, limit });
+    return {
+      success: result.data.success,
+      following: result.data.following || [],
+      count: result.data.count,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+/**
+ * Get user notifications
+ * @param {number} [limit] - Max notifications to return
+ * @param {boolean} [unreadOnly] - Only return unread notifications
+ * @returns {Promise<{success: boolean, notifications: Array, unreadCount: number}>}
+ */
+export const getNotifications = async (limit = 50, unreadOnly = false) => {
+  try {
+    const getNotificationsFunction = httpsCallable(functions, 'getNotifications');
+    const result = await getNotificationsFunction({ limit, unreadOnly });
+    return {
+      success: result.data.success,
+      notifications: result.data.notifications || [],
+      unreadCount: result.data.unreadCount || 0,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Mark a notification as read
+ * @param {string} notificationId - Notification ID
+ * @returns {Promise<{success: boolean}>}
+ */
+export const markNotificationAsRead = async (notificationId) => {
+  try {
+    const markAsReadFunction = httpsCallable(functions, 'markNotificationAsRead');
+    const result = await markAsReadFunction({ notificationId });
+    return { success: result.data.success };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Mark all notifications as read
+ * @returns {Promise<{success: boolean, count: number}>}
+ */
+export const markAllNotificationsAsRead = async () => {
+  try {
+    const markAllAsReadFunction = httpsCallable(functions, 'markAllNotificationsAsRead');
+    const result = await markAllAsReadFunction({});
+    return {
+      success: result.data.success,
+      count: result.data.count,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Create a notification (used internally from client when needed)
+ * @param {Object} data - Notification data
+ * @returns {Promise<{success: boolean, notificationId: string}>}
+ */
+export const createNotification = async (data) => {
+  try {
+    const createNotificationFunction = httpsCallable(functions, 'createNotification');
+    const result = await createNotificationFunction(data);
+    return {
+      success: result.data.success,
+      notificationId: result.data.notificationId,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};

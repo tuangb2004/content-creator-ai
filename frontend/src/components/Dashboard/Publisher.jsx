@@ -1,6 +1,9 @@
 import { Icons } from '../Icons';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const Publisher = () => {
+    const { t } = useLanguage();
+
     const socialIcons = {
         tiktok: (
             <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center text-white text-[10px]">
@@ -22,43 +25,43 @@ const Publisher = () => {
     return (
         <div className="p-8 lg:p-12 max-w-7xl mx-auto h-full flex flex-col justify-center">
             <div className="mb-12 flex items-center gap-3">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Publisher</h1>
-                <span className="bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 text-xs font-semibold px-2 py-0.5 rounded">Free for now</span>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t.dashboard.publisher.title}</h1>
+                <span className="bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 text-xs font-semibold px-2 py-0.5 rounded">{t.dashboard.publisher.freeForNow}</span>
             </div>
 
             <div className="flex flex-col lg:flex-row items-center justify-between gap-16">
                 {/* Left Side Content */}
                 <div className="lg:w-5/12 space-y-8">
                     <h2 className="text-4xl font-bold leading-tight text-gray-900 dark:text-white">
-                        Manage your posts across social platforms in one place.
+                        {t.dashboard.publisher.mainHeading}
                     </h2>
 
                     <div className="space-y-6">
                         <div className="flex gap-4 items-start">
                             <span className="flex-shrink-0 w-2 h-2 rounded-full bg-teal-500 mt-2"></span>
                             <div>
-                                <h3 className="font-bold text-lg text-gray-900 dark:text-white">Post more, grow more</h3>
-                                <p className="text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">Everything you need to create, edit, and publish posts to build your brand on social media.</p>
+                                <h3 className="font-bold text-lg text-gray-900 dark:text-white">{t.dashboard.publisher.postMore}</h3>
+                                <p className="text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{t.dashboard.publisher.postMoreDesc}</p>
                             </div>
                         </div>
                         <div className="flex gap-4 items-start">
                             <span className="flex-shrink-0 w-2 h-2 rounded-full bg-teal-500 mt-2"></span>
                             <div>
-                                <h3 className="font-bold text-lg text-gray-900 dark:text-white">Streamline your workflow</h3>
-                                <p className="text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">Manage all of your social media content in one place.</p>
+                                <h3 className="font-bold text-lg text-gray-900 dark:text-white">{t.dashboard.publisher.workflow}</h3>
+                                <p className="text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{t.dashboard.publisher.workflowDesc}</p>
                             </div>
                         </div>
                         <div className="flex gap-4 items-start">
                             <span className="flex-shrink-0 w-2 h-2 rounded-full bg-teal-500 mt-2"></span>
                             <div>
-                                <h3 className="font-bold text-lg text-gray-900 dark:text-white">Save time</h3>
-                                <p className="text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">Schedule to automatically post content whenever you want.</p>
+                                <h3 className="font-bold text-lg text-gray-900 dark:text-white">{t.dashboard.publisher.saveTime}</h3>
+                                <p className="text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{t.dashboard.publisher.saveTimeDesc}</p>
                             </div>
                         </div>
                     </div>
 
                     <button className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 font-bold py-3 px-6 rounded-lg flex items-center gap-2 transition-colors mt-4">
-                        Authorize
+                        {t.dashboard.publisher.authorize}
                         <Icons.ChevronRight size={16} />
                     </button>
                 </div>
@@ -67,7 +70,7 @@ const Publisher = () => {
                 <div className="lg:w-6/12 w-full relative">
                     <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-6">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-gray-900 dark:text-white">Publishing</h3>
+                            <h3 className="font-bold text-gray-900 dark:text-white">{t.dashboard.publisher.publishing}</h3>
                             <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 text-xs">
                                 <button><Icons.ChevronLeft size={14} /></button>
                                 <span>05/2024</span>
@@ -79,7 +82,7 @@ const Publisher = () => {
                             <div className="flex-1 bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 rounded-xl p-4 min-h-[300px]">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="border-r border-gray-100 dark:border-gray-700 pr-4">
-                                        <div className="text-xs text-gray-400 mb-4">Sunday</div>
+                                        <div className="text-xs text-gray-400 mb-4">{t.dashboard.publisher.sunday}</div>
                                         <div className="text-sm font-bold mb-4 dark:text-white">27</div>
                                         <div className="bg-orange-50 dark:bg-orange-900/20 p-2 rounded-lg mb-2">
                                             <div className="flex items-center gap-1 mb-1">
@@ -87,12 +90,12 @@ const Publisher = () => {
                                                 <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300 truncate">The Nordic way o...</span>
                                             </div>
                                             <div className="text-[9px] text-gray-400">4:30 PM</div>
-                                            <div className="text-[9px] text-gray-400">Published</div>
+                                            <div className="text-[9px] text-gray-400">{t.dashboard.publisher.published}</div>
                                         </div>
                                         <div className="text-sm font-bold mt-8 dark:text-white">3</div>
                                     </div>
                                     <div>
-                                        <div className="text-xs text-gray-400 mb-4">Monday</div>
+                                        <div className="text-xs text-gray-400 mb-4">{t.dashboard.publisher.monday}</div>
                                         <div className="text-sm font-bold mb-4 dark:text-white">28</div>
                                         <div className="text-sm font-bold mt-20 dark:text-white">4</div>
                                     </div>
@@ -101,7 +104,7 @@ const Publisher = () => {
 
                             {/* Platform List */}
                             <div className="w-40 border border-gray-100 dark:border-gray-700 rounded-xl p-4">
-                                <h4 className="text-xs font-bold text-gray-400 mb-4 uppercase">Platform</h4>
+                                <h4 className="text-xs font-bold text-gray-400 mb-4 uppercase">{t.dashboard.publisher.platform}</h4>
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-2">
                                         {socialIcons.tiktok}

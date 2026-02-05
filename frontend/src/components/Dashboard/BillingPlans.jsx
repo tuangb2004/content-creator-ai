@@ -83,26 +83,28 @@ const BillingPlans = ({ onBack }) => {
     console.log('PaymentModal state changed:', isPaymentModalOpen);
   }, [isPaymentModalOpen]);
 
-  // Map plan names to amounts (VND)
-  // Exchange rate: 1 USD ≈ 23,800 VND
-
-  /* TEST MODE (Disabled)
+  // Đơn vị tiền: 1 USD = 25.000 VND (tỷ giá tham chiếu SBV ~24.726, làm tròn cho giao dịch)
+  const USD_TO_VND = 25000;
+  // Giá bán: 2.000đ/credit (đồng bộ PRICING_RISK_ANALYSIS)
+  const VND_PER_CREDIT = 2000;
+  // Giá gói = credits × 2.000đ; yearly = 12 tháng, giảm 20%
   const PLAN_PRICES = {
-    pro_monthly: 10000,
-    pro_yearly: 20000,
-    agency_monthly: 30000,
-    agency_yearly: 50000,
+    pro_monthly: 100 * VND_PER_CREDIT,           // 200.000 VND
+    pro_yearly: Math.round(100 * 12 * VND_PER_CREDIT * 0.8),   // 1.920.000 VND
+    agency_monthly: 300 * VND_PER_CREDIT,        // 600.000 VND
+    agency_yearly: Math.round(300 * 12 * VND_PER_CREDIT * 0.8), // 5.760.000 VND
+    business_monthly: 600 * VND_PER_CREDIT,      // 1.200.000 VND
+    business_yearly: Math.round(600 * 12 * VND_PER_CREDIT * 0.8), // 11.520.000 VND
   };
-  */
+  const formatVnd = (vnd) => (vnd ?? 0).toLocaleString('vi-VN', { useGrouping: true }).replace(/\s/g, '.');
 
-  // PRODUCTION PRICES:
-  const PLAN_PRICES = {
-    pro_monthly: 690000, // 29 USD * 23,800 VND/USD ≈ 690,000 VND
-    pro_yearly: 6840000, // 24 USD/month * 12 months * 23,800 VND/USD ≈ 6,840,000 VND
-    agency_monthly: 2356200, // 99 USD * 23,800 VND/USD ≈ 2,356,200 VND
-    agency_yearly: 22562400, // 79 USD/month * 12 months * 23,800 VND/USD ≈ 22,562,400 VND
-    business_monthly: 4900000, // 206 USD * 23,800 VND/USD ≈ 4,900,000 VND
-    business_yearly: 49000000, // 172 USD/month * 12 months * 23,800 VND/USD ≈ 49,000,000 VND
+  const formatDisplayPrice = (amount) => {
+    if (t?.billing?.currency?.prefix === '$') {
+      const usdAmount = amount / USD_TO_VND;
+      // Show decimals only if needed (e.g. 76.8), otherwise integer (e.g. 8)
+      return usdAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+    return formatVnd(amount);
   };
 
   const currentPlan = userData?.plan || 'free';
@@ -214,11 +216,11 @@ const BillingPlans = ({ onBack }) => {
       id: 'starter',
       name: t?.billing?.starter?.name || 'Starter',
       desc: t?.billing?.starter?.desc || 'Perfect for small creators and explorers.',
-      credits: t?.billing?.starter?.credits || '20',
+      credits: t?.billing?.starter?.credits || '5',
       priceMonthly: 0,
       priceYearly: 0,
       features: [
-        t?.billing?.starter?.features?.credits || '20 Free Monthly Credits',
+        t?.billing?.starter?.features?.credits || '5 Free Credits',
         t?.billing?.starter?.features?.tools || 'Gemini 3 Flash Access',
         t?.billing?.starter?.features?.seo || 'Basic SEO Tools',
         t?.billing?.starter?.features?.support || 'Community Support'
@@ -231,13 +233,14 @@ const BillingPlans = ({ onBack }) => {
       id: 'pro',
       name: t?.billing?.pro?.name || 'Pro Studio',
       desc: t?.billing?.pro?.desc || 'Best for professional content creators.',
-      credits: t?.billing?.pro?.credits || '2,500',
-      priceMonthly: 29,
-      priceYearly: 24,
+      credits: t?.billing?.pro?.credits || '100',
+      priceMonthly: formatDisplayPrice(PLAN_PRICES.pro_monthly),
+      priceYearly: formatDisplayPrice(PLAN_PRICES.pro_yearly),
       features: [
-        t?.billing?.pro?.features?.credits || '2,500 Monthly Credits',
+        billingCycle === 'monthly' ? (t?.billing?.pro?.features?.monthlyCredits || '100 Monthly Credits') : (t?.billing?.pro?.features?.yearlyCredits || '1,200 Yearly Credits'),
         t?.billing?.pro?.features?.reasoning || 'Gemini 3 Pro Reasoning',
         t?.billing?.pro?.features?.images || 'Nano Banana Pro Access',
+        t?.billing?.pro?.features?.video || 'Veo 3.1 Video Generation (8/day)',
         t?.billing?.pro?.features?.support || 'Priority 24/7 Support'
       ],
       button: t?.billing?.upgradeToPro || 'Upgrade to Pro',
@@ -248,12 +251,13 @@ const BillingPlans = ({ onBack }) => {
       id: 'agency',
       name: t?.billing?.agency?.name || 'Agency Elite',
       desc: t?.billing?.agency?.desc || 'For high-volume content operations.',
-      credits: t?.billing?.agency?.credits || '12,000',
-      priceMonthly: 99,
-      priceYearly: 79,
+      credits: t?.billing?.agency?.credits || '300',
+      priceMonthly: formatDisplayPrice(PLAN_PRICES.agency_monthly),
+      priceYearly: formatDisplayPrice(PLAN_PRICES.agency_yearly),
       features: [
-        t?.billing?.agency?.features?.credits || '12,000 Monthly Credits',
+        billingCycle === 'monthly' ? (t?.billing?.agency?.features?.monthlyCredits || '300 Monthly Credits') : (t?.billing?.agency?.features?.yearlyCredits || '3,600 Yearly Credits'),
         t?.billing?.agency?.features?.unlimited || 'Unlimited Gemini 3 Pro',
+        t?.billing?.agency?.features?.video || 'Veo 3.1 Video Generation (40/day)',
         t?.billing?.agency?.features?.api || 'API & Multi-Seat Access',
         t?.billing?.agency?.features?.manager || 'Dedicated Account Manager'
       ],
@@ -264,19 +268,19 @@ const BillingPlans = ({ onBack }) => {
     {
       id: 'business',
       name: 'Business',
-      desc: 'Enterprise-grade for large teams.',
-      credits: billingCycle === 'monthly' ? '25,000' : '300,000',
-      priceMonthly: 206,
-      priceYearly: 172,
+      desc: t?.billing?.business?.desc || 'Enterprise-grade for large teams.',
+      credits: '600',
+      priceMonthly: formatDisplayPrice(PLAN_PRICES.business_monthly),
+      priceYearly: formatDisplayPrice(PLAN_PRICES.business_yearly),
       features: [
-        billingCycle === 'monthly' ? '25,000 Monthly Credits' : '300,000 Yearly Credits',
-        'Unlimited team members',
-        'Priority support 24/7',
-        'Custom integrations',
-        'Dedicated account manager',
-        'White-label options'
+        billingCycle === 'monthly' ? (t?.billing?.business?.monthlyCredits || '600 Monthly Credits') : (t?.billing?.business?.yearlyCredits || '7,200 Yearly Credits'),
+        t?.billing?.business?.unlimited || 'Unlimited team members',
+        t?.billing?.business?.support || 'Priority support 24/7',
+        t?.billing?.business?.integrations || 'Custom integrations',
+        t?.billing?.business?.manager || 'Dedicated account manager',
+        t?.billing?.business?.whiteLabel || 'White-label options'
       ],
-      button: 'Contact Sales',
+      button: t?.billing?.contactSales || 'Contact Sales',
       active: currentPlan === 'business',
       highlight: false
     }
@@ -352,16 +356,16 @@ const BillingPlans = ({ onBack }) => {
             <div className="mb-8">
               <div className="flex items-end gap-1">
                 <span className="text-4xl font-serif">
-                  ${billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly}
+                  {t?.billing?.currency?.prefix}{billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly}{t?.billing?.currency?.suffix}
                 </span>
                 <span className={`text-xs mb-1.5 ${plan.highlight
                   ? 'text-[#A8A29E]'
                   : (theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]')
-                  }`}>/ month</span>
+                  }`}>{billingCycle === 'monthly' ? (t?.billing?.perMonth || '/ month') : (t?.billing?.perYear || '/ year')}</span>
               </div>
               <div className={`mt-2 py-1 px-3 inline-block rounded-full text-[10px] font-bold uppercase tracking-widest ${plan.highlight ? 'bg-white/10' : (theme === 'dark' ? 'bg-black/20' : 'bg-[#F9F8F6]')
                 }`}>
-                {plan.credits} Monthly Credits
+                {plan.credits} {t?.billing?.monthlyCreditsLabel || 'Monthly Credits'}
               </div>
             </div>
 
@@ -427,10 +431,10 @@ const BillingPlans = ({ onBack }) => {
 
           <div className="grid grid-cols-2 gap-4">
             {[
-              { id: 'starter', credits: 500, price: 55000, discount: null },
-              { id: 'popular', credits: 1000, price: 100000, discount: '5%', popular: true },
-              { id: 'pro', credits: 2500, price: 240000, discount: '10%' },
-              { id: 'business', credits: 5000, price: 450000, discount: '15%' }
+              { id: 'starter', credits: 25, price: 60000, discount: null, popular: false },
+              { id: 'popular', credits: 55, price: 130000, discount: 'Save ~2%', popular: true },
+              { id: 'pro', credits: 120, price: 275000, discount: 'Save ~5%', popular: false },
+              { id: 'business', credits: 250, price: 540000, discount: 'Save ~10%', popular: false }
             ].map((pkg) => (
               <div
                 key={pkg.id}
@@ -450,7 +454,7 @@ const BillingPlans = ({ onBack }) => {
                 {pkg.discount && (
                   <div className="absolute -top-2 -right-2">
                     <span className="bg-emerald-600 text-white text-[8px] font-bold px-2 py-1 rounded-sm">
-                      Save {pkg.discount}
+                      {pkg.discount}
                     </span>
                   </div>
                 )}
@@ -464,9 +468,15 @@ const BillingPlans = ({ onBack }) => {
 
                 <div className="text-center mb-3">
                   <p className={`text-lg font-bold transition-colors duration-300 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'
-                    }`}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.price)}</p>
+                    }`}>{t?.billing?.currency?.prefix === '$'
+                      ? `$${(pkg.price / USD_TO_VND).toFixed(2)}`
+                      : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.price)
+                    }</p>
                   <p className={`text-[9px] transition-colors duration-300 ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'
-                    }`}>({(pkg.price / pkg.credits).toFixed(0)} ₫/credit)</p>
+                    }`}>({t?.billing?.currency?.prefix === '$'
+                      ? `$${(pkg.price / pkg.credits / USD_TO_VND).toFixed(4)}`
+                      : (pkg.price / pkg.credits).toFixed(0)
+                    } {t?.billing?.currency?.prefix === '$' ? '/credit' : '₫/credit'})</p>
                 </div>
 
                 <button
@@ -479,7 +489,7 @@ const BillingPlans = ({ onBack }) => {
                       : 'border border-[#2C2A26] hover:bg-[#2C2A26] hover:text-[#F5F2EB] text-[#2C2A26]')
                     }`}
                 >
-                  {loadingPlanId === pkg.id ? 'Processing...' : 'Buy Now'}
+                  {loadingPlanId === pkg.id ? (t?.billing?.processing || 'Processing...') : (t?.billing?.buyNow || 'Buy Now')}
                 </button>
               </div>
             ))}
@@ -507,7 +517,7 @@ const BillingPlans = ({ onBack }) => {
                 }`}>
                 {historyLoading ? (
                   <tr>
-                    <td colSpan="4" className="p-8 text-center text-sm opacity-50">Loading history...</td>
+                    <td colSpan="4" className="p-8 text-center text-sm opacity-50">{t?.billing?.loadingHistory || 'Loading history...'}</td>
                   </tr>
                 ) : billingHistory.length > 0 ? (
                   billingHistory
@@ -584,7 +594,7 @@ const BillingPlans = ({ onBack }) => {
         onClose={() => setIsPaymentModalOpen(false)}
         onSave={handlePaymentUpdate}
       />
-    </div>
+    </div >
   );
 };
 

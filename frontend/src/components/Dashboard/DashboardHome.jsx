@@ -4,13 +4,17 @@ import { AgentChat } from './AgentChat';
 import { getProjects, uploadFile, getUploads } from '../../services/firebaseFunctions';
 import toast from '../../utils/toast';
 import SelectFileModal from './SelectFileModal';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const VIDEO_RATIOS = [
-  { id: '16:9', label: '16:9', width: 'w-8', height: 'h-4' },
-  { id: '4:3', label: '4:3', width: 'w-6', height: 'h-4' },
-  { id: '1:1', label: '1:1', width: 'w-5', height: 'h-5' },
-  { id: '3:4', label: '3:4', width: 'w-4', height: 'h-5' },
-  { id: '9:16', label: '9:16', width: 'w-3', height: 'h-5' },
+  { id: '16:9', label: '16:9', width: 'w-8', height: 'h-4', desc: 'Landscape' },
+  { id: '9:16', label: '9:16', width: 'w-4', height: 'h-7', desc: 'Portrait' },
+];
+
+const VIDEO_MODES = [
+  { id: 'text-to-video', label: 'Từ văn bản sang video', icon: Icons.Notebook, desc: 'Tạo video từ prompt text' },
+  { id: 'frame-to-video', label: 'Tạo video từ các khung hình', icon: Icons.Gallery, desc: '2 ảnh đầu/cuối' },
+  { id: 'ingredients-to-video', label: 'Tạo video từ các thành phần', icon: Icons.Layers, desc: 'Tối đa 3 ảnh tham chiếu' },
 ];
 
 const VIDEO_LANGUAGES = [
@@ -31,13 +35,32 @@ const MODELS = {
     { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Reasoning & complexity', icon: Icons.Gemini },
   ],
   video: [
-    { id: 'nano-video', name: 'Nano Video', desc: 'Smooth generation', icon: Icons.Video },
-    { id: 'runway', name: 'Runway Gen-2', desc: 'Cinematic realism', icon: Icons.Film },
+    { id: 'veo-3.1-fast', name: 'Veo 3.1 Fast', desc: 'Nhanh, tiết kiệm', icon: Icons.Veo, credits: 300 },
+    { id: 'veo-3.1-standard', name: 'Veo 3.1 Standard', desc: 'Chất lượng cao', icon: Icons.Veo, credits: 500 },
   ]
 };
 
-const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialProject, onChatToggle }) => {
+const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPrompt, onPrefillConsumed, initialProject, onChatToggle }) => {
+  const { t } = useLanguage();
   const [inputType, setInputType] = useState('image');
+
+  const MODELS = {
+    image: [
+      { id: 'nano-pro', name: 'Nano Banana Pro', desc: t?.dashboard?.models?.nanoPro, icon: Icons.Banana },
+      { id: 'nano', name: 'Nano Banana', desc: t?.dashboard?.models?.nano, icon: Icons.Banana },
+      { id: 'sdxl', name: 'SDXL 1.0', desc: t?.dashboard?.models?.sdxl, icon: Icons.Stability },
+    ],
+    text: [
+      { id: 'groq', name: 'Groq Llama 3', desc: t?.dashboard?.models?.groq, icon: Icons.Groq },
+      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: t?.dashboard?.models?.geminiFlash, icon: Icons.Gemini },
+      { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: t?.dashboard?.models?.geminiNextGen, icon: Icons.Gemini },
+      { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: t?.dashboard?.models?.geminiPro, icon: Icons.Gemini },
+    ],
+    video: [
+      { id: 'veo-3.1-fast', name: 'Veo 3.1 Fast', desc: t?.dashboard?.models?.veoFast || 'Nhanh, tiết kiệm', icon: Icons.Veo, credits: 300 },
+      { id: 'veo-3.1-standard', name: 'Veo 3.1 Standard', desc: t?.dashboard?.models?.veoStandard || 'Chất lượng cao', icon: Icons.Veo, credits: 500 },
+    ]
+  };
 
   // Auto-switch to chat if initialPrompt or initialProject (open existing chat) is present
   useEffect(() => {
@@ -53,6 +76,17 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
     }
   }, [initialPrompt, initialProject, onCollapseSidebar, onChatToggle]);
 
+  // Handle prefillPrompt - just fills input WITHOUT triggering chat mode
+  useEffect(() => {
+    if (prefillPrompt) {
+      setInputValue(prefillPrompt);
+      // Optionally auto-focus the input
+      if (onPrefillConsumed) {
+        setTimeout(() => onPrefillConsumed(), 100);
+      }
+    }
+  }, [prefillPrompt, onPrefillConsumed]);
+
   const [recentProjects, setRecentProjects] = useState([]);
 
   useEffect(() => {
@@ -64,14 +98,14 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
           // Map raw projects to UI format
           const mapped = result.projects.slice(0, 5).map(p => {
             // Extract a clean title
-            let cleanTitle = p.title || 'Sáng tạo mới';
+            let cleanTitle = p.title || t.dashboard.chat.newCreation;
             if (cleanTitle.trim().startsWith('{') || cleanTitle.trim().startsWith('"')) {
               try {
                 const parsed = JSON.parse(cleanTitle);
                 if (typeof parsed === 'string') {
                   cleanTitle = parsed;
                 } else if (typeof parsed === 'object' && parsed !== null) {
-                  cleanTitle = parsed.prompt || parsed.text || parsed.title || Object.values(parsed).find(v => typeof v === 'string') || 'Sáng tạo mới';
+                  cleanTitle = parsed.prompt || parsed.text || parsed.title || Object.values(parsed).find(v => typeof v === 'string') || t.dashboard.chat.newCreation;
                 }
               } catch (e) {
                 // ignore parse error for malformed titles
@@ -113,6 +147,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
   const [isVideoRatioLangMenuOpen, setIsVideoRatioLangMenuOpen] = useState(false);
   const [videoAspectRatio, setVideoAspectRatio] = useState('9:16');
   const [videoLanguage, setVideoLanguage] = useState('EN');
+  const [videoMode, setVideoMode] = useState('text-to-video');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Toggle settings panel
+  const [isModeMenuOpen, setIsModeMenuOpen] = useState(false); // Mode dropdown
   const [uploadedFiles, setUploadedFiles] = useState([]); // Array of { url, name, type }
   const [isSelectingFromAssets, setIsSelectingFromAssets] = useState(false);
   const fileInputRef = useRef(null);
@@ -130,6 +167,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
   const modelMenuRef = useRef(null);
   const ratioMenuRef = useRef(null);
   const videoRatioLangMenuRef = useRef(null);
+  const modeMenuRef = useRef(null);
   const inputRef = useRef(null);
   const holdTimeoutRef = useRef(null);
 
@@ -147,6 +185,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
       }
       if (videoRatioLangMenuRef.current && !videoRatioLangMenuRef.current.contains(event.target)) {
         setIsVideoRatioLangMenuOpen(false);
+      }
+      if (modeMenuRef.current && !modeMenuRef.current.contains(event.target)) {
+        setIsModeMenuOpen(false);
       }
     };
 
@@ -310,7 +351,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
           <div className="flex justify-center mb-8">
             <div className="inline-flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-full px-4 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
               <Icons.Sparkles size={14} className="text-purple-600 dark:text-purple-400" />
-              <span>Nano Banana Pro và các mô hình Seedream mới nhất đã sẵn sàng</span>
+              <span>{t.dashboard.home.banner}</span>
               <button
                 onClick={() => setShowBanner(false)}
                 className="ml-2 hover:text-black dark:hover:text-white"
@@ -325,7 +366,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
       {/* Main Heading */}
       <div className={`text-center mb-14 transition-opacity duration-300 ${isTransitioning || isReturning ? 'opacity-0' : 'opacity-100'}`}>
         <h1 className="font-serif text-3xl md:text-4xl text-gray-900 dark:text-white mb-2 tracking-tight">
-          Hãy biến trí tưởng tượng của bạn thành hiện thực.
+          {t.dashboard.home.mainHeading}
         </h1>
       </div>
 
@@ -343,9 +384,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
         {/* Toggle Tabs - Minimalist Style */}
         <div className={`absolute -top-12 left-1/2 -translate-x-1/2 z-10 flex gap-8 transition-opacity duration-300 ${isTransitioning || isReturning ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           {[
-            { id: 'video', label: 'Video', icon: Icons.ClapperboardPlay },
-            { id: 'image', label: 'Image', icon: Icons.Gallery },
-            { id: 'text', label: 'Văn bản', icon: Icons.Notebook },
+            { id: 'video', label: t.dashboard.nav.video || 'Video', icon: Icons.ClapperboardPlay },
+            { id: 'image', label: t.dashboard.nav.images || 'Image', icon: Icons.Gallery },
+            { id: 'text', label: t.dashboard.nav.textContent || 'Text Content', icon: Icons.Notebook },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = inputType === item.id;
@@ -382,10 +423,10 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
             className="w-full h-16 bg-transparent border-0 focus:border-0 focus:ring-0 ring-0 focus:outline-none outline-none appearance-none text-lg text-gray-600 dark:text-gray-300 placeholder-gray-400 focus:placeholder-gray-500 dark:focus:placeholder-gray-400 resize-none leading-relaxed shadow-none transition-colors duration-200"
             placeholder={
               inputType === 'video'
-                ? "Hãy mô tả video bạn muốn tạo. Thêm liên kết, hình ảnh hoặc tài liệu để có kết quả chính xác hơn."
+                ? t.dashboard.home.placeholderVideo
                 : inputType === 'image'
-                  ? 'Mô tả hình ảnh bạn muốn thiết kế và sử dụng "/" để đánh dấu văn bản cần thêm'
-                  : 'Mô tả nội dung bạn muốn viết hoặc chỉnh sửa...'
+                  ? t.dashboard.home.placeholderImage
+                  : t.dashboard.home.placeholderText
             }
           />
 
@@ -435,7 +476,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left"
                     >
                       <Icons.Monitor size={18} className="text-black/60" />
-                      Tải lên từ máy tính
+                      {t.dashboard.home.uploadFromComputer}
                     </button>
                     <input
                       ref={fileInputRef}
@@ -452,7 +493,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left"
                     >
                       <Icons.Folder size={18} className="text-black/60" />
-                      Chọn từ Tài nguyên
+                      {t.dashboard.home.chooseFromAssets}
                     </button>
 
                     {/* Nested Menu Item */}
@@ -460,7 +501,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
                       <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors">
                         <div className="flex items-center gap-3">
                           <Icons.MoreHorizontal size={18} className="text-black/60" />
-                          Thêm
+                          {t.dashboard.home.more}
                         </div>
                         <Icons.ChevronRight size={14} className="text-black/40" />
                       </button>
@@ -469,11 +510,11 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
                       <div className="absolute top-0 left-full ml-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 translate-x-[-10px] group-hover:translate-x-0">
                         <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
                           <Icons.Link size={18} className="text-black/60" />
-                          Nhập từ liên kết sản phẩm
+                          {t.dashboard.home.importFromLink}
                         </button>
                         <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
                           <Icons.Box size={18} className="text-black/60" />
-                          Tải lên từ Dropbox
+                          {t.dashboard.home.uploadFromDropbox}
                         </button>
 
                         {/* QR Code Hover Item */}
@@ -481,18 +522,18 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
                           <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
                             <div className="flex items-center gap-3">
                               <Icons.Smartphone size={18} className="text-black/60" />
-                              Tải lên từ điện thoại
+                              {t.dashboard.home.uploadFromPhone}
                             </div>
                             <Icons.ChevronRight size={14} className="text-black/40" />
                           </button>
 
                           {/* QR Code Popup */}
                           <div className="absolute top-0 left-full ml-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-6 invisible opacity-0 group-hover/qr:visible group-hover/qr:opacity-100 transition-all duration-200 translate-x-[-10px] group-hover/qr:translate-x-0 flex flex-col items-center text-center">
-                            <h3 className="font-bold text-black dark:text-white mb-4">Quét mã QR để tải lên</h3>
+                            <h3 className="font-bold text-black dark:text-white mb-4">{t.dashboard.home.scanQr}</h3>
                             <div className="bg-white p-2 rounded-lg shadow-inner mb-4">
                               <Icons.QrCode size={120} className="text-black" />
                             </div>
-                            <p className="text-xs text-black/60 dark:text-gray-400">Sử dụng camera điện thoại để quét mã và tải ảnh lên</p>
+                            <p className="text-xs text-black/60 dark:text-gray-400">{t.dashboard.home.scanQrDesc}</p>
                           </div>
                         </div>
                       </div>
@@ -504,61 +545,130 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
               {/* Context Specific Toolbar Buttons */}
               {inputType === 'video' && (
                 <>
-                  <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
-                    <Icons.Box size={16} isActive={false} />
-                  </button>
-                  <div className="relative">
-                    <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
-                      <Icons.Lightbulb size={16} isActive={false} />
-                    </button>
-                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1e293b]"></span>
-                  </div>
-
-                  <div className="relative" ref={videoRatioLangMenuRef}>
+                  {/* Video Mode Dropdown */}
+                  <div className="relative" ref={modeMenuRef}>
                     <button
-                      onClick={() => setIsVideoRatioLangMenuOpen(!isVideoRatioLangMenuOpen)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isVideoRatioLangMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
+                      onClick={() => setIsModeMenuOpen(!isModeMenuOpen)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${isModeMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : 'bg-gray-50 dark:bg-gray-800'}`}
                     >
-                      <Icons.TuningSquare size={14} isActive={isVideoRatioLangMenuOpen} />
-                      <span>{videoAspectRatio}</span>
-                      <span className="text-gray-400 dark:text-gray-600 mx-1">|</span>
-                      <span className="text-black/60 dark:text-gray-400">{videoLanguage}</span>
+                      {VIDEO_MODES.find(m => m.id === videoMode)?.icon && (
+                        <span className="text-purple-600 dark:text-purple-400">
+                          {(() => { const MIcon = VIDEO_MODES.find(m => m.id === videoMode)?.icon; return MIcon ? <MIcon size={16} /> : null; })()}
+                        </span>
+                      )}
+                      <span className="hidden sm:inline max-w-[180px] truncate">{VIDEO_MODES.find(m => m.id === videoMode)?.label}</span>
+                      <Icons.ChevronDown size={14} className={`transition-transform ${isModeMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    {isVideoRatioLangMenuOpen && (
-                      <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                        <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-3 tracking-tight">Tỷ lệ khung hình</h3>
-                        <div className="flex flex-wrap gap-2 mb-5">
-                          {VIDEO_RATIOS.map((r) => (
-                            <button
-                              key={r.id}
-                              onClick={() => setVideoAspectRatio(r.id)}
-                              className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${videoAspectRatio === r.id ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 dark:border-purple-400 text-purple-700 dark:text-purple-300' : 'bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'}`}
-                            >
-                              <span className={`block border-2 border-current rounded-sm ${r.width} ${r.height}`} />
-                              <span className="text-xs font-semibold">{r.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                        <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-2 tracking-tight">Ngôn ngữ</h3>
-                        <div className="space-y-0.5">
-                          {VIDEO_LANGUAGES.map((lang) => (
-                            <button
-                              key={lang.id}
-                              onClick={() => setVideoLanguage(lang.id)}
-                              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${videoLanguage === lang.id ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300'}`}
-                            >
-                              {lang.label}
-                              {videoLanguage === lang.id && <Icons.CheckCircle size={16} className="text-purple-500 shrink-0" />}
-                            </button>
-                          ))}
-                        </div>
+
+                    {isModeMenuOpen && (
+                      <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                        {VIDEO_MODES.map((mode) => (
+                          <button
+                            key={mode.id}
+                            onClick={() => {
+                              setVideoMode(mode.id);
+                              setIsModeMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${videoMode === mode.id ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300'}`}
+                          >
+                            <mode.icon size={18} className={videoMode === mode.id ? 'text-purple-600' : 'text-gray-400'} />
+                            <div className="flex-1">
+                              <div className="font-semibold text-sm">{mode.label}</div>
+                              <div className="text-[11px] text-gray-500 dark:text-gray-400">{mode.desc}</div>
+                            </div>
+                            {videoMode === mode.id && <Icons.CheckCircle size={16} className="text-purple-500" />}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
-                    <Icons.Clock size={14} isActive={false} />
-                    <span>Schedule</span>
+
+                  {/* Model Selector Pill */}
+                  <div className="relative" ref={modelMenuRef}>
+                    <button
+                      onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all duration-200 ${isModelMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}
+                    >
+                      <selectedModel.icon size={14} isActive />
+                      <span className="text-black dark:text-white">{selectedModel.name}</span>
+                      {selectedModel.credits && (
+                        <span className="text-purple-600 dark:text-purple-400">{selectedModel.credits}cr</span>
+                      )}
+                    </button>
+
+                    {isModelMenuOpen && (
+                      <div className="absolute bottom-full left-0 mb-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        {currentModels.map((model) => (
+                          <button
+                            key={model.id}
+                            onClick={() => {
+                              setSelectedModel(model);
+                              setIsModelMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors ${selectedModel.id === model.id ? 'bg-gray-50 dark:bg-gray-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
+                          >
+                            <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                              <model.icon size={18} isActive={selectedModel.id === model.id} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-bold text-sm text-black dark:text-white">{model.name}</div>
+                              <div className="text-[11px] text-gray-500 dark:text-gray-400">{model.desc}</div>
+                            </div>
+                            {model.credits && (
+                              <span className="text-xs font-bold text-purple-600 dark:text-purple-400">{model.credits}cr</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Aspect Ratio Pill */}
+                  <div className="relative" ref={videoRatioLangMenuRef}>
+                    <button
+                      onClick={() => setIsVideoRatioLangMenuOpen(!isVideoRatioLangMenuOpen)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all duration-200 ${isVideoRatioLangMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}
+                    >
+                      <Icons.Pip size={14} />
+                      <span className="text-black dark:text-white">{videoAspectRatio}</span>
+                    </button>
+
+                    {isVideoRatioLangMenuOpen && (
+                      <div className="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-3 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Tỷ lệ khung hình</div>
+                        {VIDEO_RATIOS.map((r) => (
+                          <button
+                            key={r.id}
+                            onClick={() => {
+                              setVideoAspectRatio(r.id);
+                              setIsVideoRatioLangMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors ${videoAspectRatio === r.id ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300'}`}
+                          >
+                            <span className={`block border-2 border-current rounded-sm ${r.width} ${r.height}`} />
+                            <span className="font-semibold text-sm">{r.desc} ({r.label})</span>
+                            {videoAspectRatio === r.id && <Icons.CheckCircle size={14} className="text-purple-500 ml-auto" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Settings Toggle */}
+                  <button
+                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${isSettingsOpen ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'}`}
+                  >
+                    <Icons.Sliders size={16} />
                   </button>
+
+                  {/* Upload requirement warning */}
+                  {(videoMode === 'frame-to-video' || videoMode === 'ingredients-to-video') && uploadedFiles.length === 0 && (
+                    <span className="text-xs text-orange-500 dark:text-orange-400 font-medium flex items-center gap-1">
+                      <Icons.Upload size={12} />
+                      {videoMode === 'frame-to-video' ? 'Cần 2 ảnh' : 'Cần 1-3 ảnh'}
+                    </span>
+                  )}
                 </>
               )}
 
@@ -606,16 +716,16 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isRatioMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
                     >
                       <Icons.Pip size={14} isActive={isRatioMenuOpen} />
-                      <span>{isAutoRatio ? 'Tỉ lệ' : selectedRatio}</span>
+                      <span>{isAutoRatio ? t.dashboard.home.ratio : selectedRatio}</span>
                     </button>
 
                     {/* Ratio Dropdown Menu */}
                     {isRatioMenuOpen && (
                       <div className="absolute bottom-full left-0 mb-2 w-72 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
                         <div className="flex items-center justify-between mb-5">
-                          <span className="font-bold text-sm text-gray-900 dark:text-white tracking-tight">Tỉ lệ khung hình</span>
+                          <span className="font-bold text-sm text-gray-900 dark:text-white tracking-tight">{t.dashboard.home.aspectRatio}</span>
                           <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-full border border-gray-100 dark:border-gray-700">
-                            <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Auto</span>
+                            <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t.dashboard.home.auto}</span>
                             <button
                               onClick={() => setIsAutoRatio(!isAutoRatio)}
                               className={`w-8 h-4.5 rounded-full p-0.5 transition-colors ${isAutoRatio ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'}`}
@@ -655,7 +765,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
                         {isAutoRatio && (
                           <div className="mt-4 p-2.5 bg-purple-50/50 dark:bg-purple-900/10 rounded-xl border border-purple-100/50 dark:border-purple-800/30">
                             <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium leading-relaxed">
-                              Chế độ tự động sẽ chọn tỉ lệ tối ưu dựa trên nội dung bạn mô tả.
+                              {t.dashboard.home.autoRatioDesc || 'Chế độ tự động sẽ chọn tỉ lệ tối ưu dựa trên nội dung bạn mô tả.'}
                             </p>
                           </div>
                         )}
@@ -681,7 +791,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
         {/* History Links */}
         <div className={`flex justify-center gap-6 mt-6 text-xs text-black/50 dark:text-gray-400 font-medium transition-opacity duration-100 ${isTransitioning || isReturning ? 'opacity-0' : ''}`}>
           <div className="flex items-center gap-2">
-            <span>Lịch sử</span>
+            <span>{t.dashboard.home.history}</span>
             <div className="h-3 w-px bg-gray-300 dark:bg-gray-700"></div>
           </div>
           <button className="hover:text-black dark:hover:text-gray-300 flex items-center gap-1 transition-colors">Wool-felt winter village <Icons.ArrowRight size={10} className="-rotate-45" /></button>
@@ -693,7 +803,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
 
         {/* Popular Features Section */}
         <div className="mb-10">
-          <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 mb-4 tracking-tight">Tính năng phổ biến</h2>
+          <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 mb-4 tracking-tight">{t.dashboard.home.popularFeatures}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Feature Card 1 */}
             <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl flex items-center gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
@@ -704,9 +814,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
                 </div>
               </div>
               <div className="min-w-0">
-                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">AI talking photo</h3>
+                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">{t.dashboard.chat.aiTalkingPhoto}</h3>
                 <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
-                  Sử dụng ngay <Icons.ArrowUp size={8} className="rotate-45" />
+                  {t.dashboard.chat.useNow} <Icons.ArrowUp size={8} className="rotate-45" />
                 </div>
               </div>
             </div>
@@ -722,9 +832,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
                 </div>
               </div>
               <div className="min-w-0">
-                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">Avatar video</h3>
+                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">{t.dashboard.chat.avatarVideo}</h3>
                 <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
-                  Sử dụng ngay <Icons.ArrowUp size={8} className="rotate-45" />
+                  {t.dashboard.chat.useNow} <Icons.ArrowUp size={8} className="rotate-45" />
                 </div>
               </div>
             </div>
@@ -735,9 +845,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
                 <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" className="w-full h-full object-cover" alt="Product photo" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">Product photo</h3>
+                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">{t.dashboard.chat.productPhoto}</h3>
                 <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
-                  Sử dụng ngay <Icons.ArrowUp size={8} className="rotate-45" />
+                  {t.dashboard.chat.useNow} <Icons.ArrowUp size={8} className="rotate-45" />
                 </div>
               </div>
             </div>
@@ -749,11 +859,11 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
               </div>
               <div className="min-w-0">
                 <div className="flex justify-between items-start mb-0.5">
-                  <h3 className="text-[13px] font-bold text-gray-900 dark:text-white truncate">Vibe marketing</h3>
+                  <h3 className="text-[13px] font-bold text-gray-900 dark:text-white truncate">{t.dashboard.chat.vibeMarketing}</h3>
                   <span className="text-[8px] bg-purple-100 text-purple-700 px-1 py-0.5 rounded font-bold ml-1">Beta</span>
                 </div>
                 <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
-                  Sử dụng ngay <Icons.ArrowUp size={8} className="rotate-45" />
+                  {t.dashboard.chat.useNow} <Icons.ArrowUp size={8} className="rotate-45" />
                 </div>
               </div>
             </div>
@@ -763,8 +873,8 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
         {/* Recent Chats Section */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 tracking-tight">Sáng tạo gần đây</h2>
-            <button className="text-[13px] text-purple-600 font-semibold hover:underline">Xem tất cả</button>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 tracking-tight">{t.dashboard.home.recentCreations}</h2>
+            <button className="text-[13px] text-purple-600 font-semibold hover:underline">{t.dashboard.home.viewAll}</button>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2">
             {recentProjects.length > 0 ? (
@@ -801,7 +911,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
             ) : (
               <div className="w-full bg-gray-50 dark:bg-gray-800/40 rounded-3xl py-10 flex flex-col items-center justify-center border border-dashed border-gray-200 dark:border-gray-700">
                 <Icons.Inbox className="text-gray-300 dark:text-gray-600 mb-2" size={28} />
-                <p className="text-sm text-gray-400 font-medium">Chưa có lịch sử hoạt động</p>
+                <p className="text-sm text-gray-400 font-medium">{t.dashboard.home.noHistory}</p>
               </div>
             )}
           </div>
@@ -811,14 +921,14 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, initialPr
         <div>
           <div className="flex gap-8 border-b border-gray-200 dark:border-gray-800 mb-6">
             <button className="pb-3 text-sm font-bold text-black dark:text-white border-b-2 border-black dark:border-white">
-              Thịnh hành trên TikTok
+              {t.dashboard.home.trendingTikTok}
             </button>
             <button className="pb-3 text-sm font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
-              Cảm hứng hình ảnh
+              {t.dashboard.home.visualInspiration}
             </button>
             <div className="ml-auto">
               <button className="text-xs text-purple-600 font-medium hover:underline flex items-center gap-1">
-                Xem thêm <Icons.ChevronRight size={12} />
+                {t.dashboard.home.viewAll} <Icons.ChevronRight size={12} />
               </button>
             </div>
           </div>

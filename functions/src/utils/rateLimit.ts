@@ -8,9 +8,11 @@ function getDb() {
 
 const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 30;
+const DAILY_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours (rolling)
+const MAX_REQUESTS_PER_DAY = 100;
 
 /**
- * Check rate limit for user
+ * Check rate limit for user (per minute + per day)
  * Throws error if rate limit exceeded
  */
 export async function checkRateLimit(userId: string): Promise<void> {
@@ -20,10 +22,11 @@ export async function checkRateLimit(userId: string): Promise<void> {
   const now = Date.now();
 
   if (!rateLimitDoc.exists) {
-    // First request - initialize
     await rateLimitRef.set({
       count: 1,
-      lastRequest: now
+      lastRequest: now,
+      dailyCount: 1,
+      dailyWindowStart: now
     });
     return;
   }
@@ -31,17 +34,35 @@ export async function checkRateLimit(userId: string): Promise<void> {
   const data = rateLimitDoc.data()!;
   const lastRequest = data.lastRequest || 0;
   const count = data.count || 0;
+  let dailyCount = data.dailyCount ?? 0;
+  let dailyWindowStart = data.dailyWindowStart ?? now;
 
-  // Reset counter if window has passed
+  // Reset daily counter if 24h has passed (rolling window)
+  if (now - dailyWindowStart >= DAILY_WINDOW_MS) {
+    dailyCount = 0;
+    dailyWindowStart = now;
+  }
+
+  // Daily cap (protect against runaway cost)
+  if (dailyCount >= MAX_REQUESTS_PER_DAY) {
+    throw new functions.https.HttpsError(
+      'resource-exhausted',
+      `Daily limit reached. Maximum ${MAX_REQUESTS_PER_DAY} requests per day. Try again tomorrow.`
+    );
+  }
+
+  // Reset per-minute counter if window has passed
   if (now - lastRequest > RATE_LIMIT_WINDOW_MS) {
     await rateLimitRef.set({
       count: 1,
-      lastRequest: now
+      lastRequest: now,
+      dailyCount: dailyCount + 1,
+      dailyWindowStart
     });
     return;
   }
 
-  // Check if limit exceeded
+  // Per-minute limit
   if (count >= MAX_REQUESTS_PER_WINDOW) {
     throw new functions.https.HttpsError(
       'resource-exhausted',
@@ -49,10 +70,11 @@ export async function checkRateLimit(userId: string): Promise<void> {
     );
   }
 
-  // Increment counter
   await rateLimitRef.update({
     count: count + 1,
-    lastRequest: now
+    lastRequest: now,
+    dailyCount: dailyCount + 1,
+    dailyWindowStart
   });
 }
 

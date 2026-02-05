@@ -26,6 +26,7 @@ import Analytics from '../components/Dashboard/Analytics';
 import Publisher from '../components/Dashboard/Publisher';
 import SmartCreation from '../components/Dashboard/SmartCreation';
 import Assets from '../components/Dashboard/Assets';
+import UserProfile from '../components/Dashboard/UserProfile';
 
 function Home() {
   const { user, logout } = useAuth();
@@ -73,13 +74,23 @@ function Home() {
 
   // Get location for navigation state
   const location = useLocation();
-  const [initialPrompt, setInitialPrompt] = useState(location.state?.initialPrompt);
+  // Initialize as null - useEffect will handle location.state and clear it after consumption
+  const [initialPrompt, setInitialPrompt] = useState(null);
+  // Prefill prompt - fills input WITHOUT auto-send (for "Use this style" feature)
+  const [prefillPrompt, setPrefillPrompt] = useState(null);
   /** Open existing chat (full history) when coming from Assets */
   const [initialProject, setInitialProject] = useState(null);
 
   useEffect(() => {
     if (location.state?.initialPrompt) {
       setInitialPrompt(location.state.initialPrompt);
+      window.history.replaceState({}, document.title);
+    }
+    // Handle prefillPrompt - switches to dashboard and prefills input
+    if (location.state?.prefillPrompt) {
+      setPrefillPrompt(location.state.prefillPrompt);
+      setDashboardTab('dashboard'); // Switch to dashboard tab
+      window.history.replaceState({}, document.title);
     }
   }, [location.state]);
 
@@ -186,6 +197,15 @@ function Home() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const toolId = urlParams.get('tool');
+    const profileId = urlParams.get('profile');
+
+    if (profileId) {
+      // Navigate to profile view
+      setDashboardTab('profile');
+      setView({ type: 'home', profileUserId: profileId });
+      window.history.replaceState({}, '', '/dashboard');
+      return;
+    }
 
     if (toolId) {
       const tool = TOOLS.find(t => t.id === toolId);
@@ -378,6 +398,7 @@ function Home() {
               <DashboardHome
                 onCollapseSidebar={setIsSidebarCollapsed}
                 initialPrompt={initialPrompt}
+                prefillPrompt={prefillPrompt}
                 initialProject={initialProject}
                 onChatToggle={(active) => {
                   setIsChatActive(active);
@@ -388,6 +409,7 @@ function Home() {
                   if (active && initialPrompt && !initialProject) setTimeout(() => setInitialPrompt(null), 100);
                   if (active && initialProject) setTimeout(() => setInitialProject(null), 150);
                 }}
+                onPrefillConsumed={() => setPrefillPrompt(null)}
               />
             )}
 
@@ -414,6 +436,8 @@ function Home() {
                 }}
               />
             )}
+
+            {dashboardTab === 'profile' && <UserProfile userId={view.profileUserId} />}
 
             {dashboardTab === 'settings' && <ProfileSettings />}
             {dashboardTab === 'billing' && (

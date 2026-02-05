@@ -9,6 +9,37 @@ import { chat } from './chat';
 import { initializeUserIfNeeded } from './initializeUser';
 import { getTikTokAuthUrl, handleTikTokCallback } from './tiktokAuth';
 import { logUserLogin } from './logUserLogin';
+import { requestVideoGeneration, getVideoQueueStatus, processVideoQueue } from './generateVideo';
+import {
+  createPost,
+  getPosts,
+  getPost,
+  likePost,
+  savePost,
+  deletePost,
+  incrementPostUsage,
+  getTopCreators,
+} from './posts';
+import {
+  addComment,
+  getComments,
+  likeComment,
+  deleteComment,
+} from './comments';
+import {
+  getUserProfile,
+  updateUserProfile,
+  getUserPosts,
+  followUser,
+  getFollowers,
+  getFollowing,
+} from './profiles';
+import {
+  createNotification,
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from './notifications';
 
 const resolveStorageBucket = (): string | undefined => {
   const explicitBucket = process.env.FIREBASE_STORAGE_BUCKET;
@@ -54,6 +85,36 @@ export {
   initializeUserIfNeeded,
   getTikTokAuthUrl,
   handleTikTokCallback,
-  logUserLogin
+  logUserLogin,
+  // Video Generation
+  requestVideoGeneration,
+  getVideoQueueStatus,
+  processVideoQueue,
+  // Community Posts
+  createPost,
+  getPosts,
+  getPost,
+  likePost,
+  savePost,
+  deletePost,
+  incrementPostUsage,
+  getTopCreators,
+  // Comments
+  addComment,
+  getComments,
+  likeComment,
+  deleteComment,
+  // Profiles
+  getUserProfile,
+  updateUserProfile,
+  getUserPosts,
+  followUser,
+  getFollowers,
+  getFollowing,
+  // Notifications
+  createNotification,
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
 };
 

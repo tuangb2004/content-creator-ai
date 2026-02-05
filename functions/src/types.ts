@@ -6,9 +6,11 @@ export interface UserData {
   updatedAt: FirebaseFirestore.Timestamp;
 }
 
-export type ContentType = 'text' | 'image';
+export type ContentType = 'text' | 'image' | 'video';
 export type TextProvider = 'groq' | 'gemini';
 export type ImageProvider = 'pollination' | 'gemini' | 'stability';
+export type VideoProvider = 'gemini'; // Veo 3.1 via Gemini API
+export type VideoModel = 'veo-3.1-fast' | 'veo-3.1-standard';
 
 export interface GenerateContentRequest {
   prompt: string;
@@ -57,6 +59,42 @@ export interface WebhookEvent {
   eventId: string;
   processedAt: FirebaseFirestore.Timestamp;
   status: 'processing' | 'success' | 'failed';
+  error?: string;
+}
+
+// Video Generation Types
+export interface GenerateVideoRequest {
+  prompt: string;
+  model: VideoModel; // 'veo-3.1-fast' or 'veo-3.1-standard'
+  aspectRatio?: '16:9' | '9:16' | '1:1'; // Default 16:9
+  duration?: 5 | 8; // seconds, default 8
+  imageUrl?: string; // Optional: image-to-video
+}
+
+export interface GenerateVideoResponse {
+  videoUrl: string; // Firebase Storage URL
+  thumbnailUrl?: string;
+  duration: number;
+  model: VideoModel;
+  creditsUsed: number;
+  creditsRemaining: number;
+  queuePosition?: number; // If queued
+}
+
+export interface VideoQueueItem {
+  id: string;
+  userId: string;
+  userPlan: string;
+  request: GenerateVideoRequest;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  priority: number; // Higher = more priority (agency > pro)
+  createdAt: FirebaseFirestore.Timestamp;
+  processedAt?: FirebaseFirestore.Timestamp;
+  completedAt?: FirebaseFirestore.Timestamp;
+  result?: {
+    videoUrl: string;
+    thumbnailUrl?: string;
+  };
   error?: string;
 }
 

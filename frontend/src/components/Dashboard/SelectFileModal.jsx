@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { db } from '../../config/firebase';
 import { Icons } from '../Icons';
 import { getUploads } from '../../services/firebaseFunctions';
 
 const SelectFileModal = ({ isOpen, onClose, onSelectFile }) => {
+    const { t } = useLanguage();
     const { user } = useAuth();
     const [uploads, setUploads] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +50,7 @@ const SelectFileModal = ({ isOpen, onClose, onSelectFile }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
             <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl w-full max-w-4xl mx-4 max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Chọn file từ Tài nguyên</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t.dashboard.selectFile.title}</h2>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
                         <Icons.X size={20} className="text-gray-500 dark:text-gray-400" />
                     </button>
@@ -93,8 +95,8 @@ const SelectFileModal = ({ isOpen, onClose, onSelectFile }) => {
                     ) : (
                         <div className="flex flex-col items-center justify-center h-64 text-center">
                             <Icons.Folder size={48} className="text-gray-300 dark:text-gray-600 mb-4" />
-                            <p className="text-gray-500 dark:text-gray-400">Chưa có file nào được tải lên</p>
-                            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Vui lòng tải lên file trong Assets trước</p>
+                            <p className="text-gray-500 dark:text-gray-400">{t.dashboard.selectFile.noFiles}</p>
+                            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{t.dashboard.selectFile.uploadFirst}</p>
                         </div>
                     )}
                 </div>

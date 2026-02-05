@@ -1,22 +1,24 @@
 import { Icons } from '../Icons';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const ImageStudio = () => {
+    const { t } = useLanguage();
     return (
         <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0f172a] p-6 transition-colors duration-200 relative">
             <div className="max-w-6xl mx-auto w-full">
                 <header className="flex items-center justify-between mb-8">
-                    <h1 className="text-3xl font-bold text-black dark:text-white tracking-tight">Image studio</h1>
+                    <h1 className="text-3xl font-bold text-black dark:text-white tracking-tight">{t.dashboard.imageStudio.title}</h1>
                 </header>
 
                 {/* Feature Cards Section */}
                 <section className="mb-8">
-                    <h2 className="text-lg font-bold text-black dark:text-white mb-4">Nâng tầm hình ảnh marketing</h2>
+                    <h2 className="text-lg font-bold text-black dark:text-white mb-4">{t.dashboard.imageStudio.marketingHeading}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
                         {/* Card 1 */}
                         <div className="group relative bg-gray-50 dark:bg-[#1e293b] rounded-2xl p-4 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
                             <div className="flex justify-between items-start mb-2 z-10 relative">
-                                <span className="font-semibold text-black dark:text-white"> Thiết kế AI</span>
+                                <span className="font-semibold text-black dark:text-white">{t.dashboard.imageStudio.aiDesign}</span>
                             </div>
                             <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300 mb-3">Nano Banana Pro</span>
                             <div className="mt-2 rounded-xl overflow-hidden aspect-[4/3] relative bg-white dark:bg-slate-700">
@@ -27,9 +29,9 @@ const ImageStudio = () => {
                         {/* Card 2 */}
                         <div className="group relative bg-gray-50 dark:bg-[#1e293b] rounded-2xl p-4 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
                             <div className="flex justify-between items-start mb-2 z-10 relative">
-                                <span className="font-semibold text-black dark:text-white"> Nền AI</span>
+                                <span className="font-semibold text-black dark:text-white">{t.dashboard.imageStudio.aiBackground}</span>
                             </div>
-                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-300 mb-3">New update</span>
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-300 mb-3">{t.dashboard.imageStudio.newUpdate || 'New update'}</span>
                             <div className="mt-2 rounded-xl overflow-hidden aspect-[4/3] relative bg-white dark:bg-slate-700">
                                 <img alt="Perfume bottle on podium" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMRKaQzh4uA6gEdSIU2MrkbTi1r0LvHpL3zh-hQ4NPfJm_7NyOjZigr1KugERHBBLMnZVvsFinOZYJNHYOoIX6DBwVSIBk5ZCpzOGLp0HienUkqLdclsEwnNbraVtMvXwbxEv5gUmCgIyZLFOsSLc9N_XWSb3LLgU_BKinfjEfDLk8ngUrcUWVZVnzEJ6csToRZZI-qFKS0qB9AJDXjZXTWNhc8RW7XMP8Xqmg3UtddIlRgCxXKz5aAuA8F2KQifjSh_usRYIC4HI" />
                             </div>
@@ -38,7 +40,7 @@ const ImageStudio = () => {
                         {/* Card 3 */}
                         <div className="group relative bg-gray-50 dark:bg-[#1e293b] rounded-2xl p-4 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
                             <div className="flex justify-between items-start mb-8 z-10 relative">
-                                <span className="font-semibold text-black dark:text-white"> Xóa nền</span>
+                                <span className="font-semibold text-black dark:text-white">{t.dashboard.imageStudio.removeBackground}</span>
                             </div>
                             <div className="mt-2 rounded-xl overflow-hidden aspect-[4/3] relative bg-transparent flex items-end justify-center">
                                 <img alt="Woman portrait transparent background style" className="w-24 h-24 object-cover rounded-full border-4 border-white dark:border-slate-600 shadow-md z-10 absolute bottom-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjTnsq6S54I830pqdh82tw3b7k-BYC2K6IBkjq92lbG8CfxO39IwglLyGRA8b9GlcI-wJsxhvLcrclT1GrBstfIrfHz3CVSvi7R6VNi8Eo7QF4dPlen__Yo_JM80BXUzU_-0gcnl2nxcOFRpSR1EuckhvQLChj9sWvgwk0HJYuRCH1uvRSJeUFvXcF7MlVudNTo1x_2NDxzFzFvkiGrHtVzfs2PAT1ZEKj6ZIX6PQV0SS29NuVJXwrzZgSabJT0x0DxxlaqgDyjIc" />
@@ -49,11 +51,11 @@ const ImageStudio = () => {
                         {/* Card 4 */}
                         <div className="group relative bg-gray-50 dark:bg-[#1e293b] rounded-2xl p-4 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
                             <div className="flex justify-between items-start mb-8 z-10 relative">
-                                <span className="font-semibold text-black dark:text-white"> Bố cục cho thiết kế</span>
+                                <span className="font-semibold text-black dark:text-white">{t.dashboard.imageStudio.designLayout}</span>
                             </div>
                             <div className="mt-2 rounded-xl overflow-hidden aspect-[4/3] relative bg-white dark:bg-slate-700 p-2 flex items-center justify-center">
                                 <div className="w-full h-full relative border-2 border-dashed border-gray-300 dark:border-gray-500 rounded-lg flex items-center justify-center bg-gray-50 dark:bg-slate-800">
-                                    <span className="bg-white dark:bg-slate-900 shadow-sm px-3 py-1 rounded text-xs font-bold transform -rotate-6 border border-gray-200 dark:border-slate-600">BIG SALE</span>
+                                    <span className="bg-white dark:bg-slate-900 shadow-sm px-3 py-1 rounded text-xs font-bold transform -rotate-6 border border-gray-200 dark:border-slate-600">{t.dashboard.imageStudio.bigSale || 'BIG SALE'}</span>
                                     <img alt="Furniture" className="absolute bottom-2 right-2 w-16 h-12 object-cover rounded shadow-sm opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlJq7UYqqsjvBMpTD0roPZg1aISprbSzbVyJeL_jlhmUX-NAWvqjTAR7c-RMSQYPgyIdLK78csF2xfjL1JIlvQnjIaabxgDiVfjo3FmyigeR3DJSfppHDkljTxU7v9YRDMxdXwEgNnVifRDJxFiWhYQEXzNtyAgm8Xh1o8hq-I_K58fZsJRTPC0mK5gWT18C9fIElkd5NKS415obzTyJs-Jq_uXQImLdd7VLLFBJF5zDmCUzHQs5E7vliNIipS5ii0wGaefglW0YI" />
                                 </div>
                             </div>
@@ -63,38 +65,38 @@ const ImageStudio = () => {
 
                 {/* Quick Tools Section */}
                 <section className="mb-8">
-                    <h2 className="text-lg font-bold text-black dark:text-white mb-4">Công cụ nhanh</h2>
+                    <h2 className="text-lg font-bold text-black dark:text-white mb-4">{t.dashboard.imageStudio.quickTools}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="flex items-center gap-4 bg-gray-50 dark:bg-[#1e293b] p-4 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-gray-700 group">
                             <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-600">
                                 <img alt="Flower" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsuCb6Q3lOOaHjg6rp5mKhs0dZqCFVAyf5eS1gaClkWbywX26o1ub3_eK7I8yYXtMCIl6IeFcLP-Ira7Yyd_L16ITNKfao0Mjneoeac9fcRXmAPsTNKIMig7UWpdkjScmHArJTZVHJ3M5d-2s3T0Ysm9Do308-rd_2luOc4H64YljuEQJCYwvS0j0FPyfc3jg8P5erFsGRJm0ar5ZddgMFL5_9R9_hDmP8KUBq7-FSJ090GJ8njFIYKHxEPaq3qb6Twww71TEdD1I" />
                             </div>
-                            <span className="font-semibold text-black dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Rosify magic</span>
+                            <span className="font-semibold text-black dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{t.dashboard.imageStudio.rosifyMagic || 'Rosify magic'}</span>
                         </div>
 
                         <div className="flex items-center gap-4 bg-gray-50 dark:bg-[#1e293b] p-4 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-gray-700 group">
                             <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-600">
                                 <img alt="Puppy" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFtptELWdjV38NvYD9gc7W37TDgys-55WB5iAsoWMo3CUa_-g-rSIWNa88ExwBFs3jkpOIpZ56iiUbSJwU5WQF44eGpWujmc9ad9ULBUiXqJe2JauPGyFsW1pINs7kCDF-ayKOZi4rFewrto5bh0BfUODWIAcvtvI4fBomSQnTyrO41i6K_jhGfLFdRxsh-d7cQnhX2iGEipy8r49Tcpbf4YlG7VcNQxerXogi3lnKz5qJuvx_ceJr6zStKRRQQ546Pg4hDRWw1yo" />
                             </div>
-                            <span className="font-semibold text-black dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Tăng chất lượng ảnh</span>
+                            <span className="font-semibold text-black dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{t.dashboard.imageStudio.upscale}</span>
                         </div>
 
                         <div className="flex items-center gap-4 bg-gray-50 dark:bg-[#1e293b] p-4 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-gray-700 group">
                             <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                 <Icons.Brush size={24} />
                             </div>
-                            <span className="font-semibold text-black dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Trình biên tập ảnh</span>
+                            <span className="font-semibold text-black dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{t.dashboard.imageStudio.imageEditor}</span>
                         </div>
                     </div>
                 </section>
 
                 {/* Inspiration Section */}
                 <section className="mb-8">
-                    <h2 className="text-lg font-bold text-black dark:text-white mb-4">Tìm cảm hứng</h2>
+                    <h2 className="text-lg font-bold text-black dark:text-white mb-4">{t.dashboard.imageStudio.findInspiration}</h2>
                     <div className="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
-                        <button className="px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 font-semibold text-sm whitespace-nowrap">All images</button>
-                        <button className="px-4 py-1.5 rounded-full bg-gray-100 dark:bg-[#1e293b] hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 font-medium text-sm whitespace-nowrap transition-colors">Product poster</button>
-                        <button className="px-4 py-1.5 rounded-full bg-gray-100 dark:bg-[#1e293b] hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 font-medium text-sm whitespace-nowrap transition-colors">Text poster</button>
+                        <button className="px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 font-semibold text-sm whitespace-nowrap">{t.dashboard.imageStudio.allImages}</button>
+                        <button className="px-4 py-1.5 rounded-full bg-gray-100 dark:bg-[#1e293b] hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 font-medium text-sm whitespace-nowrap transition-colors">{t.dashboard.imageStudio.productPoster}</button>
+                        <button className="px-4 py-1.5 rounded-full bg-gray-100 dark:bg-[#1e293b] hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 font-medium text-sm whitespace-nowrap transition-colors">{t.dashboard.imageStudio.textPoster}</button>
                     </div>
 
                     <div className="columns-1 md:columns-2 lg:columns-4 gap-4 space-y-4">
@@ -104,11 +106,11 @@ const ImageStudio = () => {
                         </div>
 
                         <div className="break-inside-avoid rounded-xl overflow-hidden bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-slate-700 p-6 flex flex-col justify-center items-center text-center group relative cursor-zoom-in">
-                            <h3 className="text-lg font-serif font-bold text-gray-900 dark:text-white mb-2 leading-tight">"Nested Learning: A New Framework for Deep Learning"</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">An Overview of Key Concepts and Applications</p>
+                            <h3 className="text-lg font-serif font-bold text-gray-900 dark:text-white mb-2 leading-tight">{t.dashboard.imageStudio.inspiration1Title || '"Nested Learning: A New Framework for Deep Learning"'}</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">{t.dashboard.imageStudio.inspiration1Desc || 'An Overview of Key Concepts and Applications'}</p>
                             <div className="flex items-center gap-1 text-[10px] text-gray-400">
                                 <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                <span>Google Research</span>
+                                <span>{t.dashboard.imageStudio.googleResearch || 'Google Research'}</span>
                             </div>
                         </div>
 

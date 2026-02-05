@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Icons } from '../Icons';
 import { uploadFile } from '../../services/firebaseFunctions';
 import toast from '../../utils/toast';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ACCEPTED_TYPES = {
@@ -11,6 +12,7 @@ const ACCEPTED_TYPES = {
 };
 
 const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
+    const { t } = useLanguage();
     const [isDragging, setIsDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -49,7 +51,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
     const handleFiles = async (files) => {
         const validFiles = files.filter(file => {
             if (file.size > MAX_FILE_SIZE) {
-                toast.error(`File ${file.name} vượt quá 20MB`);
+                toast.error(t.dashboard.uploadModal.fileTooLarge.replace('{name}', file.name));
                 return false;
             }
             return true;
@@ -90,13 +92,13 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
                     reader.readAsDataURL(file);
                 });
             }
-            toast.success(`Đã tải lên ${selectedFiles.length} file thành công`);
+            toast.success(t.dashboard.uploadModal.uploadSuccess.replace('{count}', selectedFiles.length));
             setSelectedFiles([]);
             if (onUploadSuccess) onUploadSuccess();
             onClose();
         } catch (error) {
             console.error('Upload error:', error);
-            toast.error('Lỗi khi tải lên file');
+            toast.error(t.dashboard.uploadModal.uploadFailed);
         } finally {
             setUploading(false);
         }
@@ -108,7 +110,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
             <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Tải lên file</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t.dashboard.uploadModal.title}</h2>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
                         <Icons.X size={20} className="text-gray-500 dark:text-gray-400" />
                     </button>
@@ -120,27 +122,26 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
-                        className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${
-                            isDragging
+                        className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${isDragging
                                 ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                                 : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                        }`}
+                            }`}
                     >
                         <Icons.Cloud size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
                         <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            Kéo thả file vào đây hoặc
+                            {t.dashboard.uploadModal.dragDrop}
                         </p>
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             className="text-purple-600 dark:text-purple-400 hover:underline font-medium"
                         >
-                            Chọn file từ máy tính
+                            {t.dashboard.uploadModal.chooseFromComputer}
                         </button>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                            Hỗ trợ: Ảnh (JPG, PNG, GIF, WebP), PDF, Text (TXT, MD, CSV)
+                            {t.dashboard.uploadModal.support}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            Tối đa 20MB mỗi file
+                            {t.dashboard.uploadModal.maxSize}
                         </p>
                         <input
                             ref={fileInputRef}
@@ -154,7 +155,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
 
                     {selectedFiles.length > 0 && (
                         <div className="mt-6 space-y-2">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Files đã chọn:</h3>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{t.dashboard.uploadModal.selectedFiles}</h3>
                             {selectedFiles.map((file, index) => (
                                 <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                                     <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center shrink-0">
@@ -190,7 +191,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
                         className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                         disabled={uploading}
                     >
-                        Hủy
+                        {t.dashboard.uploadModal.cancel}
                     </button>
                     <button
                         onClick={handleUpload}
@@ -200,12 +201,12 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
                         {uploading ? (
                             <>
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                Đang tải lên...
+                                {t.dashboard.uploadModal.uploading}
                             </>
                         ) : (
                             <>
                                 <Icons.Cloud size={16} />
-                                Tải lên {selectedFiles.length > 0 && `(${selectedFiles.length})`}
+                                {t.dashboard.uploadModal.upload} {selectedFiles.length > 0 && `(${selectedFiles.length})`}
                             </>
                         )}
                     </button>

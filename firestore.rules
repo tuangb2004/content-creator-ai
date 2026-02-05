@@ -3,43 +3,109 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Users collection
     match /users/{userId} {
-      // Users can only read/write their own data
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null; // Allow getting basic user info
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Activity logs - users can only read their own logs
+
+    // User Profiles (Public)
+    match /userProfiles/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Posts (Public read if isPublic, owner write)
+    match /posts/{postId} {
+      allow read: if resource.data.isPublic == true || (request.auth != null && resource.data.authorId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+    }
+
+    // Post Likes
+    match /postLikes/{likeId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Post Saves
+    match /postSaves/{saveId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid; // Only user sees their saves
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Comments
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Follows
+    match /follows/{followId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.followerId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.followerId == request.auth.uid;
+    }
+
+    // Post Views (for spam prevention - backend managed)
+    match /postViews/{viewId} {
+      allow read, write: if false; // Only backend can access
+    }
+
+    // Comment Likes
+    match /commentLikes/{likeId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null; // Allow creating notifications for others
+    }
+
+    // Activity logs
     match /activity_logs/{logId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null; // Cloud Functions can create
-      allow update, delete: if false; // Only Cloud Functions can update/delete
+      allow create: if request.auth != null;
+      allow update, delete: if false;
     }
     
-    // Rate limits - users cannot access
+    // Rate limits
     match /rate_limits/{userId} {
-      allow read, write: if false; // Only Cloud Functions can access
+      allow read, write: if false;
     }
     
-    // Webhook events - users cannot access
+    // Webhook events
     match /webhook_events/{eventId} {
-      allow read, write: if false; // Only Cloud Functions can access
+      allow read, write: if false;
     }
     
-    // Payment links - users can read their own payment history
+    // Payment links
     match /payment_links/{linkId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create, update, delete: if false; // Only Cloud Functions can write
+      allow create, update, delete: if false;
     }
     
-    // Projects (if you have this collection)
+    // Templates (Inspiration)
+    match /templates/{templateId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Projects
     match /projects/{projectId} {
       allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-    // Uploads - user can only read their own upload metadata (list in Assets / SelectFileModal)
+    // Uploads
     match /uploads/{uploadId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create, update, delete: if false; // Only Cloud Functions (admin) write
+      allow create, update, delete: if false;
     }
   }
 }
