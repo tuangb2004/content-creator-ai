@@ -11,15 +11,17 @@ function getDb() {
 // TYPES
 // ============================================================================
 
-export type NotificationType = 'like' | 'comment' | 'follow' | 'mention' | 'system';
+export type NotificationType = 'like' | 'comment' | 'follow' | 'mention' | 'system' | 'ai_complete' | 'save';
 
 export interface Notification {
     id?: string;
     userId: string; // Recipient
     type: NotificationType;
-    actorId: string; // Who triggered the notification
+    actorId: string; // Who triggered the notification (last actor)
     actorName: string;
     actorAvatar?: string;
+    actorIds?: string[]; // List of actors for aggregation
+    count: number; // Number of events aggregated
     postId?: string;
     postTitle?: string;
     postThumbnail?: string;
@@ -28,6 +30,7 @@ export interface Notification {
     message?: string;
     isRead: boolean;
     createdAt: FirebaseFirestore.Timestamp;
+    updatedAt?: FirebaseFirestore.Timestamp;
 }
 
 // ============================================================================
@@ -92,7 +95,10 @@ export const createNotification = functions.https.onCall(
                 commentPreview,
                 message: data.message,
                 isRead: false,
+                count: 1,
+                actorIds: [data.actorId],
                 createdAt: FieldValue.serverTimestamp() as any,
+                updatedAt: FieldValue.serverTimestamp() as any,
             };
 
             const docRef = await db.collection('notifications').add(notification);
@@ -181,9 +187,19 @@ export const markNotificationAsRead = functions.https.onCall(
                 throw new functions.https.HttpsError('permission-denied', 'Not your notification');
             }
 
+            const notifData = notifDoc.data();
+            const notificationCount = notifData?.count || 1;
+
             await notifRef.update({ isRead: true });
 
+            // Decrement unread counter in Profile by the actual aggregated count
+            await db.collection('userProfiles').doc(userId).set({
+                unreadNotificationCount: FieldValue.increment(-notificationCount),
+                updatedAt: FieldValue.serverTimestamp()
+            }, { merge: true });
+
             return { success: true };
+
         } catch (error: any) {
             if (error instanceof functions.https.HttpsError) throw error;
             console.error('Error marking notification as read:', error);
@@ -215,7 +231,15 @@ export const markAllNotificationsAsRead = functions.https.onCall(
             snapshot.docs.forEach(doc => {
                 batch.update(doc.ref, { isRead: true });
             });
+
+            // Production Optimization: Reset unread count for user profile
+            batch.set(db.collection('userProfiles').doc(userId), {
+                unreadNotificationCount: 0,
+                updatedAt: FieldValue.serverTimestamp()
+            }, { merge: true });
+
             await batch.commit();
+
 
             return { success: true, count: snapshot.size };
         } catch (error: any) {

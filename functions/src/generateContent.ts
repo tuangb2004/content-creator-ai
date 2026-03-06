@@ -10,6 +10,8 @@ import { callPollinationAPI } from './utils/pollination';
 import { callStabilityAPI } from './utils/stability';
 import { logActivity } from './utils/logging';
 import { sendNotificationIfEnabled } from './emailService';
+import { sendNotification } from './utils/notificationHelper';
+import { addToVideoQueue } from './utils/videoQueue';
 import { GenerateContentRequest, GenerateContentResponse, TextProvider, ImageProvider } from './types';
 
 // Lazy load firestore to avoid calling before initializeApp()
@@ -48,8 +50,13 @@ export const generateContent = functions
         toolCategory,
         modelId,
         useGoogleSearchGrounding,
-        fileUrls = [] // File URLs to analyze
+        fileUrls = [], // File URLs to analyze
+        ratio, // Aspect ratio for image generation (e.g. '1:1', '16:9')
+        count = 1 // Number of images to generate (1-4)
       } = data;
+
+      // Clamp count to 1-4
+      const imageCount = Math.max(1, Math.min(4, count || 1));
 
       // 3. Rate limiting
       await checkRateLimit(userId);
@@ -113,8 +120,8 @@ export const generateContent = functions
         if (provider && (provider === 'pollination' || provider === 'gemini' || provider === 'stability')) {
           finalProvider = provider;
         } else if (userPlan === 'free') {
-          // Free plan: default to Stability (Pollination is down)
-          finalProvider = 'stability';
+          // Free plan: default to Pollination (free, no API key needed)
+          finalProvider = 'pollination';
         } else {
           // Paid plan: default to Stability (better quality)
           finalProvider = 'stability';
@@ -150,13 +157,15 @@ export const generateContent = functions
           creditsToCharge = Math.ceil(baseCredits * heavyMultiplier);
         }
       } else {
+        let perImageCredits = 0;
         if (finalProvider === 'gemini') {
-          creditsToCharge = 8;
+          perImageCredits = 8;
         } else if (finalProvider === 'stability') {
-          creditsToCharge = 4;
-        } else {
-          creditsToCharge = 0;
+          perImageCredits = 4;
+        } else if (finalProvider === 'pollination') {
+          perImageCredits = 0; // Free provider
         }
+        creditsToCharge = perImageCredits * imageCount;
       }
 
       // 8. Decrement credits using Transaction (atomic) - Skip for free providers
@@ -176,6 +185,17 @@ export const generateContent = functions
           throw new functions.https.HttpsError('internal', 'Failed to process credits');
         }
       }
+
+      // Helper: Map ratio string to pixel dimensions for Stability API
+      const ratioToDimensions = (r: string | undefined): { width: number; height: number } => {
+        switch (r) {
+          case '16:9': return { width: 1344, height: 768 };
+          case '9:16': return { width: 768, height: 1344 };
+          case '4:3': return { width: 1152, height: 896 };
+          case '3:4': return { width: 896, height: 1152 };
+          case '1:1': default: return { width: 1024, height: 1024 };
+        }
+      };
 
       // 9. Call appropriate API based on provider and content type
       let content: string;
@@ -198,29 +218,80 @@ export const generateContent = functions
           } else {
             throw new Error(`Invalid text provider: ${finalProvider}`);
           }
-        } else {
-          // Image generation
-          if (finalProvider === 'stability') {
-            content = await callStabilityAPI(prompt, { retries: 3 });
-          } else if (finalProvider === 'pollination') {
-            content = await callPollinationAPI(prompt, { retries: 3 });
-          } else if (finalProvider === 'gemini') {
-            // Map internal model IDs to Gemini Imagen models
-            let geminiModel = 'imagen-3.0-generate-001';
-            if (modelId === 'nano-pro') geminiModel = 'gemini-3-pro-image-preview';
-            if (modelId === 'nano') geminiModel = 'gemini-2.5-flash-image';
+        } else if (contentType === 'image') {
+          // Image generation — generate imageCount images
+          const generateOneImage = async (seed?: number): Promise<string> => {
+            if (finalProvider === 'stability') {
+              const dims = ratioToDimensions(ratio);
+              return await callStabilityAPI(prompt, { retries: 3, width: dims.width, height: dims.height });
+            } else if (finalProvider === 'pollination') {
+              const dims = ratioToDimensions(ratio);
+              return await callPollinationAPI(prompt, { retries: 2, width: dims.width, height: dims.height, seed });
+            } else if (finalProvider === 'gemini') {
+              // Map internal model IDs to Gemini Imagen models
+              let geminiModel = 'imagen-3.0-generate-001';
+              if (modelId === 'nano-pro') geminiModel = 'gemini-3-pro-image-preview';
+              if (modelId === 'nano') geminiModel = 'gemini-2.5-flash-image';
 
-            console.log(`Using Gemini Image model: ${geminiModel} for toolId: ${modelId}, fileUrls: ${fileUrls?.length ?? 0}`);
+              // For Gemini native models, append aspect ratio instruction to prompt
+              let adjustedPrompt = prompt;
+              if (ratio && ratio !== '1:1') {
+                adjustedPrompt = `${prompt}\n\n[Aspect ratio: ${ratio}]`;
+              }
 
-            content = await callGeminiImageAPI(prompt, {
-              retries: 3,
-              systemInstruction,
-              model: geminiModel,
-              fileUrls: fileUrls || []
-            });
+              console.log(`Using Gemini Image model: ${geminiModel} for toolId: ${modelId}, ratio: ${ratio || 'default'}, fileUrls: ${fileUrls?.length ?? 0}`);
+
+              return await callGeminiImageAPI(adjustedPrompt, {
+                retries: 3,
+                systemInstruction,
+                model: geminiModel,
+                fileUrls: fileUrls || []
+              });
+            } else {
+              throw new Error(`Invalid image provider: ${finalProvider}`);
+            }
+          };
+
+          if (imageCount <= 1) {
+            content = await generateOneImage(Math.floor(Math.random() * 999999));
           } else {
-            throw new Error(`Invalid image provider: ${finalProvider}`);
+            // Generate multiple images in parallel with unique seeds
+            const results = await Promise.all(
+              Array.from({ length: imageCount }, (_, i) => generateOneImage(Math.floor(Math.random() * 999999) + i))
+            );
+            // Return as JSON array of data URLs
+            content = JSON.stringify(results);
           }
+        } else if (contentType === 'video') {
+          // Special case: Video generation from Home tab
+          // Cast ratio to valid aspect ratio type
+          const validRatio = (ratio === '16:9' || ratio === '9:16' || ratio === '1:1') ? ratio : '16:9';
+
+          const { queueId } = await addToVideoQueue(userId, userPlan, {
+            prompt,
+            model: 'veo-3.1-fast',
+            aspectRatio: validRatio as any,
+            duration: 8
+          });
+
+          // Enqueue task
+          try {
+            const queue = (functions.tasks as any).taskQueue('onVideoTaskDispatch');
+            await queue.enqueue({ queueId });
+          } catch (e) {
+            console.error('Failed to enqueue video task from generateContent:', e);
+          }
+
+          return {
+            content: `Video generation started. Queue ID: ${queueId}`,
+            contentType: 'video',
+            provider: 'gemini',
+            creditsUsed: 20, // Veo cost
+            creditsRemaining: creditsBefore - 20,
+            metadata: { queueId }
+          };
+        } else {
+          throw new Error(`Invalid content type: ${contentType}`);
         }
       } catch (error: any) {
         // Refund credits if API call fails (only if we charged credits)
@@ -284,9 +355,20 @@ export const generateContent = functions
           const projectTitle = `Generated ${contentType}`;
           const projectType = 'image';
 
+          // Email notification
           await sendNotificationIfEnabled(userId, 'projectCompleted', {
             projectTitle,
             projectType
+          });
+
+          // In-app notification (ai_complete)
+          const db = getDb();
+          const countMsg = (imageCount > 1) ? `${imageCount} ảnh` : '1 ảnh';
+          await sendNotification(db, {
+            userId,
+            type: 'ai_complete',
+            actorId: 'system',
+            message: `✅ ${countMsg} đã được tạo xong! Kiểm tra Assets của bạn.`,
           });
         }
       } catch (notificationError) {

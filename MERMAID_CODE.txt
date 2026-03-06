@@ -1,0 +1,742 @@
+====================================================
+1. BIỂU ĐỒ USE CASE TỔNG QUÁT
+(Dùng nested subgraph để nhóm UC, vừa trang A4)
+====================================================
+
+====================================================
+1. BIỂU ĐỒ USE CASE TỔNG QUÁT (HỆ THỐNG TOÀN DIỆN)
+====================================================
+
+flowchart LR
+    Guest(("Khách"))
+    User(("Người dùng"))
+
+    subgraph S["Hệ thống Content Creator AI"]
+        direction TB
+        
+        subgraph G1["Xác thực & Cá nhân hóa"]
+            UC01([Đăng ký tài khoản])
+            UC02([Đăng nhập hệ thống])
+            UC03([Quản lý hồ sơ & Follow])
+        end
+        
+        subgraph G2["AI Agent & Tạo nội dung"]
+            UC04([Trợ lý AI (Concierge)])
+            UC05([Tạo nội dung AI])
+            UC06([Quản lý dự án chat])
+        end
+        
+        subgraph G3["Cộng đồng Inspiration"]
+            UC07([Khám phá Feed])
+            UC08([Đăng bài Inspiration])
+            UC09([Tương tác bài đăng])
+        end
+        
+        subgraph G4["Quản lý Tài sản & File"]
+            UC10([Quản lý tài sản số])
+            UC11([Tải tệp lên hệ thống])
+        end
+        
+        subgraph G5["Tài chính & Gói cước"]
+            UC12([Xem gói & Giao dịch])
+            UC13([Thanh toán & Nạp Credit])
+        end
+    end
+
+    %% Mối quan hệ Khách
+    Guest --- UC01
+    Guest --- UC02
+
+    %% Mối quan hệ Người dùng
+    User --- UC03
+    User --- UC04
+    User --- UC05
+    User --- UC06
+    User --- UC07
+    User --- UC08
+    User --- UC09
+    User --- UC10
+    User --- UC11
+    User --- UC12
+    User --- UC13
+
+
+====================================================
+2. UC PHÂN RÃ - XÁC THỰC & HỒ SƠ
+====================================================
+%% Sơ đồ 2: Phân rã nhóm Xác thực & Hồ sơ
+flowchart TD
+    User(("Người dùng"))
+    Guest(("Khách"))
+
+    subgraph Authentication_Profile ["Phân hệ Xác thực & Hồ sơ"]
+        UC01([Đăng ký])
+        UC02([Đăng nhập])
+        UC_Verify([Xác thực Email])
+        UC_OAuth([Xác thực Google/FB])
+        UC_Email_Login([Đăng nhập Email/Pass])
+        
+        UC03([Quản lý hồ sơ & Follow])
+        UC_Edit([Chỉnh sửa Bio])
+        UC_Avt([Cập nhật Avatar])
+        UC_Pass([Đổi mật khẩu])
+        UC_Fol_Op([Thao tác Follow])
+    end
+
+    Guest --> UC01
+    Guest --> UC02
+    UC01 -.-> |include| UC_Verify
+    UC_OAuth -.-> |extend| UC01
+    UC02 -.-> |include| UC_Email_Login
+    UC_OAuth -.-> |extend| UC02
+    UC_Email_Login -.-> |include| UC_Verify
+    
+    User --> UC03
+    UC_Edit -.-> |extend| UC03
+    UC_Avt -.-> |extend| UC03
+    UC_Pass -.-> |extend| UC03
+    UC_Fol_Op -.-> |extend| UC03
+
+
+%% Sơ đồ 3: Phân rã nhóm AI Agent & Tạo nội dung
+flowchart TD
+    User(("Người dùng"))
+
+    subgraph AI_Creation_Module ["Phân hệ AI Agent & Tạo nội dung"]
+        UC04([Trợ lý AI (Concierge)])
+        UC05([Tạo nội dung AI])
+        UC06([Quản lý dự án])
+        
+        %% Chức năng nhỏ của Tạo nội dung
+        UC_Image([Tạo hình ảnh])
+        UC_Text([Tạo văn bản])
+        UC_Video([Tạo video])
+        UC_Credit([Khấu trừ Credit])
+        
+        %% Chức năng nhỏ của Quản lý dự án
+        UC_List([Xem danh sách])
+        UC_View([Xem chi tiết])
+        UC_Edit([Chỉnh sửa dự án])
+        UC_Delete([Xóa dự án])
+    end
+
+    User --> UC04
+    User --> UC05
+    User --> UC06
+    
+    %% Trợ lý AI chỉ trả lời câu hỏi
+    
+    %% Tạo nội dung bắt buộc khấu trừ credit
+    UC_Image -.-> |extend| UC05
+    UC_Text -.-> |extend| UC05
+    UC_Video -.-> |extend| UC05
+    UC05 -.-> |include| UC_Credit
+    
+    %% Quản lý dự án
+    UC_List -.-> |extend| UC06
+    UC_View -.-> |extend| UC06
+    UC_Edit -.-> |extend| UC06
+    UC_Delete -.-> |extend| UC06
+
+    UC05 -.-> |extend| UC04
+    Note right of UC04: Trò chuyện miễn phí (Groq API)
+
+
+====================================================
+4. UC PHÂN RÃ - CỘNG ĐỒNG INSPIRATION
+====================================================
+flowchart TD
+    User(("Người dùng"))
+
+    subgraph Community ["Phân hệ Cộng đồng"]
+        UC07([Khám phá Feed])
+        UC08([Đăng bài Inspiration])
+        UC09([Tương tác bài đăng])
+        
+        UC_React([Like & Save])
+        UC_Cmt([Bình luận])
+        UC_Prompt([Dùng lại Prompt])
+        UC_Filter([Lọc theo Category])
+    end
+
+    User --> UC07
+    User --> UC08
+    User --> UC09
+
+    UC_Filter -.-> |extend| UC07
+    UC09 -.-> |extend| UC07
+    UC_React -.-> |extend| UC09
+    UC_Cmt -.-> |extend| UC09
+    UC_Prompt -.-> |extend| UC09
+
+
+====================================================
+5. UC PHÂN RÃ - QUẢN LÝ TÀI SẢN & FILE
+====================================================
+flowchart TD
+    User(("Người dùng"))
+
+    subgraph Assets_Module ["Phân hệ Tài sản & File"]
+        UC10([Quản lý tài sản số])
+        UC11([Tải tệp lên hệ thống])
+        
+        UC_List_Asset([Xem danh sách tệp])
+        UC_Delete_Asset([Xóa tài sản])
+        UC_Bulk([Thao tác hàng loạt])
+        UC_Upload_Local([Tải lên từ thiết bị])
+        UC_Storage([Lưu vào Storage])
+    end
+
+    User --> UC10
+    User --> UC11
+    
+    UC_List_Asset -.-> |extend| UC10
+    UC_Delete_Asset -.-> |extend| UC10
+    UC_Bulk -.-> |extend| UC10
+    
+    UC_Upload_Local -.-> |extend| UC11
+    UC11 -.-> |include| UC_Storage
+    UC11 -.-> |include| UC10
+
+
+====================================================
+6. UC PHÂN RÃ - TÀI CHÍNH & GÓI CƯỚC
+====================================================
+flowchart TD
+    User(("Người dùng"))
+
+    subgraph Billing_Module ["Phân hệ Tài chính"]
+        UC12([Xem gói & Giao dịch])
+        UC13([Thanh toán & Nạp Credit])
+        
+        UC_History_Bill([Lịch sử giao dịch])
+        UC_PayOS([Xử lý qua PayOS])
+    end
+
+    User --> UC12
+    User --> UC13
+    
+    UC_History_Bill -.-> |extend| UC12
+    UC13 -.-> |include| UC_PayOS
+
+
+====================================================
+8. UC02 - ĐĂNG NHẬP (Tuần tự)
+====================================================
+
+sequenceDiagram
+    actor U as Khách
+    participant FE as Giao diện
+    participant HT as Hệ thống
+    participant DB as Cơ sở dữ liệu
+
+    U->>FE: 1. Chọn phương thức đăng nhập
+    FE->>HT: 2. Gửi thông tin đăng nhập
+    HT->>HT: 3. Xác thực thông tin
+    HT->>DB: 4. Truy vấn dữ liệu người dùng
+    DB-->>HT: 5. Trả về thông tin (credit, gói)
+    HT-->>FE: 6. Trả về kết quả xác thực
+    FE-->>U: 7. Hiển thị Dashboard
+
+
+====================================================
+9. UC02 - ĐĂNG NHẬP (Hoạt động)
+====================================================
+
+flowchart TD
+    A([Bắt đầu]) --> B{Phương thức?}
+    B -->|Email| C[Nhập email và mật khẩu]
+    B -->|Google| D[Đăng nhập qua Google]
+    B -->|Facebook| E[Đăng nhập qua Facebook]
+    C --> F{Thông tin hợp lệ?}
+    D --> F
+    E --> F
+    F -->|Không| G[Hiển thị lỗi] --> B
+    F -->|Có| H{Email đã xác thực?}
+    H -->|Không| I[Hiển thị màn hình yêu cầu xác thực]
+    H -->|Có| J[Vào Dashboard]
+    I --> J --> K([Kết thúc])
+
+
+====================================================
+10. UC03 - XÁC THỰC EMAIL (Tuần tự)
+====================================================
+
+sequenceDiagram
+    actor U as Người dùng
+    participant Mail as Hộp thư
+    participant FE as Giao diện
+    participant HT as Hệ thống
+
+    U->>Mail: 1. Mở email xác thực
+    U->>FE: 2. Nhấn vào link xác thực
+    FE->>HT: 3. Gửi mã xác thực
+    HT-->>HT: 4. Kiểm tra mã xác thực
+    HT-->>FE: 5. Xác nhận email thành công
+    FE-->>U: 6. Chuyển hướng vào Dashboard
+
+
+====================================================
+11. UC03 - XÁC THỰC EMAIL (Hoạt động)
+====================================================
+
+flowchart TD
+    A([Bắt đầu]) --> B[Mở hộp thư email]
+    B --> C[Nhấn link xác thực]
+    C --> D{Link hợp lệ?}
+    D -->|Không| E[Gửi lại email xác thực] --> B
+    D -->|Có| F[Cập nhật trạng thái đã xác thực]
+    F --> G([Kết thúc])
+
+
+====================================================
+12. UC04 - TRỢ LÝ AI (CONCIERGE) (Tuần tự)
+====================================================
+
+sequenceDiagram
+    actor U as Người dùng
+    participant FE as Giao diện Concierge
+    participant HT as Hệ thống 
+    participant AI as AI Model
+
+    U->>FE: 1. Mở Trợ lý AI
+    FE-->>U: 2. Hiển thị UI và Danh sách Quick Actions
+    U->>FE: 3. Lựa chọn Quick Action hoặc nhập văn bản
+    FE->>HT: 4. Gửi yêu cầu kèm ngữ cảnh hiện tại
+    HT->>AI: 5. Chuyển tiếp prompt
+    AI-->>HT: 6. Trả về luồng dữ liệu (Stream) tư vấn
+    HT-->>FE: 7. Đẩy kết quả hội thoại về màn hình
+    FE-->>U: 8. Hiển thị gợi ý & Đề xuất công cụ tiếp theo
+
+
+====================================================
+13. UC04 - TRỢ LÝ AI (CONCIERGE) (Hoạt động)
+====================================================
+
+flowchart TD
+    A([Bắt đầu]) --> B[Mở UI Chatbot / Concierge]
+    B --> C[Hệ thống gợi ý Quick Actions]
+    C --> D[Người dùng chọn Action hoặc gõ Yêu cầu]
+    D --> E[Đóng gói Ngữ cảnh & Gửi lên Server]
+    E --> F[Chuyển tiếp tác vụ tới Dịch vụ AI]
+    F --> G{Trạng thái Phản hồi?}
+    G -->|Lỗi API| H[Thông báo lỗi, yêu cầu chờ] --> End([Kết thúc])
+    G -->|Thành công| I[Trả về Stream gợi ý/kế hoạch]
+    I --> J[Cập nhật UI hội thoại trợ lý]
+    J --> K[Gợi ý chuyển sang màn hình Tạo nội dung] --> End
+
+
+====================================================
+14. UC05 - TẠO NỘI DUNG AI (Tuần tự - Tiêu biểu Tạo Ảnh)
+====================================================
+
+sequenceDiagram
+    actor U as Người dùng
+    participant FE as Giao diện Tạo ảnh
+    participant HT as Hệ thống
+    participant AI as Dịch vụ AI (Stability/Gemini)
+    participant ST as Firebase Storage / Database
+
+    U->>FE: 1. Chọn model & Tỷ lệ ảnh
+    U->>FE: 2. Nhập prompt và nhấn "Tạo ảnh"
+    FE->>HT: 3. Gửi thông số & prompt
+    HT->>HT: 4. Kiểm tra số dư Credit
+    alt Không đủ Credit
+        HT-->>FE: Báo lỗi hết Credit
+    else Đủ Credit
+        HT->>HT: 5. Khấu trừ Credit trước (-4cr)
+        HT->>AI: 6. Gọi API sinh ảnh
+        alt NSFW / Lỗi vi phạm
+            AI-->>HT: 7.1 Từ chối tạo (Lỗi chính sách)
+            HT->>HT: Hoàn lại (Refund) Credit
+            HT-->>FE: Báo lỗi vi phạm nội dung
+        else Thành công
+            AI-->>HT: 7. Trả về URL hình ảnh
+            HT->>ST: 8. Lưu URL vào kho Assets
+            HT-->>FE: 9. Trả về URL kết quả
+            FE-->>U: 10. Hiển thị ảnh trên màn hình
+        end
+    end
+
+
+====================================================
+15. UC05 - TẠO NỘI DUNG AI (Hoạt động)
+====================================================
+
+flowchart TD
+    A([Bắt đầu]) --> B[Chọn Model và Tỷ lệ khung hình]
+    B --> C[Nhập Prompt mô tả]
+    C --> D{Số dư Credit >= Yêu cầu?}
+    D -->|Không| E[Hiển thị thông báo mua thêm] --> End([Kết thúc])
+    D -->|Có| F[Khấu trừ Credit]
+    F --> G[Gọi API Dịch vụ Tạo Ảnh]
+    G --> H{API Trả kết quả?}
+    H -->|Vi phạm NSFW / Lỗi| I[Hoàn lại Credit] --> J[Thông báo lỗi] --> End
+    H -->|Thành công| K[Nhận URL Ảnh]
+    K --> L[Lưu URL vào Database Assets]
+    L --> M[Hiển thị kết quả lên giao diện] --> End
+
+
+====================================================
+17. UC07 - KHÁM PHÁ FEED (Hoạt động)
+====================================================
+
+flowchart TD
+    A([Bắt đầu]) --> B[Truy cập trang Inspiration]
+    B --> C[Hệ thống lấy 10 bài viết Public mới nhất]
+    C --> D[Hiển thị danh sách dạng Grid]
+    D --> E{Người dùng cuộn trang?}
+    E -->|Có| F[Kích hoạt Infinite Scroll]
+    F --> G[Tải thêm 10 bài tiếp theo]
+    G --> D
+    E -->|Bấm vào bài| H[Mở cửa sổ chi tiết (Modal)]
+    H --> I[Xem Prompt, Bình luận & Tác giả]
+    I --> J([Kết thúc])
+
+
+====================================================
+18. UC08 - ĐĂNG BÀI INSPIRATION (Tuần tự)
+====================================================
+
+sequenceDiagram
+    actor U as Người dùng
+    participant FE as Tab Creations
+    participant HT as Hệ thống
+    participant DB as Firestore (Cơ sở dữ liệu)
+
+    U->>FE: 1. Chọn Tác phẩm & Nhấn "Chia sẻ"
+    FE-->>U: 2. Hiển thị Form Đăng bài
+    U->>FE: 3. Nhập Tiêu đề & Chọn Tags
+    U->>FE: 4. Nhấn "Đăng bài"
+    FE->>HT: 5. Gửi payload bài đăng
+    HT->>DB: 6. Tạo bản ghi mới ở collection `BaiViet` 
+    Note right of DB: Trạng thái isPublic = true
+    DB-->>HT: 7. Tạo thành công
+    HT-->>FE: 8. Reset Form & Báo thành công
+    FE-->>U: 9. Đưa tác phẩm lên đầu Feed
+
+
+====================================================
+19. UC09 - TƯƠNG TÁC LIKE (Tuần tự)
+====================================================
+
+sequenceDiagram
+    actor U as Người dùng
+    participant FE as Feed / Giao diện
+    participant HT as Hệ thống 
+    participant DB as Firestore (`ThichBaiViet`)
+
+    U->>FE: 1. Nhấn nút Trái tim (Like)
+    FE->>FE: 2. (Optimistic UI) Đổi icon đỏ, +1 Like
+    FE->>HT: 3. Gửi yêu cầu cập nhật thả tim
+    HT->>DB: 4. Cập nhật lượt like trong CSDL
+    alt Giao dịch Thất bại
+        DB-->>HT: 4.1. Lỗi mạng/Từ chối DB
+        HT-->>FE: 5.1. Báo cáo Tương tác lỗi
+        FE->>FE: 6.1. Rollback UI (Icon xám, -1 Like)
+    else Giao dịch Thành công
+        DB-->>HT: 4.2 Cập nhật thành công
+        HT-->>FE: Giữ nguyên UI hiện tại
+    end
+
+
+====================================================
+32. UC14 - SỬ DỤNG PROMPT (Tuần tự)
+====================================================
+
+sequenceDiagram
+    actor U as Người dùng
+    participant FE as Giao diện
+    participant HT as Hệ thống
+    participant Dash as Trang tạo nội dung
+
+    U->>FE: 1. Nhấn nút Sử dụng prompt
+    FE->>HT: 2. Gửi yêu cầu tăng số lượt sử dụng
+    HT-->>FE: 3. Xác nhận thành công
+    FE->>Dash: 4. Chuyển hướng kèm dữ liệu prompt
+    Dash-->>U: 5. Điền prompt vào ô nhập
+
+
+====================================================
+33. UC14 - SỬ DỤNG PROMPT (Hoạt động)
+====================================================
+
+flowchart TD
+    A([Bắt đầu]) --> B[Nhấn nút Sử dụng prompt]
+    B --> C[Tăng số lượt sử dụng]
+    C --> D[Chuyển sang trang tạo nội dung]
+    D --> E[Điền prompt vào ô nhập]
+    E --> F[Tạo nội dung AI]
+    F --> G([Kết thúc])
+
+
+====================================================
+20. UC10 - QUẢN LÝ TÀI SẢN SỐ (Hoạt động)
+====================================================
+
+flowchart TD
+    A([Bắt đầu]) --> B[Vào menu Assets, tab Creations]
+    B --> C[Hiển thị danh sách Tài sản dạng Grid]
+    C --> D{Người dùng chọn Hành động?}
+    D -->|Download| E[Truy vấn URL Tải xuống]
+    E --> F[Kích hoạt lưu tệp về máy cục bộ]
+    F --> G[Thông báo tải thành công] --> End([Kết thúc])
+    D -->|Xóa| H[Xác nhận Xóa]
+    H --> I[Chạy API xóa trên CSDL và Storage]
+    I --> J[Cập nhật lại danh sách] --> End
+    D -->|Chia sẻ| K[Mở Share Form (UC08)] --> End
+
+
+====================================================
+21. UC11 - TẢI TỆP LÊN HỆ THỐNG (Hoạt động)
+====================================================
+
+flowchart TD
+    A([Bắt đầu]) --> B[Mở công cụ Upload / Kéo thả tệp]
+    B --> C{Loại tệp & Size hợp lệ?}
+    C -->|Không| D[Báo lỗi định dạng/dung lượng] --> End([Kết thúc])
+    C -->|Có| E[Bắt đầu tải lên Firebase Storage]
+    E --> F[Chờ nhận lại Public URL]
+    F --> G[Lưu Metadata tệp vào Firestore]
+    G --> H[Hiển thị tệp trên giao diện] --> End
+
+
+====================================================
+21. UC11 - TẢI TỆP LÊN HỆ THỐNG (Tuần tự)
+====================================================
+
+sequenceDiagram
+    actor U as Người dùng
+    participant FE as Giao diện
+    participant HT as Hệ thống (Backend)
+    participant ST as Firebase (Storage/CSDL)
+
+    U->>FE: 1. Kéo thả hoặc Chọn tệp tin
+    FE->>HT: 2. Gửi tệp yêu cầu Upload
+    HT->>HT: 3. Kiểm tra định dạng & dung lượng
+    alt Không hợp lệ
+        HT-->>FE: 3.1 Trả lỗi nội dung không hợp lệ
+        FE-->>U: Hiển thị Toast thông báo lỗi
+    else Hợp lệ
+        HT->>ST: 4. Đẩy tệp lên Storage & Metadata vào CSDL
+        ST-->>HT: 5. Trả về Public URL
+        HT-->>FE: 6. Thông báo "Tải tệp thành công"
+        FE-->>U: 7. Hiển thị tệp trong danh sách Assets
+    end
+
+
+====================================================
+22. UC12 - XEM GÓI & GIAO DỊCH (Tuần tự)
+====================================================
+
+sequenceDiagram
+    actor U as Người dùng
+    participant FE as Trang Billing
+    participant HT as Hệ thống
+    participant DB as Firestore (Cơ sở dữ liệu)
+
+    U->>FE: 1. Truy cập màn hình Billing
+    FE->>HT: 2. Gọi fetch thông tin Gói và Giao dịch
+    HT->>DB: 3. Lấy thông tin `NguoiDung` (Plan, Credits)
+    DB-->>HT: 4. Trả về thông tin Gói
+    HT->>DB: 5. Lấy lịch sử collection `GiaoDich` 
+    DB-->>HT: 6. Trả về danh sách Order
+    HT-->>FE: 7. Forward dữ liệu về Client
+    FE-->>U: 8. Render thẻ gói cước và bảng Lịch sử
+
+
+====================================================
+23. UC13 - THANH TOÁN & NẠP CREDIT (Tuần tự)
+====================================================
+
+sequenceDiagram
+    actor U as Người dùng
+    participant FE as Giao diện Mua Gói
+    participant HT as Hệ thống (Backend)
+    participant POS as Cổng thanh toán (PayOS)
+    participant DB as Firestore
+
+    U->>FE: 1. Click nút "Mua gói" / "Nạp tiền"
+    FE->>HT: 2. Gửi request tạo Order
+    HT->>POS: 3. Gọi API tạo Checkout URL
+    POS-->>HT: 4. Trả về Checkout Link
+    HT-->>FE: 5. Chuyển hướng trình duyệt
+    FE-->>U: 6. Hiển thị mã QR Thanh Toán
+    U->>U: 7. Dùng App Ngân hàng quét QR
+    
+    POS->>POS: 8. Giao dịch Ngân hàng thành công
+    POS-->>HT: 9. Bắn Webhook server (Server-to-server)
+    HT->>HT: 10. Xác thực mã Signature PayOS
+    HT->>DB: 11. Cập nhật Gói / Cộng điểm Credit
+    DB-->>HT: 12. DB Update thành công
+    HT-->>FE: 13. Tự động redirect về trang kết quả
+    FE-->>U: 14. Báo Nạp Credit thành công
+
+
+====================================================
+24. BIỂU ĐỒ LỚP (CLASS DIAGRAM)
+====================================================
+
+classDiagram
+    class NguoiDung {
+        +String uid
+        +String email
+        +String displayName
+        +String firstName
+        +String lastName
+        +String photoURL
+        +String avatarUrl
+        +String bio
+        +String plan
+        +Number credits
+        +String role
+        +String language
+        +String theme
+        +String provider
+        +Boolean emailVerified
+        +Object notifications
+        +Timestamp createdAt
+        +Timestamp updatedAt
+    }
+    class HoSoNguoiDung {
+        +String docId
+        +String userId
+        +String bio
+        +String website
+        +Object socialLinks
+        +Timestamp updatedAt
+    }
+    class DuAn {
+        +String id
+        +String userId
+        +String title
+        +String type
+        +String lastModel
+        +Array~TinNhan~ messages
+        +String thumbnail
+        +Timestamp createdAt
+        +Timestamp updatedAt
+    }
+    class TinNhan {
+        +String role
+        +String content
+        +String imageUrl
+        +String videoUrl
+        +Timestamp timestamp
+    }
+    class BaiViet {
+        +String id
+        +String authorId
+        +String authorName
+        +String authorAvatar
+        +String type
+        +String title
+        +String content
+        +String prompt
+        +String mediaUrl
+        +String thumbnailUrl
+        +String model
+        +String aspectRatio
+        +String category
+        +Array~String~ tags
+        +Number likes
+        +Number views
+        +Number saves
+        +Number comments
+        +Number usageCount
+        +Boolean isTrending
+        +Boolean isPublic
+        +Timestamp createdAt
+        +Timestamp updatedAt
+    }
+    class BinhLuan {
+        +String id
+        +String postId
+        +String authorId
+        +String authorName
+        +String authorAvatar
+        +String content
+        +Number likes
+        +String parentId
+        +Timestamp createdAt
+    }
+    class TheoDoiNguoiDung {
+        +String id
+        +String followerId
+        +String followingId
+        +Timestamp createdAt
+    }
+    class GiaoDich {
+        +String paymentLinkId
+        +String userId
+        +Number orderCode
+        +Number amount
+        +String planName
+        +Number credits
+        +Number creditAmount
+        +String description
+        +String status
+        +Timestamp createdAt
+        +Timestamp processedAt
+    }
+    class HangDoiVideo {
+        +String id
+        +String userId
+        +String userPlan
+        +Object request
+        +String status
+        +Number priority
+        +Object result
+        +String error
+        +Timestamp createdAt
+        +Timestamp processedAt
+        +Timestamp completedAt
+    }
+    class TepTaiLen {
+        +String id
+        +String userId
+        +String fileName
+        +String fileType
+        +Number fileSize
+        +String fileUrl
+        +String storagePath
+        +Object metadata
+        +Timestamp createdAt
+        +Timestamp updatedAt
+    }
+    class MauTemplate {
+        +String id
+        +String userId
+        +String title
+        +String prompt
+        +String type
+        +String model
+        +Number likes
+        +Number usageCount
+        +Timestamp createdAt
+        +Timestamp updatedAt
+    }
+    class NhatKyHoatDong {
+        +String id
+        +String userId
+        +String action
+        +Number creditsBefore
+        +Number creditsAfter
+        +Boolean success
+        +String error
+        +Object metadata
+        +Timestamp timestamp
+    }
+    NguoiDung "1" --> "1" HoSoNguoiDung : có hồ sơ
+    NguoiDung "1" --> "*" DuAn : tạo
+    NguoiDung "1" --> "*" BaiViet : đăng
+    NguoiDung "1" --> "*" BinhLuan : viết
+    NguoiDung "1" --> "*" TheoDoiNguoiDung : theo dõi
+    NguoiDung "1" --> "*" GiaoDich : thanh toán
+    NguoiDung "1" --> "*" TepTaiLen : tải lên
+    NguoiDung "1" --> "*" HangDoiVideo : yêu cầu video
+    NguoiDung "1" --> "*" MauTemplate : lưu mẫu
+    NguoiDung "1" --> "*" NhatKyHoatDong : ghi log
+    DuAn "1" --> "*" TinNhan : chứa
+    BaiViet "1" --> "*" BinhLuan : chứa
+

@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateAuth } from './utils/validation';
 
+
 function getDb() {
     return admin.firestore();
 }
@@ -50,16 +51,7 @@ export const getUserProfile = functions.https.onCall(
                 .count()
                 .get();
 
-            // Check if current user follows this user
-            let isFollowing = false;
-            if (currentUserId && currentUserId !== data.userId) {
-                const followDoc = await db.collection('follows')
-                    .where('followerId', '==', currentUserId)
-                    .where('followingId', '==', data.userId)
-                    .limit(1)
-                    .get();
-                isFollowing = !followDoc.empty;
-            }
+
 
             // Get total likes received
             const postsForLikes = await db.collection('posts')
@@ -84,7 +76,7 @@ export const getUserProfile = functions.https.onCall(
                     followersCount: followersSnap.data().count,
                     followingCount: followingSnap.data().count,
                     totalLikes,
-                    isFollowing,
+                    unreadNotificationCount: profileData?.unreadNotificationCount || 0,
                     isOwnProfile: currentUserId === data.userId,
                     createdAt: userData.createdAt,
                 },
@@ -134,7 +126,7 @@ export const getUserPosts = functions.https.onCall(
             throw new functions.https.HttpsError('invalid-argument', 'userId is required');
         }
 
-        const currentUserId = context.auth?.uid;
+
         const db = getDb();
         const limit = Math.min(data.limit || 20, 50);
 
@@ -153,24 +145,12 @@ export const getUserPosts = functions.https.onCall(
 
             const snapshot = await query.get();
 
-            // Get user's likes/saves if logged in
-            let userLikes = new Set<string>();
-            let userSaves = new Set<string>();
-            if (currentUserId) {
-                const [likesSnap, savesSnap] = await Promise.all([
-                    db.collection('postLikes').where('userId', '==', currentUserId).get(),
-                    db.collection('postSaves').where('userId', '==', currentUserId).get(),
-                ]);
-                likesSnap.forEach(doc => userLikes.add(doc.data().postId));
-                savesSnap.forEach(doc => userSaves.add(doc.data().postId));
-            }
-
-            const posts = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                isLiked: userLikes.has(doc.id),
-                isSaved: userSaves.has(doc.id),
-            }));
+            const posts = snapshot.docs
+                .filter(doc => doc.data().isDeleted !== true)
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
 
             return {
                 success: true,
@@ -202,27 +182,45 @@ export const followUser = functions.https.onCall(
         }
 
         const db = getDb();
+        const followRef = db.collection('follows').doc(`${currentUserId}_${data.userId}`);
 
         try {
-            const existingFollow = await db.collection('follows')
-                .where('followerId', '==', currentUserId)
-                .where('followingId', '==', data.userId)
-                .limit(1)
-                .get();
+            return await db.runTransaction(async (transaction) => {
+                const followDoc = await transaction.get(followRef);
 
-            if (!existingFollow.empty) {
-                // Unfollow
-                await existingFollow.docs[0].ref.delete();
-                return { success: true, following: false };
-            } else {
-                // Follow
-                await db.collection('follows').add({
-                    followerId: currentUserId,
-                    followingId: data.userId,
-                    createdAt: FieldValue.serverTimestamp(),
-                });
-                return { success: true, following: true };
-            }
+                if (followDoc.exists) {
+                    // Unfollow
+                    transaction.delete(followRef);
+
+                    // Sync followersCount
+                    const profileRef = db.collection('userProfiles').doc(data.userId);
+                    transaction.set(profileRef, {
+                        followersCount: FieldValue.increment(-1),
+                        updatedAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+
+                    return { success: true, following: false, message: 'User unfollowed' };
+                } else {
+                    // Follow
+                    transaction.set(followRef, {
+                        followerId: currentUserId,
+                        followingId: data.userId,
+                        createdAt: FieldValue.serverTimestamp(),
+                    });
+
+                    // Sync followersCount
+                    const profileRef = db.collection('userProfiles').doc(data.userId);
+                    transaction.set(profileRef, {
+                        followersCount: FieldValue.increment(1),
+                        updatedAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+
+                    // Notification now handled by Firestore Trigger: onFollowCreated
+
+
+                    return { success: true, following: true, message: 'User followed' };
+                }
+            });
         } catch (error: any) {
             console.error('Error following user:', error);
             throw new functions.https.HttpsError('internal', 'Failed to follow user', error.message);

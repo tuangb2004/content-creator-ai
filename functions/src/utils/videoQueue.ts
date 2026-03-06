@@ -48,8 +48,9 @@ export async function addToVideoQueue(
         userId,
         userPlan,
         request,
-        status: 'pending',
+        status: 'queued',
         priority: PLAN_PRIORITY[userPlan] || 0,
+        retryCount: 0,
         createdAt: FieldValue.serverTimestamp() as any,
     };
 
@@ -63,7 +64,7 @@ export async function addToVideoQueue(
 
     // Calculate position in queue
     const pendingSnapshot = await db.collection('video_queue')
-        .where('status', '==', 'pending')
+        .where('status', '==', 'queued')
         .orderBy('priority', 'desc')
         .orderBy('createdAt', 'asc')
         .get();
@@ -78,36 +79,51 @@ export async function addToVideoQueue(
 }
 
 /**
- * Get next video to process from queue
+ * Mark queue item as processing and return document data
  */
-export async function getNextQueueItem(): Promise<VideoQueueItem | null> {
+export async function startProcessing(queueId: string): Promise<VideoQueueItem | null> {
     const db = getDb();
+    const docRef = db.collection('video_queue').doc(queueId);
 
-    // Check if any video is currently processing
-    const processingSnapshot = await db.collection('video_queue')
-        .where('status', '==', 'processing')
-        .limit(1)
-        .get();
+    return await db.runTransaction(async (transaction) => {
+        const doc = await transaction.get(docRef);
+        if (!doc.exists) return null;
 
-    if (!processingSnapshot.empty) {
-        // Already processing one video, wait
-        return null;
-    }
+        const data = doc.data() as VideoQueueItem;
+        if (data.status !== 'queued' && data.status !== 'error') return null;
 
-    // Get next pending item (highest priority first, then oldest)
-    const pendingSnapshot = await db.collection('video_queue')
-        .where('status', '==', 'pending')
-        .orderBy('priority', 'desc')
-        .orderBy('createdAt', 'asc')
-        .limit(1)
-        .get();
+        transaction.update(docRef, {
+            status: 'processing',
+            startedAt: FieldValue.serverTimestamp(),
+            processedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
+        });
 
-    if (pendingSnapshot.empty) {
-        return null;
-    }
+        return { ...data, id: doc.id, status: 'processing' } as VideoQueueItem;
+    });
+}
 
-    const doc = pendingSnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as VideoQueueItem;
+/**
+ * Increment retry count and put back to pending
+ */
+export async function incrementRetryCount(queueId: string, error: string): Promise<void> {
+    const db = getDb();
+    const docRef = db.collection('video_queue').doc(queueId);
+
+    await db.runTransaction(async (transaction) => {
+        const doc = await transaction.get(docRef);
+        if (!doc.exists) return;
+
+        const data = doc.data() as VideoQueueItem;
+        const newRetryCount = (data.retryCount || 0) + 1;
+
+        transaction.update(docRef, {
+            status: 'queued',
+            retryCount: newRetryCount,
+            error: `Retry #${newRetryCount}: ${error}`,
+            updatedAt: FieldValue.serverTimestamp()
+        });
+    });
 }
 
 /**
@@ -142,7 +158,7 @@ export async function markAsCompleted(
 export async function markAsFailed(queueId: string, error: string): Promise<void> {
     const db = getDb();
     await db.collection('video_queue').doc(queueId).update({
-        status: 'failed',
+        status: 'error',
         completedAt: FieldValue.serverTimestamp(),
         error,
     });
@@ -167,7 +183,7 @@ export async function getUserQueueStatus(userId: string): Promise<{
     const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VideoQueueItem));
 
     return {
-        pending: items.filter(i => i.status === 'pending'),
+        pending: items.filter(i => i.status === 'queued'),
         processing: items.filter(i => i.status === 'processing'),
         completed: items.filter(i => i.status === 'completed'),
     };
@@ -183,10 +199,10 @@ export async function getQueuePosition(queueId: string): Promise<number> {
     if (!itemDoc.exists) return -1;
 
     const item = itemDoc.data() as VideoQueueItem;
-    if (item.status !== 'pending') return 0; // Not in queue
+    if (item.status !== 'queued') return 0; // Not in queue
 
     const pendingSnapshot = await db.collection('video_queue')
-        .where('status', '==', 'pending')
+        .where('status', '==', 'queued')
         .orderBy('priority', 'desc')
         .orderBy('createdAt', 'asc')
         .get();

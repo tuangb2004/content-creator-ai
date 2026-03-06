@@ -48,11 +48,25 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onProfileUpdated }) => {
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     {/* Avatar Preview */}
                     <div className="flex items-center gap-4">
-                        <img
-                            src={profile?.photoURL || `https://ui-avatars.com/api/?name=${profile?.displayName}&size=80`}
-                            alt={profile?.displayName}
-                            className="w-20 h-20 rounded-full border-4 border-gray-100 dark:border-gray-700"
-                        />
+                        <div className="w-20 h-20 rounded-full flex items-center justify-center shrink-0 border-4 border-white dark:border-gray-700 overflow-hidden shadow-md bg-gradient-to-br from-purple-500 to-blue-500">
+                            {profile?.photoURL ? (
+                                <img
+                                    src={profile.photoURL}
+                                    alt={profile.displayName}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.style.display = 'none';
+                                        e.target.parentElement.classList.add('bg-gradient-to-br', 'from-purple-500', 'to-blue-500');
+                                        e.target.parentElement.innerHTML = `<span class="text-xl font-bold text-white uppercase tracking-tighter">${profile?.displayName?.charAt(0) || 'U'}</span>`;
+                                    }}
+                                />
+                            ) : (
+                                <span className="text-xl font-bold text-white uppercase tracking-tighter">
+                                    {profile?.displayName?.charAt(0) || 'U'}
+                                </span>
+                            )}
+                        </div>
                         <div>
                             <h3 className="font-bold text-gray-900 dark:text-white">{profile?.displayName}</h3>
                             <p className="text-sm text-gray-500">{profile?.email}</p>

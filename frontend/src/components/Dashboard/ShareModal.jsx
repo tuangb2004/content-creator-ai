@@ -47,6 +47,10 @@ const ShareModal = ({ isOpen, onClose, mediaUrl, prompt, type = 'image', model, 
             toast.error('Không có media để chia sẻ');
             return;
         }
+        if (typeof mediaUrl === 'string' && (mediaUrl.startsWith('blob:') || mediaUrl.startsWith('data:'))) {
+            toast.error('Đang chờ ảnh lưu hoàn tất, vui lòng thử lại sau giây lát');
+            return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -172,8 +176,8 @@ const ShareModal = ({ isOpen, onClose, mediaUrl, prompt, type = 'image', model, 
                                                 key={cat.id}
                                                 onClick={() => setCategory(cat.id)}
                                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${category === cat.id
-                                                        ? 'bg-purple-600 text-white'
-                                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                                    ? 'bg-purple-600 text-white'
+                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                                     }`}
                                             >
                                                 <CatIcon size={12} />

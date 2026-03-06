@@ -47,9 +47,10 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
   // User info
   const displayEmail = userEmail || user?.email || "creator@demo.com";
   // Ensure we only retrieve the first name to avoid long names
-  const fullDisplayName = userData?.firstName || user?.displayName || displayEmail.split('@')[0];
-  const userDisplayName = fullDisplayName.split(' ')[0];
+  const fullDisplayName = userData?.displayName || userData?.firstName || user?.displayName || displayEmail.split('@')[0];
+  const userDisplayName = fullDisplayName.split(' ')[0] || "User";
   const userHandle = `@${userDisplayName.toLowerCase().replace(/\s+/g, '')}`;
+  const userAvatar = userData?.photoURL || user?.photoURL;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -168,11 +169,23 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
               : 'bottom-full left-2 mb-2 slide-in-from-bottom-2'
               }`}>
               <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 dark:text-purple-300 font-bold text-sm shrink-0">
-                  {user?.photoURL ? (
-                    <img src={user.photoURL} alt="User" className="w-full h-full rounded-full object-cover" />
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-white dark:border-gray-700 overflow-hidden shadow-sm bg-gradient-to-br from-purple-500 to-blue-500">
+                  {userAvatar ? (
+                    <img
+                      src={userAvatar}
+                      alt="User"
+                      className="w-full h-full rounded-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                        e.target.parentElement.classList.add('bg-gradient-to-br', 'from-purple-500', 'to-blue-500');
+                        e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-white uppercase tracking-tighter">${fullDisplayName.split(' ').filter(Boolean).length >= 2 ? (fullDisplayName.split(' ').filter(Boolean)[0][0] + fullDisplayName.split(' ').filter(Boolean).pop()[0]).toUpperCase() : fullDisplayName.substring(0, 2).toUpperCase()}</span>`;
+                      }}
+                    />
                   ) : (
-                    <span>{userDisplayName.charAt(0)}</span>
+                    <span className="text-sm font-bold text-white uppercase tracking-tighter">
+                      {fullDisplayName.split(' ').filter(Boolean).length >= 2 ? (fullDisplayName.split(' ').filter(Boolean)[0][0] + fullDisplayName.split(' ').filter(Boolean).pop()[0]).toUpperCase() : fullDisplayName.substring(0, 2).toUpperCase()}
+                    </span>
                   )}
                 </div>
                 <div className="overflow-hidden">
@@ -187,27 +200,43 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                     onTabChange('profile');
                     setIsSidebarProfileOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group"
                 >
                   <Icons.User size={16} className="text-black dark:text-gray-400" />
                   {t.dashboard.profile?.myProfile || 'Hồ sơ của tôi'}
                 </button>
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
+                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group">
                   <Icons.Bell size={16} className="text-black dark:text-gray-400" />
                   {t.dashboard.profile?.notifications || 'Notifications'}
                 </button>
                 <button
                   onClick={() => changeLanguage(language === 'en' ? 'vi' : 'en')}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group"
                 >
                   <Icons.Globe size={16} className="text-black dark:text-gray-400" />
                   {t.settings.language}: {language === 'en' ? 'EN' : 'VI'}
                 </button>
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
+                <button
+                  onClick={toggleTheme}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group"
+                >
+                  {theme === 'dark' ? (
+                    <>
+                      <Icons.Sun size={16} className="text-black dark:text-gray-400" />
+                      {t.dashboard.profile?.lightMode || 'Light Mode'}
+                    </>
+                  ) : (
+                    <>
+                      <Icons.Moon size={16} className="text-black dark:text-gray-400" />
+                      {t.dashboard.profile?.darkMode || 'Dark Mode'}
+                    </>
+                  )}
+                </button>
+                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group">
                   <Icons.Sparkles size={16} className="text-black dark:text-gray-400" />
                   {t.dashboard.profile?.upgrade || 'Upgrade plan'}
                 </button>
-                <button onClick={() => onTabChange('settings')} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
+                <button onClick={() => onTabChange('settings')} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group">
                   <Icons.Settings size={16} className="text-black dark:text-gray-400" />
                   {t.dashboard.profile?.settings || 'Settings'}
                 </button>
@@ -216,7 +245,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
               <div className="h-px bg-gray-100 dark:bg-gray-700 mx-2"></div>
 
               <div className="p-1.5 space-y-0.5">
-                <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left">
+                <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group">
                   <div className="flex items-center gap-3">
                     <Icons.HelpCircle size={16} className="text-black dark:text-gray-400" />
                     {t.dashboard.profile?.help || 'Help'}
@@ -228,7 +257,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                     if (onLogout) onLogout();
                     setIsSidebarProfileOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group"
                 >
                   <Icons.LogOut size={16} className="text-black dark:text-gray-400" />
                   {t.dashboard.profile?.signout || 'Log out'}
@@ -242,11 +271,23 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
               onClick={() => setIsSidebarProfileOpen(!isSidebarProfileOpen)}
               className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group w-full"
             >
-              <div className="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 dark:text-purple-300 font-bold text-sm shrink-0">
-                {user?.photoURL ? (
-                  <img src={user.photoURL} alt="User" className="w-full h-full rounded-full object-cover" />
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 border border-white dark:border-gray-700 overflow-hidden shadow-sm bg-gradient-to-br from-purple-500 to-blue-500">
+                {userAvatar ? (
+                  <img
+                    src={userAvatar}
+                    alt="User"
+                    className="w-full h-full rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = 'none';
+                      e.target.parentElement.classList.add('bg-gradient-to-br', 'from-purple-500', 'to-blue-500');
+                      e.target.parentElement.innerHTML = `<span class="text-xs font-bold text-white uppercase tracking-tighter">${userDisplayName.charAt(0)}</span>`;
+                    }}
+                  />
                 ) : (
-                  <span>{userDisplayName.charAt(0)}</span>
+                  <span className="text-xs font-bold text-white uppercase tracking-tighter">
+                    {fullDisplayName.split(' ').filter(Boolean).length >= 2 ? (fullDisplayName.split(' ').filter(Boolean)[0][0] + fullDisplayName.split(' ').filter(Boolean).pop()[0]).toUpperCase() : fullDisplayName.substring(0, 2).toUpperCase()}
+                  </span>
                 )}
               </div>
               <div className="flex-1 min-w-0 text-left overflow-hidden">
@@ -266,11 +307,23 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
               onClick={() => setIsSidebarProfileOpen(!isSidebarProfileOpen)}
               className="flex justify-center"
             >
-              <div className="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-600 dark:text-purple-300 font-bold text-sm shrink-0 cursor-pointer">
-                {user?.photoURL ? (
-                  <img src={user.photoURL} alt="User" className="w-full h-full rounded-full object-cover" />
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 border border-white dark:border-gray-700 overflow-hidden shadow-sm bg-gradient-to-br from-purple-500 to-blue-500">
+                {userAvatar ? (
+                  <img
+                    src={userAvatar}
+                    alt="User"
+                    className="w-full h-full rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = 'none';
+                      e.target.parentElement.classList.add('bg-gradient-to-br', 'from-purple-500', 'to-blue-500');
+                      e.target.parentElement.innerHTML = `<span class="text-xs font-bold text-white uppercase tracking-tighter">${userDisplayName.charAt(0)}</span>`;
+                    }}
+                  />
                 ) : (
-                  <span>{userDisplayName.charAt(0)}</span>
+                  <span className="text-xs font-bold text-white uppercase tracking-tighter">
+                    {fullDisplayName.split(' ').filter(Boolean).length >= 2 ? (fullDisplayName.split(' ').filter(Boolean)[0][0] + fullDisplayName.split(' ').filter(Boolean).pop()[0]).toUpperCase() : fullDisplayName.substring(0, 2).toUpperCase()}
+                  </span>
                 )}
               </div>
             </div>

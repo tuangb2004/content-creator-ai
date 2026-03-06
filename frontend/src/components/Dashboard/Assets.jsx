@@ -5,7 +5,7 @@ import { db } from '../../config/firebase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../Icons';
 import UploadModal from './UploadModal';
-import { getUploads } from '../../services/firebaseFunctions';
+import { getUploads, deleteUpload } from '../../services/firebaseFunctions';
 
 const mapDocToProject = (doc, t, language) => {
     const p = { id: doc.id, ...doc.data() };
@@ -27,6 +27,7 @@ const mapDocToProject = (doc, t, language) => {
         type: p.type || 'text',
         date: new Date(createdAt).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }),
         imageUrl: p.content?.imageUrl || p.content?.previewUrl,
+        videoUrl: p.content?.videoUrl,
         content: p.content,
         _createdAt: createdAt
     };
@@ -124,9 +125,14 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
 
         setIsDeleting(true);
         try {
-            const promises = Array.from(selectedIds).map(id =>
-                deleteDoc(doc(db, activeTab === 'Creations' ? 'projects' : 'uploads', id))
-            );
+            const promises = Array.from(selectedIds).map(id => {
+                if (activeTab === 'Creations') {
+                    return deleteDoc(doc(db, 'projects', id));
+                } else {
+                    // Use Cloud Function to also delete from Storage
+                    return deleteUpload(id);
+                }
+            });
             await Promise.all(promises);
             setSelectedIds(new Set());
         } catch (error) {
@@ -144,7 +150,7 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
         const selectedItems = items.filter(item => selectedIds.has(item.id));
 
         selectedItems.forEach((item) => {
-            const url = activeTab === 'Creations' ? item.imageUrl : item.fileUrl;
+            const url = activeTab === 'Creations' ? (item.videoUrl || item.imageUrl) : item.fileUrl;
             if (url) {
                 // Force download by creating a temporary link
                 const link = document.createElement('a');
@@ -240,9 +246,17 @@ const Assets = ({ onNavigateToProject, onSelectFile }) => {
                                             {isSelected && <Icons.CheckCircle size={12} />}
                                         </div>
 
-                                        {/* Image Container - Horizontal Aspect Ratio (16:9) */}
+                                        {/* Image/Video Container - Horizontal Aspect Ratio (16:9) */}
                                         <div className="relative w-full aspect-video bg-gray-50 dark:bg-gray-800/50 overflow-hidden">
-                                            {item.imageUrl ? (
+                                            {item.type === 'video' && item.videoUrl ? (
+                                                <video
+                                                    src={item.videoUrl}
+                                                    className={`w-full h-full object-cover transition-transform duration-700 ${isSelected ? 'scale-105' : 'group-hover:scale-105'}`}
+                                                    muted
+                                                    playsInline
+                                                    preload="metadata"
+                                                />
+                                            ) : item.imageUrl ? (
                                                 <img
                                                     src={item.imageUrl}
                                                     alt={item.title}

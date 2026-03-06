@@ -94,11 +94,34 @@ const FollowersModal = ({ isOpen, onClose, userId, type = 'followers', displayNa
                                     onClick={() => handleUserClick(u.id)}
                                     className="flex items-center gap-3 flex-1 text-left"
                                 >
-                                    <img
-                                        src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}`}
-                                        alt={u.displayName}
-                                        className="w-12 h-12 rounded-full"
-                                    />
+                                    <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 border border-white dark:border-gray-700 overflow-hidden shadow-sm bg-gradient-to-br from-purple-500 to-blue-500">
+                                        {u.photoURL ? (
+                                            <img
+                                                src={u.photoURL}
+                                                alt={u.displayName}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    e.target.style.display = 'none';
+                                                    e.target.parentElement.classList.add('bg-gradient-to-br', 'from-purple-500', 'to-blue-500');
+                                                    const initials = u.displayName
+                                                        ? (u.displayName.split(' ').length >= 2
+                                                            ? (u.displayName.split(' ')[0][0] + u.displayName.split(' ').pop()[0]).toUpperCase()
+                                                            : u.displayName.substring(0, 2).toUpperCase())
+                                                        : 'U';
+                                                    e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-white uppercase tracking-tighter">${initials}</span>`;
+                                                }}
+                                            />
+                                        ) : (
+                                            <span className="text-sm font-bold text-white uppercase tracking-tighter">
+                                                {u.displayName
+                                                    ? (u.displayName.split(' ').length >= 2
+                                                        ? (u.displayName.split(' ')[0][0] + u.displayName.split(' ').pop()[0]).toUpperCase()
+                                                        : u.displayName.substring(0, 2).toUpperCase())
+                                                    : 'U'}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="flex-1 min-w-0">
                                         <h4 className="font-bold text-gray-900 dark:text-white truncate">
                                             {u.displayName}
@@ -114,8 +137,8 @@ const FollowersModal = ({ isOpen, onClose, userId, type = 'followers', displayNa
                                     <button
                                         onClick={() => handleFollow(u.id)}
                                         className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${u.isFollowing
-                                                ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300'
-                                                : 'bg-purple-600 text-white hover:bg-purple-700'
+                                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300'
+                                            : 'bg-purple-600 text-white hover:bg-purple-700'
                                             }`}
                                     >
                                         {u.isFollowing ? 'Đang theo dõi' : 'Theo dõi'}

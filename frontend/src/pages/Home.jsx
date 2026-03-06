@@ -68,9 +68,15 @@ function Home() {
 
   const savedState = loadSavedViewState();
 
+  // Detect /dashboard/project/:id URL before first render
+  const urlProjectMatch = typeof window !== 'undefined'
+    ? window.location.pathname.match(/^\/dashboard\/project\/(.+)$/)
+    : null;
+  const urlProjectId = urlProjectMatch?.[1] || null;
+
   /* eslint-disable no-unused-vars */
-  const [dashboardTab, setDashboardTab] = useState(savedState?.dashboardTab || 'dashboard');
-  const [view, setView] = useState(savedState?.view || { type: 'home' });
+  const [dashboardTab, setDashboardTab] = useState(urlProjectId ? 'dashboard' : (savedState?.dashboardTab || 'dashboard'));
+  const [view, setView] = useState(urlProjectId ? { type: 'home' } : (savedState?.view || { type: 'home' }));
 
   // Get location for navigation state
   const location = useLocation();
@@ -98,10 +104,10 @@ function Home() {
   const [highlightedProjectId, setHighlightedProjectId] = useState(null);
   const [isProjectDrawerOpen, setIsProjectDrawerOpen] = useState(false);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isChatActive, setIsChatActive] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(!!urlProjectId);
+  const [isChatActive, setIsChatActive] = useState(!!urlProjectId);
   /** Mở chat trực tiếp từ Assets (realtime: chuyển ngay, AgentChat tự load project) */
-  const [openProjectId, setOpenProjectId] = useState(null);
+  const [openProjectId, setOpenProjectId] = useState(urlProjectId);
   /* eslint-enable no-unused-vars */
 
   // Save view state to localStorage
@@ -195,7 +201,7 @@ function Home() {
 
   // Handle tool query parameter from URL (e.g., ?tool=t1)
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search || window.location.search);
     const toolId = urlParams.get('tool');
     const profileId = urlParams.get('profile');
 
@@ -203,6 +209,8 @@ function Home() {
       // Navigate to profile view
       setDashboardTab('profile');
       setView({ type: 'home', profileUserId: profileId });
+      // We don't necessarily need to clear it immediately if we want back button to work, 
+      // but the current logic clears it. I'll stick to current logic but fix the reactive part.
       window.history.replaceState({}, '', '/dashboard');
       return;
     }
@@ -210,19 +218,16 @@ function Home() {
     if (toolId) {
       const tool = TOOLS.find(t => t.id === toolId);
       if (tool) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setView({ type: 'workspace', tool });
         setDashboardTab('tools');
-        // Clear the query parameter from URL
         window.history.replaceState({}, '', '/dashboard');
       } else {
-        // If tool not found, reset to home view
         console.warn(`Tool with ID ${toolId} not found`);
         setView({ type: 'home' });
         window.history.replaceState({}, '', '/dashboard');
       }
     }
-  }, []);
+  }, [location.search]);
 
   const handleLogout = () => {
     logout();
@@ -360,6 +365,10 @@ function Home() {
           setView({ type: 'home' });
           setIsChatActive(false);
         }
+        // Clear project URL so reload stays on the correct tab
+        if (window.location.pathname !== '/dashboard') {
+          navigate('/dashboard', { replace: true });
+        }
       }}
       onLogout={handleLogout}
       userEmail={user?.email || 'creator@demo.com'}
@@ -392,6 +401,7 @@ function Home() {
                   setOpenProjectId(null);
                   setIsChatActive(false);
                   setIsSidebarCollapsed(false);
+                  navigate('/dashboard', { replace: true });
                 }}
               />
             ) : dashboardTab === 'dashboard' && view.type === 'home' && (
@@ -405,6 +415,9 @@ function Home() {
                   if (!active) {
                     setInitialProject(null);
                     setOpenProjectId(null);
+                    if (window.location.pathname !== '/dashboard') {
+                      navigate('/dashboard', { replace: true });
+                    }
                   }
                   if (active && initialPrompt && !initialProject) setTimeout(() => setInitialPrompt(null), 100);
                   if (active && initialProject) setTimeout(() => setInitialProject(null), 150);
@@ -420,7 +433,9 @@ function Home() {
             {/* New Sidebar Pages */}
             {dashboardTab === 'video-generator' && <VideoGenerator />}
             {dashboardTab === 'image-studio' && <ImageStudio />}
-            {dashboardTab === 'inspiration' && <Inspiration />}
+            {dashboardTab === 'inspiration' && (
+              <Inspiration onTabChange={setDashboardTab} />
+            )}
             {dashboardTab === 'avatars' && <Avatars />}
             {dashboardTab === 'analytics' && <Analytics />}
             {dashboardTab === 'publisher' && <Publisher />}
@@ -433,11 +448,12 @@ function Home() {
                   setView({ type: 'home' });
                   setIsChatActive(true);
                   setIsSidebarCollapsed(true);
+                  navigate(`/dashboard/project/${project.id}`, { replace: true });
                 }}
               />
             )}
 
-            {dashboardTab === 'profile' && <UserProfile userId={view.profileUserId} />}
+            {dashboardTab === 'profile' && <UserProfile userId={view.profileUserId} onBack={() => { setDashboardTab('inspiration'); setView({ type: 'home' }); }} />}
 
             {dashboardTab === 'settings' && <ProfileSettings />}
             {dashboardTab === 'billing' && (

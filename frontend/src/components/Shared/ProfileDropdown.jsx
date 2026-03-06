@@ -1,20 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  User, FileText, Key, Tag, 
-  ArrowRight, LogOut, Sparkles 
+import {
+  User, FileText, Key, Tag,
+  ArrowRight, LogOut, Sparkles
 } from 'lucide-react';
 
 function ProfileDropdown() {
   const { user, userData, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  
+
   // Get plan and credits from userData
   const plan = userData?.plan || 'free';
   const creditsRemaining = userData?.credits || 0;
-  
+
   const planDisplayNames = {
     free: 'Free Plan',
     pro: 'Pro Studio',
@@ -61,17 +61,25 @@ function ProfileDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center ring-2 ring-purple-500 hover:ring-purple-600 transition overflow-hidden"
+        className="w-10 h-10 rounded-full flex items-center justify-center ring-2 ring-purple-500 hover:ring-purple-600 transition overflow-hidden bg-gradient-to-br from-purple-500 to-blue-500 shadow-sm"
       >
-        {user?.avatar ? (
+        {(userData?.photoURL || user?.photoURL) ? (
           <img
-            src={user.avatar}
-            alt={user.name || 'User'}
+            src={userData?.photoURL || user?.photoURL}
+            alt={userData?.displayName || user?.displayName || 'User'}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              const parent = e.target.parentElement;
+              const name = userData?.displayName || user?.displayName || 'User';
+              parent.innerHTML = `<span class="text-white font-semibold text-sm uppercase tracking-tighter">${name.split(' ').length >= 2 ? (name.split(' ')[0][0] + name.split(' ').pop()[0]).toUpperCase() : name.substring(0, 2).toUpperCase()}</span>`;
+            }}
           />
         ) : (
-          <span className="text-white font-semibold text-sm">
-            {user?.name?.[0]?.toUpperCase() || 'C'}
+          <span className="text-white font-semibold text-sm uppercase tracking-tighter">
+            {(() => {
+              const name = userData?.displayName || user?.displayName || 'User';
+              return name.split(' ').length >= 2 ? (name.split(' ')[0][0] + name.split(' ').pop()[0]).toUpperCase() : name.substring(0, 2).toUpperCase();
+            })()}
           </span>
         )}
       </button>
@@ -81,16 +89,24 @@ function ProfileDropdown() {
           {/* User Summary Section */}
           <div className="p-6 border-b border-gray-200">
             <div className="flex flex-col items-center mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full flex items-center justify-center mb-3 overflow-hidden">
-                {user?.avatar ? (
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 overflow-hidden bg-gradient-to-br from-purple-500 to-blue-500 shadow-md">
+                {(userData?.photoURL || user?.photoURL) ? (
                   <img
-                    src={user.avatar}
-                    alt={user.name || 'User'}
+                    src={userData?.photoURL || user?.photoURL}
+                    alt={userData?.displayName || user?.displayName || 'User'}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const parent = e.target.parentElement;
+                      const name = userData?.displayName || user?.displayName || 'User';
+                      parent.innerHTML = `<span class="text-white font-bold text-xl uppercase tracking-tighter">${name.split(' ').length >= 2 ? (name.split(' ')[0][0] + name.split(' ').pop()[0]).toUpperCase() : name.substring(0, 2).toUpperCase()}</span>`;
+                    }}
                   />
                 ) : (
-                  <span className="text-white font-semibold text-xl">
-                    {user?.name?.[0]?.toUpperCase() || 'C'}
+                  <span className="text-white font-bold text-xl uppercase tracking-tighter">
+                    {(() => {
+                      const name = userData?.displayName || user?.displayName || 'User';
+                      return name.split(' ').length >= 2 ? (name.split(' ')[0][0] + name.split(' ').pop()[0]).toUpperCase() : name.substring(0, 2).toUpperCase();
+                    })()}
                   </span>
                 )}
               </div>

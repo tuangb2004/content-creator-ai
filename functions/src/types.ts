@@ -1,5 +1,7 @@
 export interface UserData {
   email: string;
+  displayName?: string;
+  photoURL?: string;
   plan: 'free' | 'pro' | 'agency';
   credits: number;
   createdAt: FirebaseFirestore.Timestamp;
@@ -29,6 +31,10 @@ export interface GenerateContentRequest {
   fileUrls?: string[]; // Array of file URLs (from Firebase Storage or public URLs)
   /** When provider is gemini: enable Google Search Grounding for real-time, factual answers. Default true. */
   useGoogleSearchGrounding?: boolean;
+  /** Aspect ratio for image generation (e.g. '1:1', '16:9', '9:16', '4:3', '3:4') */
+  ratio?: string;
+  /** Number of images to generate (1-4, default 1). Each image costs credits separately. */
+  count?: number;
 }
 
 export interface GenerateContentResponse {
@@ -37,6 +43,7 @@ export interface GenerateContentResponse {
   provider: string;
   creditsUsed: number;
   creditsRemaining: number;
+  metadata?: Record<string, any>;
 }
 
 export interface ActivityLog {
@@ -63,12 +70,24 @@ export interface WebhookEvent {
 }
 
 // Video Generation Types
+export type VideoMode = 'text-to-video' | 'frame-to-video' | 'ingredients-to-video';
+
 export interface GenerateVideoRequest {
   prompt: string;
   model: VideoModel; // 'veo-3.1-fast' or 'veo-3.1-standard'
   aspectRatio?: '16:9' | '9:16' | '1:1'; // Default 16:9
-  duration?: 5 | 8; // seconds, default 8
-  imageUrl?: string; // Optional: image-to-video
+  duration?: 4 | 6 | 8; // Veo 3.1 only supports 4, 6 or 8 seconds
+  imageUrl?: string; // Optional: image-to-video (legacy)
+  videoMode?: VideoMode; // Generation mode
+  fileUrls?: string[]; // Generic file URLs from upload
+  firstFrameUrl?: string; // First frame for frame-to-video
+  lastFrameUrl?: string; // Last frame for frame-to-video
+  referenceImageUrls?: string[]; // Reference images for ingredients-to-video (max 3)
+  numberOfVideos?: 1 | 2; // Number of videos to generate (default 1, x2 = 2)
+  resolution?: '720p' | '1080p' | '4k'; // Output resolution (default 720p)
+  language?: string; // Prompt language hint (EN, VI, etc.)
+  personGeneration?: 'dont_allow' | 'allow_adult'; // Person generation policy
+  queueId?: string; // Internal: for progress updates
 }
 
 export interface GenerateVideoResponse {
@@ -86,9 +105,11 @@ export interface VideoQueueItem {
   userId: string;
   userPlan: string;
   request: GenerateVideoRequest;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'queued' | 'processing' | 'completed' | 'error';
   priority: number; // Higher = more priority (agency > pro)
+  retryCount: number;
   createdAt: FirebaseFirestore.Timestamp;
+  startedAt?: FirebaseFirestore.Timestamp;
   processedAt?: FirebaseFirestore.Timestamp;
   completedAt?: FirebaseFirestore.Timestamp;
   result?: {
@@ -96,5 +117,8 @@ export interface VideoQueueItem {
     thumbnailUrl?: string;
   };
   error?: string;
+  veoOperationName?: string;
+  processingAttempt?: number;
+  statusDetail?: string;
 }
 

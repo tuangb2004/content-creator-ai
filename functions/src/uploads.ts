@@ -47,121 +47,131 @@ export interface GetUploadsResponse {
 /**
  * Upload a file to Firebase Storage and save metadata to Firestore
  */
-export const uploadFile = functions.https.onCall(
-  async (data: UploadFileRequest, context: functions.https.CallableContext): Promise<UploadFileResponse> => {
-    const userId = validateAuth(context);
+export const uploadFile = functions
+  .runWith({
+    timeoutSeconds: 120,
+    memory: '1GB',
+  })
+  .https.onCall(
+    async (data: UploadFileRequest, context: functions.https.CallableContext): Promise<UploadFileResponse> => {
+      const userId = validateAuth(context);
 
-    if (!data.fileName || !data.fileType || !data.fileData) {
-      throw new functions.https.HttpsError('invalid-argument', 'fileName, fileType, and fileData are required');
-    }
+      if (!data.fileName || !data.fileType || !data.fileData) {
+        throw new functions.https.HttpsError('invalid-argument', 'fileName, fileType, and fileData are required');
+      }
 
-    // Validate file size (max 20MB)
-    const maxSize = 20 * 1024 * 1024; // 20MB
-    if (data.fileSize > maxSize) {
-      throw new functions.https.HttpsError('invalid-argument', 'File size exceeds 20MB limit');
-    }
+      // Validate file size (max 20MB)
+      const maxSize = 20 * 1024 * 1024; // 20MB
+      if (data.fileSize > maxSize) {
+        throw new functions.https.HttpsError('invalid-argument', 'File size exceeds 20MB limit');
+      }
 
-    try {
-      const bucket = getBucket();
-      const db = getDb();
-      
-      // Generate unique file path
-      const timestamp = Date.now();
-      const sanitizedFileName = data.fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filePath = `uploads/${userId}/${timestamp}_${sanitizedFileName}`;
+      try {
+        const bucket = getBucket();
+        const db = getDb();
 
-      // Decode base64 and upload to Storage
-      const fileBuffer = Buffer.from(data.fileData, 'base64');
-      const file = bucket.file(filePath);
+        // Generate unique file path
+        const timestamp = Date.now();
+        const sanitizedFileName = data.fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const filePath = `uploads/${userId}/${timestamp}_${sanitizedFileName}`;
 
-      await file.save(fileBuffer, {
-        contentType: data.fileType,
-        metadata: {
+        // Decode base64 and upload to Storage
+        const fileBuffer = Buffer.from(data.fileData, 'base64');
+        const file = bucket.file(filePath);
+
+        await file.save(fileBuffer, {
+          contentType: data.fileType,
           metadata: {
-            uploadedBy: userId,
-            originalFileName: data.fileName,
-            uploadedAt: new Date().toISOString()
+            metadata: {
+              uploadedBy: userId,
+              originalFileName: data.fileName,
+              uploadedAt: new Date().toISOString()
+            }
           }
-        }
-      });
+        });
 
-      // Make file publicly readable (or use signed URL for private)
-      await file.makePublic();
+        // Make file publicly readable (or use signed URL for private)
+        await file.makePublic();
 
-      // Get public URL
-      const fileUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+        // Get public URL
+        const fileUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
 
-      // Save metadata to Firestore
-      const uploadsRef = db.collection('uploads');
-      const uploadData = {
-        userId,
-        fileName: data.fileName,
-        fileType: data.fileType,
-        fileSize: data.fileSize,
-        fileUrl,
-        storagePath: filePath,
-        metadata: data.metadata || {},
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      };
+        // Save metadata to Firestore
+        const uploadsRef = db.collection('uploads');
+        const uploadData = {
+          userId,
+          fileName: data.fileName,
+          fileType: data.fileType,
+          fileSize: data.fileSize,
+          fileUrl,
+          storagePath: filePath,
+          metadata: data.metadata || {},
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        };
 
-      const docRef = await uploadsRef.add(uploadData);
+        const docRef = await uploadsRef.add(uploadData);
 
-      return {
-        success: true,
-        fileId: docRef.id,
-        fileUrl,
-        fileName: data.fileName,
-        fileType: data.fileType,
-        fileSize: data.fileSize
-      };
-    } catch (error: any) {
-      console.error('Error uploading file:', error);
-      throw new functions.https.HttpsError('internal', 'Failed to upload file', error.message);
+        return {
+          success: true,
+          fileId: docRef.id,
+          fileUrl,
+          fileName: data.fileName,
+          fileType: data.fileType,
+          fileSize: data.fileSize
+        };
+      } catch (error: any) {
+        console.error('Error uploading file:', error);
+        throw new functions.https.HttpsError('internal', 'Failed to upload file', error.message);
+      }
     }
-  }
-);
+  );
 
 /**
  * Get all uploads for the authenticated user
  */
-export const getUploads = functions.https.onCall(
-  async (data: any, context: functions.https.CallableContext): Promise<GetUploadsResponse> => {
-    const userId = validateAuth(context);
+export const getUploads = functions
+  .runWith({
+    timeoutSeconds: 60,
+    memory: '512MB',
+  })
+  .https.onCall(
+    async (data: any, context: functions.https.CallableContext): Promise<GetUploadsResponse> => {
+      const userId = validateAuth(context);
 
-    const db = getDb();
-    const uploadsRef = db.collection('uploads');
+      const db = getDb();
+      const uploadsRef = db.collection('uploads');
 
-    try {
-      const querySnapshot = await uploadsRef
-        .where('userId', '==', userId)
-        .orderBy('createdAt', 'desc')
-        .get();
+      try {
+        const querySnapshot = await uploadsRef
+          .where('userId', '==', userId)
+          .orderBy('createdAt', 'desc')
+          .get();
 
-      const uploads = querySnapshot.docs.map(doc => {
-        const data = doc.data();
+        const uploads = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            fileName: data.fileName,
+            fileType: data.fileType,
+            fileSize: data.fileSize,
+            fileUrl: data.fileUrl,
+            createdAt: data.createdAt,
+            metadata: data.metadata
+          };
+        });
+
         return {
-          id: doc.id,
-          fileName: data.fileName,
-          fileType: data.fileType,
-          fileSize: data.fileSize,
-          fileUrl: data.fileUrl,
-          createdAt: data.createdAt,
-          metadata: data.metadata
+          success: true,
+          uploads,
+          count: uploads.length
         };
-      });
-
-      return {
-        success: true,
-        uploads,
-        count: uploads.length
-      };
-    } catch (error: any) {
-      console.error('Error getting uploads:', error);
-      throw new functions.https.HttpsError('internal', 'Failed to get uploads', error.message);
+      } catch (error: any) {
+        console.error('Error getting uploads:', error);
+        throw new functions.https.HttpsError('internal', 'Failed to get uploads', error.message);
+      }
     }
-  }
-);
+  );
 
 /**
  * Delete an upload

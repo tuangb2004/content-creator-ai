@@ -75,8 +75,22 @@ export async function decrementCredits(userId: string, amount: number = 1, metad
     });
   });
 
-  // Note: Credit deduction is not logged here because Studio Pulse only shows credits added
-  // Credit deduction is logged separately in generateContent.ts after successful generation
+  // Log transaction for billing history
+  try {
+    await db.collection('transactions').add({
+      userId,
+      type: 'deduct',
+      amount,
+      description: metadata?.toolName
+        ? `Sử dụng ${metadata.toolName}${metadata.contentType ? ` (${metadata.contentType})` : ''}`
+        : `Trừ ${amount} credit`,
+      status: 'completed',
+      referenceId: metadata?.toolName || 'content_generation',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  } catch (logError) {
+    console.warn('Failed to log deduction transaction:', logError);
+  }
 
   return creditsAfter;
 }
@@ -127,7 +141,21 @@ export async function incrementCredits(userId: string, amount: number, metadata?
     });
   } catch (logError) {
     console.warn('Failed to log credit increment activity:', logError);
-    // Don't fail credit operation if logging fails
+  }
+
+  // Log transaction for billing history
+  try {
+    await db.collection('transactions').add({
+      userId,
+      type: 'add',
+      amount,
+      description: metadata?.reason || `Nạp ${amount} credit`,
+      status: 'completed',
+      referenceId: 'credit_purchase',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  } catch (logError) {
+    console.warn('Failed to log increment transaction:', logError);
   }
 
   return creditsAfter;
@@ -151,6 +179,9 @@ export async function setCredits(userId: string, credits: number, metadata?: { r
 
   // Log credit update activity if credits changed
   if (credits !== creditsBefore) {
+    const change = credits - creditsBefore;
+    const description = metadata?.reason || (metadata?.planName ? `Nâng cấp gói: ${metadata.planName}` : `Cập nhật credit: ${credits}`);
+
     try {
       await logActivity({
         userId,
@@ -159,15 +190,29 @@ export async function setCredits(userId: string, credits: number, metadata?: { r
         creditsAfter: credits,
         success: true,
         metadata: {
-          change: credits - creditsBefore,
-          reason: metadata?.reason || (metadata?.planName ? `Plan upgrade: ${metadata.planName}` : `Credits set to ${credits}`),
+          change,
+          reason: description,
           planName: metadata?.planName,
           type: credits > creditsBefore ? 'added' : 'set'
         }
       });
     } catch (logError) {
       console.warn('Failed to log credit set activity:', logError);
-      // Don't fail credit operation if logging fails
+    }
+
+    // Log transaction for billing history
+    try {
+      await db.collection('transactions').add({
+        userId,
+        type: change > 0 ? 'add' : 'deduct',
+        amount: Math.abs(change),
+        description,
+        status: 'completed',
+        referenceId: metadata?.planName || 'plan_update',
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    } catch (logError) {
+      console.warn('Failed to log setCredits transaction:', logError);
     }
   }
 }
@@ -175,7 +220,7 @@ export async function setCredits(userId: string, credits: number, metadata?: { r
 /**
  * Initialize user with free credits (on signup)
  */
-export async function initializeUser(userId: string, email: string): Promise<void> {
+export async function initializeUser(userId: string, email: string, displayName?: string, photoURL?: string): Promise<void> {
   const db = getDb();
   const userRef = db.collection('users').doc(userId);
   const userDoc = await userRef.get();
@@ -184,8 +229,10 @@ export async function initializeUser(userId: string, email: string): Promise<voi
   if (!userDoc.exists) {
     await userRef.set({
       email,
+      ...(displayName && { displayName }),
+      ...(photoURL && { photoURL }),
       plan: 'free',
-      credits: 5, // Free tier: 5 credits (1 image trial)
+      credits: 10, // Default for new users
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     });

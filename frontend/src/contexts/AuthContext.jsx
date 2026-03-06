@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { 
-  signInWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
@@ -12,7 +12,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
-import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { auth, db, functions } from '../config/firebase';
 
 const AuthContext = createContext(null);
@@ -40,6 +40,8 @@ export const AuthProvider = ({ children }) => {
 
       if (firebaseUser) {
         setUser(firebaseUser);
+        // Sync profile to Firestore
+        syncProfileWithFirestore(firebaseUser);
         // Set loading false IMMEDIATELY - don't wait for userData
         setLoading(false);
 
@@ -116,7 +118,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
+
       // Check if email is verified (only for email/password users, not social login)
       // Flow chuẩn: Cho phép login, ProtectedRoute sẽ block nếu chưa verify
       // ❌ KHÔNG signOut() - user được login, ProtectedRoute sẽ handle blocking
@@ -132,7 +134,7 @@ export const AuthProvider = ({ children }) => {
         // User is logged in - ProtectedRoute will show blocking screen
         // No error thrown - let ProtectedRoute handle it
       }
-      
+
       // Log login activity (fire and forget - don't block login)
       console.log('🔐 Attempting to log login activity...');
       try {
@@ -159,7 +161,7 @@ export const AuthProvider = ({ children }) => {
             setTimeout(() => {
               console.log(`🔄 Dispatching refreshActivityLogs event (attempt ${attempt}/${maxAttempts})...`);
               window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
-              
+
               if (attempt < maxAttempts) {
                 refreshLogs(attempt + 1, maxAttempts);
               }
@@ -174,7 +176,7 @@ export const AuthProvider = ({ children }) => {
         console.error('❌ Failed to initialize login logging:', logError);
         // Don't fail login if logging fails
       }
-      
+
       // Auth state listener will update user state automatically
       return {
         user: userCredential.user,
@@ -198,14 +200,14 @@ export const AuthProvider = ({ children }) => {
     try {
       // Step 1: Create user account
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
+
       // Step 2: Update user profile with name
       if (name) {
         await updateProfile(userCredential.user, {
           displayName: name
         });
       }
-      
+
       // Step 3: Send email verification using Firebase built-in function
       let emailSent = false;
       try {
@@ -218,7 +220,7 @@ export const AuthProvider = ({ children }) => {
         emailSent = false;
         // Don't throw - user can request resend later
       }
-      
+
       // Step 4: Return result (user is logged in with emailVerified = false)
       // ProtectedRoute will automatically show blocking screen
       // ❌ KHÔNG signOut() - flow chuẩn industry
@@ -245,21 +247,25 @@ export const AuthProvider = ({ children }) => {
       provider.setCustomParameters({
         prompt: 'select_account'
       });
-      
+
       const userCredential = await signInWithPopup(auth, provider);
-      
+
       // Social login users are automatically email verified
       // Update profile if needed
       if (userCredential.user && !userCredential.user.displayName && userCredential.user.providerData[0]?.displayName) {
         try {
           await updateProfile(userCredential.user, {
-            displayName: userCredential.user.providerData[0].displayName
+            displayName: userCredential.user.providerData[0].displayName,
+            photoURL: userCredential.user.providerData[0].photoURL
           });
         } catch (updateError) {
           console.warn('Failed to update profile:', updateError);
         }
       }
-      
+
+      // Force sync to Firestore
+      await syncProfileWithFirestore(userCredential.user);
+
       // Log login activity (fire and forget - don't block login)
       console.log('🔐 Attempting to log Google login activity...');
       setTimeout(async () => {
@@ -283,7 +289,7 @@ export const AuthProvider = ({ children }) => {
             setTimeout(() => {
               console.log(`🔄 Dispatching refreshActivityLogs event (attempt ${attempt}/${maxAttempts})...`);
               window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
-              
+
               if (attempt < maxAttempts) {
                 refreshLogs(attempt + 1, maxAttempts);
               }
@@ -295,7 +301,7 @@ export const AuthProvider = ({ children }) => {
           console.error('Error code:', logError.code, 'Message:', logError.message);
         }
       }, 500);
-      
+
       // Auth state listener will update user state automatically
       return {
         user: userCredential.user,
@@ -314,21 +320,25 @@ export const AuthProvider = ({ children }) => {
       // Note: Firebase Auth automatically requests basic profile and email
       // Only add additional scopes if needed and approved by Facebook
       // provider.addScope('public_profile'); // Default scope, usually not needed
-      
+
       const userCredential = await signInWithPopup(auth, provider);
-      
+
       // Social login users are automatically email verified
       // Update profile if needed
       if (userCredential.user && !userCredential.user.displayName && userCredential.user.providerData[0]?.displayName) {
         try {
           await updateProfile(userCredential.user, {
-            displayName: userCredential.user.providerData[0].displayName
+            displayName: userCredential.user.providerData[0].displayName,
+            photoURL: userCredential.user.providerData[0].photoURL
           });
         } catch (updateError) {
           console.warn('Failed to update profile:', updateError);
         }
       }
-      
+
+      // Force sync to Firestore
+      await syncProfileWithFirestore(userCredential.user);
+
       // Log login activity (fire and forget - don't block login)
       console.log('🔐 Attempting to log Facebook login activity...');
       setTimeout(async () => {
@@ -352,7 +362,7 @@ export const AuthProvider = ({ children }) => {
             setTimeout(() => {
               console.log(`🔄 Dispatching refreshActivityLogs event (attempt ${attempt}/${maxAttempts})...`);
               window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
-              
+
               if (attempt < maxAttempts) {
                 refreshLogs(attempt + 1, maxAttempts);
               }
@@ -364,7 +374,7 @@ export const AuthProvider = ({ children }) => {
           console.error('Error code:', logError.code, 'Message:', logError.message);
         }
       }, 500);
-      
+
       // Auth state listener will update user state automatically
       return {
         user: userCredential.user,
@@ -381,11 +391,11 @@ export const AuthProvider = ({ children }) => {
     try {
       const { httpsCallable } = await import('firebase/functions');
       const { functions } = await import('../config/firebase');
-      
+
       // Get TikTok auth URL from Cloud Function
       const getTikTokUrl = httpsCallable(functions, 'getTikTokAuthUrl');
       const result = await getTikTokUrl({});
-      
+
       // Redirect to TikTok OAuth
       window.location.href = result.data.authUrl;
     } catch (error) {
@@ -399,7 +409,7 @@ export const AuthProvider = ({ children }) => {
   const signInWithCustomTokenAuth = async (customToken) => {
     try {
       const userCredential = await signInWithCustomToken(auth, customToken);
-      
+
       // Log login activity (fire and forget - don't block login)
       console.log('🔐 Attempting to log TikTok login activity...');
       setTimeout(async () => {
@@ -423,7 +433,7 @@ export const AuthProvider = ({ children }) => {
             setTimeout(() => {
               console.log(`🔄 Dispatching refreshActivityLogs event (attempt ${attempt}/${maxAttempts})...`);
               window.dispatchEvent(new CustomEvent('refreshActivityLogs'));
-              
+
               if (attempt < maxAttempts) {
                 refreshLogs(attempt + 1, maxAttempts);
               }
@@ -435,7 +445,7 @@ export const AuthProvider = ({ children }) => {
           console.error('Error code:', logError.code, 'Message:', logError.message);
         }
       }, 500);
-      
+
       // Auth state listener will update user state automatically
       return {
         user: userCredential.user,
@@ -472,15 +482,15 @@ export const AuthProvider = ({ children }) => {
   const resetPassword = async (email) => {
     try {
       console.log('[AuthContext] Requesting password reset for:', email);
-      
+
       // Use Firebase built-in sendPasswordResetEmail
       const { sendPasswordResetEmail } = await import('firebase/auth');
       await sendPasswordResetEmail(auth, email);
-      
+
       console.log('[AuthContext] Password reset email sent successfully');
-      return { 
-        success: true, 
-        message: 'Password reset email sent. Please check your inbox.' 
+      return {
+        success: true,
+        message: 'Password reset email sent. Please check your inbox.'
       };
     } catch (error) {
       console.error('[AuthContext] Failed to send password reset email:', error);
@@ -496,28 +506,28 @@ export const AuthProvider = ({ children }) => {
     if (!user) {
       throw new Error('No user logged in. Please sign in first to resend verification email.');
     }
-    
+
     try {
       console.log('[AuthContext] Resending email verification for user:', user.email);
-      
+
       // Check if email is already verified
       if (user.emailVerified) {
         console.log('[AuthContext] Email is already verified');
-        return { 
-          success: true, 
+        return {
+          success: true,
           alreadyVerified: true,
-          message: 'Email is already verified.' 
+          message: 'Email is already verified.'
         };
       }
-      
+
       // Use Firebase built-in sendEmailVerification
       const { sendEmailVerification } = await import('firebase/auth');
       await sendEmailVerification(user);
-      
+
       console.log('[AuthContext] Verification email resent successfully');
-      return { 
-        success: true, 
-        message: 'Verification email sent. Please check your inbox.' 
+      return {
+        success: true,
+        message: 'Verification email sent. Please check your inbox.'
       };
     } catch (error) {
       console.error('[AuthContext] Failed to resend verification email:', error);
@@ -537,11 +547,11 @@ export const AuthProvider = ({ children }) => {
    */
   const refreshUserData = async () => {
     if (!user) return;
-    
+
     try {
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
-      
+
       if (userDocSnap.exists()) {
         setUserData(userDocSnap.data());
       } else {
@@ -572,15 +582,100 @@ export const AuthProvider = ({ children }) => {
       'auth/user-mismatch': 'Thông tin đăng nhập không khớp.',
       'auth/email-not-verified': 'Vui lòng xác thực email trước khi đăng nhập. Chúng tôi đã gửi email xác thực đến địa chỉ email của bạn.',
     };
-    
+
     const errorCode = error.code;
     const message = errorMessages[errorCode] || error.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
-    
+
     return {
       code: errorCode,
       message: message,
       originalError: error
     };
+  };
+
+  /**
+   * Sync Firebase Auth profile with Firestore user document
+   */
+  const syncProfileWithFirestore = async (firebaseUser) => {
+    if (!firebaseUser) return;
+
+    try {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      const updateData = {};
+      const currentName = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User';
+
+      if (userDocSnap.exists()) {
+        const currentData = userDocSnap.data();
+
+        if (firebaseUser.displayName && currentData.displayName !== firebaseUser.displayName) {
+          updateData.displayName = firebaseUser.displayName;
+        }
+
+        if (firebaseUser.photoURL && currentData.photoURL !== firebaseUser.photoURL) {
+          updateData.photoURL = firebaseUser.photoURL;
+        }
+
+        // Always ensure updatedAt is fresh if we're doing ANY update
+        if (Object.keys(updateData).length > 0) {
+          console.log('🔄 Updating profile in Firestore:', updateData);
+          await setDoc(userDocRef, {
+            ...updateData,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+
+        // PROACTIVE SYNC: Even if profile photo matches, posts might still have old names/avatars
+        // especially if they were created before the last sync or with legacy logic
+        if (firebaseUser.photoURL || firebaseUser.displayName) {
+          console.log('🔄 Checking posts for sync (Aggressive)...');
+          try {
+            const postsQuery = query(
+              collection(db, 'posts'),
+              where('authorId', '==', firebaseUser.uid)
+            );
+            const querySnapshot = await getDocs(postsQuery);
+
+            if (!querySnapshot.empty) {
+              const batch = writeBatch(db);
+              let needsCommit = false;
+
+              querySnapshot.docs.forEach((postDoc) => {
+                const post = postDoc.data();
+                const updates = {};
+
+                // Update avatar if missing or different
+                if (firebaseUser.photoURL && (post.authorAvatar !== firebaseUser.photoURL || post.authorPhotoURL !== firebaseUser.photoURL)) {
+                  updates.authorAvatar = firebaseUser.photoURL;
+                  updates.authorPhotoURL = firebaseUser.photoURL;
+                }
+
+                // Update name if missing or different (fixes 'hihitk28' issue)
+                if (currentName && (post.authorName !== currentName || post.authorDisplayName !== currentName)) {
+                  updates.authorName = currentName;
+                  updates.authorDisplayName = currentName;
+                }
+
+                if (Object.keys(updates).length > 0) {
+                  batch.update(postDoc.ref, updates);
+                  needsCommit = true;
+                }
+              });
+
+              if (needsCommit) {
+                await batch.commit();
+                console.log(`✅ Updated author info for ${querySnapshot.size} posts`);
+              }
+            }
+          } catch (postError) {
+            console.error('⚠️ Failed to sync posts author info:', postError);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to sync profile with Firestore:', error);
+    }
   };
 
   const value = {
@@ -596,7 +691,8 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     resendVerificationEmail,
     loading,
-    refreshUserData
+    refreshUserData,
+    syncProfileWithFirestore // Export for explicit sync if needed
   };
 
   return (

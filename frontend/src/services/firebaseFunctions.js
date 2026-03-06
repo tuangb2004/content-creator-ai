@@ -445,13 +445,15 @@ export const getPost = async (postId) => {
  * @param {string} postId - Post ID
  * @returns {Promise<{success: boolean, liked: boolean}>}
  */
-export const likePost = async (postId) => {
+export const likePost = async (postIdOrData) => {
   try {
+    const data = typeof postIdOrData === 'string' ? { postId: postIdOrData } : postIdOrData;
     const likePostFunction = httpsCallable(functions, 'likePost');
-    const result = await likePostFunction({ postId });
+    const result = await likePostFunction(data);
     return {
       success: result.data.success,
       liked: result.data.liked,
+      newCount: result.data.newCount,
       message: result.data.message,
     };
   } catch (error) {
@@ -471,6 +473,7 @@ export const savePostToFavorites = async (postId) => {
     return {
       success: result.data.success,
       saved: result.data.saved,
+      newCount: result.data.newCount,
       message: result.data.message,
     };
   } catch (error) {
@@ -491,6 +494,22 @@ export const deletePostById = async (postId) => {
       success: result.data.success,
       message: result.data.message,
     };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Report a post
+ * @param {string} postId - Post ID
+ * @param {string} reason - Reason for reporting
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export const reportPost = async (postId, reason) => {
+  try {
+    const reportFunction = httpsCallable(functions, 'reportPost');
+    const result = await reportFunction({ postId, reason });
+    return { success: result.data.success, message: result.data.message };
   } catch (error) {
     throw formatFunctionError(error);
   }
@@ -523,6 +542,24 @@ export const getTopCreators = async (limit = 10) => {
     return {
       success: result.data.success,
       creators: result.data.creators || [],
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+
+/**
+ * Get weekly trending posts (top posts by views this week)
+ * @param {number} [limit] - Max posts to return (default 3)
+ * @returns {Promise<{success: boolean, posts: Array}>}
+ */
+export const getWeeklyTrendingPosts = async (limit = 3) => {
+  try {
+    const getWeeklyTrendingPostsFunction = httpsCallable(functions, 'getWeeklyTrendingPosts');
+    const result = await getWeeklyTrendingPostsFunction({ limit });
+    return {
+      success: result.data.success,
+      posts: result.data.posts || [],
     };
   } catch (error) {
     throw formatFunctionError(error);
@@ -800,6 +837,24 @@ export const createNotification = async (data) => {
     return {
       success: result.data.success,
       notificationId: result.data.notificationId,
+    };
+  } catch (error) {
+    throw formatFunctionError(error);
+  }
+};
+/**
+ * Get all interactions for the current authenticated user
+ * @returns {Promise<{success: boolean, likedPostIds: Array, savedPostIds: Array, followingUserIds: Array}>}
+ */
+export const getUserInteractions = async () => {
+  try {
+    const getUserInteractionsFunction = httpsCallable(functions, 'getUserInteractions');
+    const result = await getUserInteractionsFunction({});
+    return {
+      success: result.data.success,
+      likedPostIds: result.data.likedPostIds || [],
+      savedPostIds: result.data.savedPostIds || [],
+      followingUserIds: result.data.followingUserIds || [],
     };
   } catch (error) {
     throw formatFunctionError(error);

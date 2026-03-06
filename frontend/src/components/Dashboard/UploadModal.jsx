@@ -7,12 +7,14 @@ import { useLanguage } from '../../contexts/LanguageContext';
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ACCEPTED_TYPES = {
     image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
+    video: ['video/mp4', 'video/webm', 'video/quicktime'],
     document: ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
     text: ['text/plain', 'text/markdown', 'text/csv']
 };
 
 const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
     const { t } = useLanguage();
+    const u = t.dashboard?.uploadModal ?? {};
     const [isDragging, setIsDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -51,7 +53,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
     const handleFiles = async (files) => {
         const validFiles = files.filter(file => {
             if (file.size > MAX_FILE_SIZE) {
-                toast.error(t.dashboard.uploadModal.fileTooLarge.replace('{name}', file.name));
+                toast.error((u.fileTooLarge || 'File {name} exceeds 20MB').replace('{name}', file.name));
                 return false;
             }
             return true;
@@ -92,13 +94,13 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
                     reader.readAsDataURL(file);
                 });
             }
-            toast.success(t.dashboard.uploadModal.uploadSuccess.replace('{count}', selectedFiles.length));
+            toast.success((u.uploadSuccess || 'Uploaded {count} files successfully').replace('{count}', selectedFiles.length));
             setSelectedFiles([]);
             if (onUploadSuccess) onUploadSuccess();
             onClose();
         } catch (error) {
             console.error('Upload error:', error);
-            toast.error(t.dashboard.uploadModal.uploadFailed);
+            toast.error(u.uploadFailed || 'Failed to upload files');
         } finally {
             setUploading(false);
         }
@@ -110,7 +112,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
             <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t.dashboard.uploadModal.title}</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{u.title || 'Upload files'}</h2>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
                         <Icons.X size={20} className="text-gray-500 dark:text-gray-400" />
                     </button>
@@ -123,31 +125,31 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${isDragging
-                                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                             }`}
                     >
                         <Icons.Cloud size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
                         <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            {t.dashboard.uploadModal.dragDrop}
+                            {u.dragDrop || 'Drag and drop files here or'}
                         </p>
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             className="text-purple-600 dark:text-purple-400 hover:underline font-medium"
                         >
-                            {t.dashboard.uploadModal.chooseFromComputer}
+                            {u.chooseFromComputer || 'Choose from computer'}
                         </button>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                            {t.dashboard.uploadModal.support}
+                            {u.support || 'Supports: Images, Video, PDF, Text'}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            {t.dashboard.uploadModal.maxSize}
+                            {u.maxSize || 'Max 20MB per file'}
                         </p>
                         <input
                             ref={fileInputRef}
                             type="file"
                             multiple
-                            accept={[...ACCEPTED_TYPES.image, ...ACCEPTED_TYPES.document, ...ACCEPTED_TYPES.text].join(',')}
+                            accept={[...ACCEPTED_TYPES.image, ...ACCEPTED_TYPES.video, ...ACCEPTED_TYPES.document, ...ACCEPTED_TYPES.text].join(',')}
                             onChange={handleFileSelect}
                             className="hidden"
                         />
@@ -155,12 +157,14 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
 
                     {selectedFiles.length > 0 && (
                         <div className="mt-6 space-y-2">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{t.dashboard.uploadModal.selectedFiles}</h3>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{u.selectedFiles || 'Selected files:'}</h3>
                             {selectedFiles.map((file, index) => (
                                 <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                                     <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center shrink-0">
                                         {file.type.startsWith('image/') ? (
                                             <Icons.Image size={20} className="text-purple-600 dark:text-purple-400" />
+                                        ) : file.type.startsWith('video/') ? (
+                                            <Icons.Video size={20} className="text-blue-600 dark:text-blue-400" />
                                         ) : file.type === 'application/pdf' ? (
                                             <Icons.FileText size={20} className="text-red-600 dark:text-red-400" />
                                         ) : (
@@ -191,7 +195,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
                         className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                         disabled={uploading}
                     >
-                        {t.dashboard.uploadModal.cancel}
+                        {u.cancel || 'Cancel'}
                     </button>
                     <button
                         onClick={handleUpload}
@@ -201,12 +205,12 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
                         {uploading ? (
                             <>
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                {t.dashboard.uploadModal.uploading}
+                                {u.uploading || 'Uploading...'}
                             </>
                         ) : (
                             <>
                                 <Icons.Cloud size={16} />
-                                {t.dashboard.uploadModal.upload} {selectedFiles.length > 0 && `(${selectedFiles.length})`}
+                                {u.upload || 'Upload'} {selectedFiles.length > 0 && `(${selectedFiles.length})`}
                             </>
                         )}
                     </button>

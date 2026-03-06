@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -14,6 +15,15 @@ import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import PricingPage from './pages/PricingPage';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
 function App() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -22,108 +32,119 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <ThemeProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <ToastProvider>
-              <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<LandingPage />} />
-                  {/* Redirect old register/login routes to landing page */}
-                  <Route path="/register" element={<LandingPage />} />
-                  <Route path="/login" element={<LandingPage />} />
-                  {/* Redirect email verification to landing page (modal will handle it) */}
-                  <Route path="/verify-email" element={<LandingPage />} />
-                  {/* Pricing page */}
-                  <Route path="/pricing" element={<PricingPage />} />
-                  {/* Legal pages */}
-                  <Route path="/terms" element={<TermsPage />} />
-                  <Route path="/privacy" element={<PrivacyPage />} />
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <ThemeProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <ToastProvider>
+                <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<LandingPage />} />
+                    {/* Redirect old register/login routes to landing page */}
+                    <Route path="/register" element={<LandingPage />} />
+                    <Route path="/login" element={<LandingPage />} />
+                    {/* Redirect email verification to landing page (modal will handle it) */}
+                    <Route path="/verify-email" element={<LandingPage />} />
+                    {/* Pricing page */}
+                    <Route path="/pricing" element={<PricingPage />} />
+                    {/* Legal pages */}
+                    <Route path="/terms" element={<TermsPage />} />
+                    <Route path="/privacy" element={<PrivacyPage />} />
 
-                  {/* Protected Routes */}
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <Home />
-                      </ProtectedRoute>
-                    }
-                  />
-                  {/* Redirect old routes to dashboard (workspace is now in LandingPage) */}
-                  <Route
-                    path="/generate"
-                    element={
-                      <ProtectedRoute>
-                        <Home />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/generate/text"
-                    element={
-                      <ProtectedRoute>
-                        <Home />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/generate/image"
-                    element={
-                      <ProtectedRoute>
-                        <Home />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/tools/hashtags"
-                    element={
-                      <ProtectedRoute>
-                        <Home />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/tools/improver"
-                    element={
-                      <ProtectedRoute>
-                        <Home />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/projects"
-                    element={
-                      <ProtectedRoute>
-                        <ProjectsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  {/* Redirect analytics and settings to dashboard */}
-                  <Route
-                    path="/analytics"
-                    element={
-                      <ProtectedRoute>
-                        <Home />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <ProtectedRoute>
-                        <Home />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Routes>
-              </div>
-            </ToastProvider>
-          </AuthProvider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </Router>
+                    {/* Protected Routes */}
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Catch-all for /dashboard/project/:id etc. (pushState URLs) */}
+                    <Route
+                      path="/dashboard/*"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Redirect old routes to dashboard (workspace is now in LandingPage) */}
+                    <Route
+                      path="/generate"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/generate/text"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/generate/image"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/tools/hashtags"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/tools/improver"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/projects"
+                      element={
+                        <ProtectedRoute>
+                          <ProjectsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Redirect analytics and settings to dashboard */}
+                    <Route
+                      path="/analytics"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/settings"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Routes>
+                </div>
+              </ToastProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </Router>
+    </QueryClientProvider>
   );
 }
 

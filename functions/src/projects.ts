@@ -94,6 +94,8 @@ export interface ChatMessage {
   content: string;
   timestamp?: unknown;
   mediaUrl?: string | null;
+  /** Multiple image URLs for multi-image generation responses */
+  mediaUrls?: string[] | null;
   attachedFiles?: AttachedFile[] | null;
   modelId?: string | null;
   inputType?: string | null;
@@ -103,11 +105,12 @@ export interface ChatMessage {
 export interface Project {
   userId: string;
   title: string;
-  type: 'blog' | 'caption' | 'email' | 'product' | 'image';
+  type: 'blog' | 'caption' | 'email' | 'product' | 'image' | 'video';
   content: {
     text?: string;
     imageUrl?: string;
     images?: string[];
+    videoUrl?: string;
   };
   /** Full chat history for this project */
   messages?: ChatMessage[];
@@ -126,11 +129,12 @@ export interface SaveProjectRequest {
   /** If provided, update this project (append/set messages). Otherwise create new. */
   projectId?: string;
   title: string;
-  type: 'blog' | 'caption' | 'email' | 'product' | 'image';
+  type: 'blog' | 'caption' | 'email' | 'product' | 'image' | 'video';
   content: {
     text?: string;
     imageUrl?: string;
     images?: string[];
+    videoUrl?: string;
   };
   /** Full conversation messages to store/append */
   messages?: ChatMessage[];
@@ -230,11 +234,13 @@ export const saveProject = functions.https.onCall(
       const text = normalizeString(typeof rawContent.text === 'string' ? rawContent.text : undefined);
       const imageUrl = normalizeImageString(rawContent.imageUrl);
       const images = normalizeStringArray(rawContent.images);
+      const videoUrl = normalizeString(typeof rawContent.videoUrl === 'string' ? rawContent.videoUrl : undefined);
 
       const normalized: SaveProjectRequest['content'] = {};
       if (text) normalized.text = text;
       if (imageUrl) normalized.imageUrl = imageUrl;
       if (images && images.length > 0) normalized.images = images;
+      if (videoUrl) normalized.videoUrl = videoUrl;
 
       return Object.keys(normalized).length > 0 ? normalized : undefined;
     };
@@ -263,7 +269,7 @@ export const saveProject = functions.https.onCall(
       return messagesInput
         .filter((m) => m && (m.role === 'user' || m.role === 'model') && typeof m.content === 'string')
         .map((m) => {
-          const msg = m as ChatMessage & { attachedFiles?: unknown };
+          const msg = m as ChatMessage & { attachedFiles?: unknown; mediaUrls?: unknown };
           const attachedFiles = Array.isArray(msg.attachedFiles)
             ? msg.attachedFiles.map((f: { url?: unknown; name?: unknown; type?: unknown }) => ({
               url: typeof f?.url === 'string' ? f.url : '',
@@ -271,12 +277,17 @@ export const saveProject = functions.https.onCall(
               type: typeof f?.type === 'string' ? f.type : undefined,
             })).filter((f) => f.url)
             : null;
+          // Preserve mediaUrls array (multi-image responses)
+          const mediaUrls = Array.isArray(msg.mediaUrls)
+            ? (msg.mediaUrls as unknown[]).filter((u): u is string => typeof u === 'string' && u.length > 0)
+            : null;
           return {
             id: typeof msg.id === 'string' ? msg.id : undefined,
             role: msg.role,
             content: msg.content,
             timestamp: msg.timestamp,
             mediaUrl: typeof msg.mediaUrl === 'string' ? msg.mediaUrl : null,
+            mediaUrls: mediaUrls && mediaUrls.length > 0 ? mediaUrls : null,
             attachedFiles: attachedFiles && attachedFiles.length > 0 ? attachedFiles : null,
             modelId: typeof msg.modelId === 'string' ? msg.modelId : null,
             inputType: typeof msg.inputType === 'string' ? msg.inputType : null,

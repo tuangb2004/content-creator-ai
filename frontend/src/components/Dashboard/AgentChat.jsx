@@ -3,6 +3,7 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../config/firebase';
 import { Icons } from '../Icons';
 import { generateContent, saveProject, getProjects, getProject, uploadFile, getUploads } from '../../services/firebaseFunctions';
+import { createVideoRequest, subscribeVideoRequest, VIDEO_CREDIT_COSTS } from '../../services/videoGeneration';
 import toast from '../../utils/toast';
 import SelectFileModal from './SelectFileModal';
 import { useAuth } from '../../contexts/AuthContext';
@@ -35,6 +36,20 @@ const VIDEO_RATIOS = [
     { id: '9:16', label: '9:16', width: 'w-3', height: 'h-5' },
 ];
 
+const IMAGE_RATIOS = [
+    { id: '1:1', label: '1:1', width: 'w-6', height: 'h-6', desc: 'Square' },
+    { id: '4:3', label: '4:3', width: 'w-8', height: 'h-6', desc: 'Standard' },
+    { id: '3:4', label: '3:4', width: 'w-6', height: 'h-8', desc: 'Vertical' },
+    { id: '16:9', label: '16:9', width: 'w-8', height: 'h-4', desc: 'Landscape' },
+    { id: '9:16', label: '9:16', width: 'w-4', height: 'h-7', desc: 'Portrait' },
+];
+
+const VIDEO_MODES = [
+    { id: 'text-to-video', label: 'Từ văn bản sang video', icon: Icons.Notebook, desc: 'Tạo video từ prompt text' },
+    { id: 'frame-to-video', label: 'Tạo video từ các khung hình', icon: Icons.Gallery, desc: '2 ảnh đầu/cuối' },
+    { id: 'ingredients-to-video', label: 'Tạo video từ các thành phần', icon: Icons.Layers, desc: 'Tối đa 3 ảnh tham chiếu' },
+];
+
 const VIDEO_LANGUAGES = [
     { id: 'EN', label: 'English' },
     { id: 'VI', label: 'Tiếng Việt' },
@@ -45,6 +60,7 @@ const MODELS = {
         { id: 'nano-pro', name: 'Nano Banana Pro', desc: 'Pro image quality', icon: Icons.Banana },
         { id: 'nano', name: 'Nano Banana', desc: 'Fast & efficient', icon: Icons.Banana },
         { id: 'sdxl', name: 'SDXL 1.0', desc: 'High quality stable diffusion', icon: Icons.Stability },
+        { id: 'pollinations', name: 'Pollinations Flux', desc: 'Free • Không tốn tín dụng', icon: Icons.Pollinations, credits: 0, free: true },
     ],
     text: [
         { id: 'groq', name: 'Groq Llama 3', desc: 'Siêu nhanh & thông minh', icon: Icons.Groq },
@@ -53,8 +69,8 @@ const MODELS = {
         { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Reasoning & complexity', icon: Icons.Gemini },
     ],
     video: [
-        { id: 'nano-video', name: 'Nano Video', desc: 'Smooth generation', icon: Icons.Video },
-        { id: 'runway', name: 'Runway Gen-2', desc: 'Cinematic realism', icon: Icons.Film },
+        { id: 'veo-3.1-fast', name: 'Veo 3.1 Fast', desc: 'Nhanh, tiết kiệm', icon: Icons.Veo, credits: 300 },
+        { id: 'veo-3.1-standard', name: 'Veo 3.1 Standard', desc: 'Chất lượng cao', icon: Icons.Veo, credits: 500 },
     ]
 };
 
@@ -66,9 +82,26 @@ const isImageFile = (f) => {
     return type.startsWith('image/') || url.startsWith('data:image/') || /\.(jpe?g|png|gif|webp|bmp)(\?|$)/i.test(url);
 };
 
+/** Coi là video nếu type video/ hoặc có đuôi video */
+const isVideoFile = (f) => {
+    if (!f) return false;
+    const type = f.type || '';
+    const url = f.url || '';
+    return type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)(\?|$)/i.test(url);
+};
+
+/** Context-aware: image mode → ảnh only, video mode → ảnh+video, text → all */
+const getAcceptTypes = (inputType) => {
+    switch (inputType) {
+        case 'image': return 'image/*';
+        case 'video': return 'image/*,video/mp4,video/webm,video/quicktime';
+        default: return 'image/*,video/mp4,video/webm,application/pdf,text/plain,text/markdown,text/csv';
+    }
+};
+
 const isDataUrl = (url) => typeof url === 'string' && url.startsWith('data:');
 
-/** Loại file hiển thị (PNG, PDF, ...) */
+/** Loại file hiển thị (PNG, PDF, MP4, ...) */
 const fileDisplayType = (f) => {
     if (!f) return 'FILE';
     const t = (f.type || '').toLowerCase();
@@ -77,20 +110,35 @@ const fileDisplayType = (f) => {
     if (t.includes('jpeg') || t.includes('jpg')) return 'JPEG';
     if (t.includes('gif')) return 'GIF';
     if (t.includes('webp')) return 'WEBP';
+    if (t.includes('mp4')) return 'MP4';
+    if (t.includes('webm')) return 'WEBM';
+    if (t.includes('quicktime') || t.includes('mov')) return 'MOV';
     const u = (f.url || '').toLowerCase();
     if (/\.pdf(\?|$)/.test(u)) return 'PDF';
     if (/\.png(\?|$)/.test(u)) return 'PNG';
     if (/\.jpe?g(\?|$)/.test(u)) return 'JPEG';
+    if (/\.mp4(\?|$)/.test(u)) return 'MP4';
+    if (/\.webm(\?|$)/.test(u)) return 'WEBM';
+    if (/\.mov(\?|$)/.test(u)) return 'MOV';
     return (t.split('/')[1] || 'FILE').toUpperCase();
 };
 
-/** Card file đính kèm (ảnh 2): thumbnail | tên + loại | optional X. Click ảnh → mở full ảnh (lightbox). */
+/** Card file đính kèm: thumbnail | tên + loại | optional X. Click ảnh → mở full ảnh (lightbox). */
 const FileCard = ({ file, onRemove, showRemove = false, onImageClick }) => {
+    const { t: tr } = useLanguage();
     const isImg = isImageFile(file);
+    const isVid = isVideoFile(file);
     const thumb = (
-        <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative">
             {isImg ? (
                 <img src={file.url} alt={file.name || ''} className="w-full h-full object-cover" />
+            ) : isVid ? (
+                <>
+                    <Icons.Video size={22} className="text-purple-500 dark:text-purple-400" />
+                    <div className="absolute bottom-0.5 right-0.5 bg-black/60 rounded px-1">
+                        <span className="text-[8px] text-white font-bold">{fileDisplayType(file)}</span>
+                    </div>
+                </>
             ) : (
                 <Icons.FileText size={22} className="text-gray-500 dark:text-gray-400" />
             )}
@@ -110,7 +158,7 @@ const FileCard = ({ file, onRemove, showRemove = false, onImageClick }) => {
                 <p className="text-xs text-gray-500 dark:text-gray-400">{fileDisplayType(file)}</p>
             </div>
             {showRemove && onRemove && (
-                <button type="button" onClick={onRemove} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 absolute top-2 right-2" title={t.common.delete || 'Delete'}>
+                <button type="button" onClick={onRemove} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 absolute top-2 right-2" title={tr?.common?.delete || 'Delete'}>
                     <Icons.X size={16} />
                 </button>
             )}
@@ -118,7 +166,7 @@ const FileCard = ({ file, onRemove, showRemove = false, onImageClick }) => {
     );
 };
 
-const MessageItem = ({ msg, onShare, onImageClick }) => {
+const MessageItem = ({ msg, onShare, onImageClick, setMessages, selectedModel, videoAspectRatio, videoDuration }) => {
     const { t } = useLanguage();
     const [isExpanded, setIsExpanded] = useState(false);
     const isUser = msg.role === 'user';
@@ -133,6 +181,15 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
         if (msg.mediaUrl && !seen.has(msg.mediaUrl)) {
             seen.add(msg.mediaUrl);
             list.push({ url: msg.mediaUrl, name: 'Image', type: 'image' });
+        }
+        // Include all mediaUrls (multi-image responses)
+        if (msg.mediaUrls && Array.isArray(msg.mediaUrls)) {
+            msg.mediaUrls.forEach((url, idx) => {
+                if (url && !seen.has(url)) {
+                    seen.add(url);
+                    list.push({ url, name: `Image ${idx + 1}`, type: 'image' });
+                }
+            });
         }
         (msg.attachedFiles || []).forEach(f => {
             if (f?.url && !seen.has(f.url)) { seen.add(f.url); list.push(f); }
@@ -154,7 +211,9 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
                                 const foundModel = MODELS[msg.inputType].find(m => m.id === msg.modelId);
                                 if (foundModel?.icon) IconComponent = foundModel.icon;
                             }
-                            return <IconComponent size={16} />;
+                            // Using capitalized variable for component rendering
+                            const ModelIcon = IconComponent;
+                            return <ModelIcon size={16} />;
                         })()}
                     </div>
                 )}
@@ -184,7 +243,7 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
                             <button
                                 onClick={() => setIsExpanded(!isExpanded)}
                                 className="absolute top-2 right-2 p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors bg-white/50 dark:bg-black/20 rounded-full backdrop-blur-[1px] z-10"
-                                title={isExpanded ? (t.common.hide || "Hide") : (t.common.show || "Show")}
+                                title={isExpanded ? (t.common?.hide || "Hide") : (t.common?.show || "Show")}
                             >
                                 <Icons.ChevronDown size={14} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                             </button>
@@ -202,9 +261,42 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
                             </div>
                         )}
 
-                        {!isUser && msg.mediaUrl && (
+                        {!isUser && (msg.mediaUrls?.length > 1 ? (
+                            /* Multi-image grid */
+                            <div className={`mt-3 grid gap-2 ${msg.mediaUrls.length === 2 ? 'grid-cols-2' : msg.mediaUrls.length === 3 ? 'grid-cols-2' : 'grid-cols-2'}`}>
+                                {msg.mediaUrls.map((url, idx) => (
+                                    <div key={idx} className="relative">
+                                        {onImageClick ? (
+                                            <button type="button" onClick={() => onImageClick(url)} className="block rounded-2xl overflow-hidden focus:outline-none cursor-zoom-in w-full">
+                                                <img src={url} alt={`Generated ${idx + 1}`} className="w-full h-auto max-h-[280px] object-cover rounded-2xl bg-gray-50 dark:bg-gray-800" />
+                                            </button>
+                                        ) : (
+                                            <img src={url} alt={`Generated ${idx + 1}`} className="w-full h-auto max-h-[280px] object-cover rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shadow-sm" />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : msg.mediaUrl && (
                             <div className="mt-3 inline-block">
-                                {onImageClick ? (
+                                {msg.type === 'video' ? (
+                                    <div className="space-y-2">
+                                        <video
+                                            src={msg.mediaUrl}
+                                            controls
+                                            className="w-auto h-auto max-h-[400px] max-w-full rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-900 shadow-sm"
+                                        />
+                                        <div className="flex items-center gap-2">
+                                            <a
+                                                href={msg.mediaUrl}
+                                                download
+                                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                            >
+                                                <Icons.Download size={14} />
+                                                Tải xuống
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : onImageClick ? (
                                     <button type="button" onClick={() => onImageClick(msg.mediaUrl)} className="block rounded-2xl overflow-hidden focus:outline-none cursor-zoom-in">
                                         <img src={msg.mediaUrl} alt="Generated Content" className="w-auto h-auto max-h-[400px] max-w-full object-contain rounded-2xl bg-gray-50 dark:bg-gray-800" />
                                     </button>
@@ -212,7 +304,7 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
                                     <img src={msg.mediaUrl} alt="Generated Content" className="w-auto h-auto max-h-[400px] max-w-full object-contain rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shadow-sm" />
                                 )}
                             </div>
-                        )}
+                        ))}
                     </div>
 
                     {/* AI Action Buttons */}
@@ -231,7 +323,7 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
                             >
                                 <Icons.Share2 size={16} />
                             </button>
-                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={t.common.more || 'More'}>
+                            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={t.common?.more || 'More'}>
                                 <Icons.MoreVertical size={16} />
                             </button>
                         </div>
@@ -242,23 +334,32 @@ const MessageItem = ({ msg, onShare, onImageClick }) => {
     );
 };
 
+/** Infer video from URL so saved projects show video player, not broken img */
+const isVideoUrl = (url) => url && /\.(mp4|webm|mov)(\?|$)/i.test(String(url));
+
 /** Normalize messages from backend (may have Firestore timestamps) for display */
 const normalizeMessages = (raw) => {
     if (!Array.isArray(raw) || raw.length === 0) return [];
-    return raw.map((m, i) => ({
-        id: m.id || `msg-${i}-${Date.now()}`,
-        role: m.role === 'user' ? 'user' : 'model',
-        content: typeof m.content === 'string' ? m.content : '',
-        timestamp: m.timestamp,
-        mediaUrl: m.mediaUrl ?? null,
-        attachedFiles: Array.isArray(m.attachedFiles) ? m.attachedFiles : null,
-        modelId: m.modelId ?? null,
-        inputType: m.inputType ?? null,
-        isError: !!m.isError,
-    }));
+    return raw.map((m, i) => {
+        const mediaUrl = m.mediaUrl ?? null;
+        const type = m.type ?? (mediaUrl && isVideoUrl(mediaUrl) ? 'video' : null);
+        return {
+            id: m.id || `msg-${i}-${Date.now()}`,
+            role: m.role === 'user' ? 'user' : 'model',
+            content: typeof m.content === 'string' ? m.content : '',
+            timestamp: m.timestamp,
+            mediaUrl,
+            mediaUrls: Array.isArray(m.mediaUrls) ? m.mediaUrls : null,
+            attachedFiles: Array.isArray(m.attachedFiles) ? m.attachedFiles : null,
+            modelId: m.modelId ?? null,
+            inputType: m.inputType ?? null,
+            type: type ?? null,
+            isError: !!m.isError,
+        };
+    });
 };
 
-export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialProjectId, initialInputType = 'image', initialModel, initialMorphOffsetY, initialFileUrls = [], onBack }) => {
+export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialProjectId, initialInputType = 'image', initialModel, initialMorphOffsetY, initialFileUrls = [], initialVideoMode, initialVideoAspectRatio, initialVideoDuration, initialVideoX2, initialVideoResolution, initialVideoLanguage, initialImageAspectRatio = '1:1', initialImageCount = 1, onBack }) => {
     const { t } = useLanguage();
     const { user } = useAuth();
     const [messages, setMessages] = useState(() => (initialMessages?.length > 0 ? normalizeMessages(initialMessages) : []));
@@ -277,13 +378,23 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
     const [inputType, setInputType] = useState(initialInputType);
     const [selectedModel, setSelectedModel] = useState(initialModel);
     const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
-    const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
-    const [isRatioMenuOpen, setIsRatioMenuOpen] = useState(false);
+    const [tuningSubMenu, setTuningSubMenu] = useState(null); // 'ratio', 'count', 'model'
+    const [isTuningOpen, setIsTuningOpen] = useState(false);
+    const [imageAspectRatio, setImageAspectRatio] = useState(initialImageAspectRatio);
+    const [imageCount, setImageCount] = useState(initialImageCount);
     const [selectedRatio, setSelectedRatio] = useState('1:1');
     const [isAutoRatio, setIsAutoRatio] = useState(true);
     const [isVideoRatioLangMenuOpen, setIsVideoRatioLangMenuOpen] = useState(false);
-    const [videoAspectRatio, setVideoAspectRatio] = useState('9:16');
+    const [videoAspectRatio, setVideoAspectRatio] = useState(initialVideoAspectRatio || '9:16');
     const [videoLanguage, setVideoLanguage] = useState('EN');
+    const [videoMode, setVideoMode] = useState(initialVideoMode || 'text-to-video');
+    const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
+    const [plusMenuFrameSlot, setPlusMenuFrameSlot] = useState(null);
+    const [videoGenerating, setVideoGenerating] = useState(false);
+    const [videoDuration] = useState(initialVideoDuration || 8);
+    const [videoX2] = useState(initialVideoX2 || false);
+    const [videoResolution] = useState(initialVideoResolution || '720p');
+    const [videoLanguage2] = useState(initialVideoLanguage || 'EN');
 
     // New Feature States
     const [isLengthMenuOpen, setIsLengthMenuOpen] = useState(false);
@@ -295,6 +406,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
     const [isSelectingFromAssets, setIsSelectingFromAssets] = useState(false);
     const [lightboxImage, setLightboxImage] = useState(null);
     const fileInputRef = useRef(null);
+    const frameFileInputRef = useRef(null);
     const assetsFileInputRef = useRef(null);
 
     const currentModels = MODELS[inputType] || MODELS.image;
@@ -331,10 +443,12 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
     const initializedRef = useRef(false);
 
     const menuRef = useRef(null);
-    const modelMenuRef = useRef(null);
-    const ratioMenuRef = useRef(null);
+    const tuningRef = useRef(null);
+    const tuningButtonRef = useRef(null);
     const lengthMenuRef = useRef(null);
     const videoRatioLangMenuRef = useRef(null);
+    const modeMenuRef = useRef(null);
+    const plusMenuFrameSlotRef = useRef(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -416,17 +530,18 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
             if (menuRef.current && !menuRef.current.contains(event.target)) {
                 setIsPlusMenuOpen(false);
             }
-            if (modelMenuRef.current && !modelMenuRef.current.contains(event.target)) {
-                setIsModelMenuOpen(false);
-            }
-            if (ratioMenuRef.current && !ratioMenuRef.current.contains(event.target)) {
-                setIsRatioMenuOpen(false);
+            if (tuningRef.current && !tuningRef.current.contains(event.target)) {
+                setIsTuningOpen(false);
+                setTuningSubMenu(null);
             }
             if (lengthMenuRef.current && !lengthMenuRef.current.contains(event.target)) {
                 setIsLengthMenuOpen(false);
             }
             if (videoRatioLangMenuRef.current && !videoRatioLangMenuRef.current.contains(event.target)) {
                 setIsVideoRatioLangMenuOpen(false);
+            }
+            if (modeMenuRef.current && !modeMenuRef.current.contains(event.target)) {
+                setIsModeMenuOpen(false);
             }
         };
 
@@ -437,51 +552,126 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
     }, []);
 
     const handleFileUpload = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
 
-        if (file.size > 20 * 1024 * 1024) {
-            toast.error('File size must be less than 20MB');
-            return;
-        }
+        setIsPlusMenuOpen(false);
 
-        // Upload to Storage
-        try {
-            const reader = new FileReader();
-            toast.loading(t.dashboard.chat.uploadingImage, { id: 'uploading' });
-            reader.onloadend = async () => {
-                try {
-                    const base64 = reader.result.split(',')[1];
-                    const result = await uploadFile({
-                        fileName: file.name,
-                        fileType: file.type,
-                        fileSize: file.size,
-                        fileData: base64
-                    });
-                    if (result.success) {
-                        setUploadedFiles(prev => [...prev, { url: result.fileUrl, name: file.name, type: file.type }]);
-                        toast.dismiss('uploading');
-                        toast.success('File đã được tải lên');
-                    }
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    toast.error('Lỗi khi tải lên file');
+        for (const file of files) {
+            if (file.size > 20 * 1024 * 1024) {
+                toast.error((t.dashboard.uploadModal?.fileTooLarge || 'File {name} exceeds 20MB').replace('{name}', file.name));
+                continue;
+            }
+
+            toast.loading(t.dashboard.chat?.uploadingImage || 'Uploading...', { id: `uploading-${file.name}` });
+
+            try {
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = (err) => reject(err);
+                    reader.readAsDataURL(file);
+                });
+
+                if (!base64Data || typeof base64Data !== 'string' || !base64Data.includes(',')) {
+                    throw new Error('Invalid file data format');
                 }
-            };
-            reader.readAsDataURL(file);
-            setIsPlusMenuOpen(false);
-        } catch (error) {
-            console.error('File read error:', error);
-            toast.error('Lỗi khi đọc file');
+
+                const base64 = base64Data.split(',')[1];
+                const result = await uploadFile({
+                    fileName: file.name,
+                    fileType: file.type || 'application/octet-stream',
+                    fileSize: file.size,
+                    fileData: base64
+                });
+
+                if (result.success) {
+                    setUploadedFiles(prev => [...prev, { url: result.fileUrl, name: file.name, type: file.type }]);
+                    toast.dismiss(`uploading-${file.name}`);
+                    toast.success(t.dashboard.chat?.fileUploaded || 'File uploaded');
+                } else {
+                    throw new Error(result.message || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('File upload error:', error);
+                toast.dismiss(`uploading-${file.name}`);
+                const errorMessage = error.message === 'Invalid file data format'
+                    ? (t.dashboard.chat?.fileReadError || 'Error reading file')
+                    : (t.dashboard.chat?.uploadError || 'Upload failed');
+                toast.error(`${errorMessage}: ${file.name}`);
+            }
         }
+        // Reset input so same file can be re-selected
+        e.target.value = '';
     };
 
     const handleSelectFromAssets = () => {
         setIsSelectingFromAssets(true);
     };
 
+    const handleFrameFileUpload = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        const slot = plusMenuFrameSlotRef.current;
+        if (slot === undefined || slot === null) return;
+
+        const file = files[0];
+        if (file.size > 20 * 1024 * 1024) {
+            toast.error((t.dashboard.uploadModal?.fileTooLarge || 'File {name} exceeds 20MB').replace('{name}', file.name));
+            e.target.value = '';
+            return;
+        }
+
+        toast.loading(t.dashboard.chat?.uploadingImage || 'Uploading...', { id: `frame-upload-${slot}` });
+        try {
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = (err) => reject(err);
+                reader.readAsDataURL(file);
+            });
+            if (!base64Data || typeof base64Data !== 'string' || !base64Data.includes(',')) throw new Error('Invalid file data format');
+            const base64 = base64Data.split(',')[1];
+            const result = await uploadFile({ fileName: file.name, fileType: file.type || 'application/octet-stream', fileSize: file.size, fileData: base64 });
+            if (result.success) {
+                handleFileSelectedForSlot(slot, { url: result.fileUrl, name: file.name, type: file.type });
+                toast.dismiss(`frame-upload-${slot}`);
+                toast.success(t.dashboard.chat?.fileUploaded || 'File uploaded');
+            } else throw new Error(result.message || 'Upload failed');
+        } catch (err) {
+            console.error('Frame file upload error:', err);
+            toast.dismiss(`frame-upload-${slot}`);
+            toast.error((t.dashboard.chat?.uploadError || 'Upload failed') + ': ' + file.name);
+        }
+        e.target.value = '';
+    };
+
     const removeFile = (index) => {
-        setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+        if (inputType === 'video' && videoMode === 'frame-to-video') {
+            setUploadedFiles(prev => {
+                const a = [prev[0] ?? null, prev[1] ?? null];
+                a[index] = null;
+                return a;
+            });
+        } else {
+            setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+        }
+    };
+
+    const swapFrameOrder = () => {
+        if (uploadedFiles.length < 2) return;
+        setUploadedFiles(prev => [prev[1], prev[0]]);
+    };
+
+    const handleFileSelectedForSlot = (slot, file) => {
+        setUploadedFiles(prev => {
+            const a = [prev[0] ?? null, prev[1] ?? null];
+            a[slot] = file;
+            return a;
+        });
+        setIsPlusMenuOpen(false);
+        setPlusMenuFrameSlot(null);
+        plusMenuFrameSlotRef.current = null;
     };
 
     // State for community share modal (image/video)
@@ -508,18 +698,19 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
     };
 
     const handleSend = async (text) => {
-        if (!text.trim() && uploadedFiles.length === 0 && !uploadedImage) return;
+        const validFiles = uploadedFiles.filter(Boolean);
+        if (!text.trim() && validFiles.length === 0 && !uploadedImage) return;
 
         // Lưu file đính kèm vào message user (hiển thị như Gemini/ChatGPT)
-        const attachedFiles = uploadedFiles.map(f => ({ url: f.url, name: f.name, type: f.type }));
+        const attachedFiles = validFiles.map(f => ({ url: f.url, name: f.name, type: f.type }));
         const firstImageUrl = (uploadedImage && typeof uploadedImage === 'string')
             ? uploadedImage
-            : (uploadedFiles.find(f => isImageFile(f))?.url ?? null);
+            : (validFiles.find(f => isImageFile(f))?.url ?? null);
 
         const userMsg = {
             id: Date.now().toString(),
             role: 'user',
-            content: text || (uploadedFiles.length > 0 ? `Phân tích ${uploadedFiles.length} file đính kèm` : ''),
+            content: text || (validFiles.length > 0 ? `Phân tích ${validFiles.length} file đính kèm` : ''),
             timestamp: new Date(),
             mediaUrl: firstImageUrl ?? null,
             attachedFiles: attachedFiles.length > 0 ? attachedFiles : null
@@ -532,17 +723,173 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
         setIsLoading(true);
 
         const model = (selectedModel && (MODELS[inputType] || MODELS.image).find(m => m.id === selectedModel.id)) ? selectedModel : (MODELS[inputType] || MODELS.image)[0];
+
+        // ===== VIDEO: Gửi yêu cầu tạo video qua Firestore trigger =====
+        if (inputType === 'video') {
+            try {
+                setVideoGenerating(true);
+                const fileUrls = attachedFiles.map(f => f.url).filter(Boolean);
+
+                // Build video request params based on videoMode
+                const videoParams = {
+                    prompt: text || 'Generate a video',
+                    model: model?.id || 'veo-3.1-fast',
+                    aspectRatio: videoAspectRatio || '16:9',
+                    duration: videoDuration || 8,
+                    videoMode: videoMode,
+                    numberOfVideos: videoX2 ? 2 : 1,
+                    resolution: videoResolution || '720p',
+                    language: videoLanguage2 || 'EN',
+                };
+
+                // Map uploaded files based on video mode
+                if (videoMode === 'frame-to-video' && fileUrls.length > 0) {
+                    videoParams.firstFrameUrl = fileUrls[0];
+                    if (fileUrls.length > 1) videoParams.lastFrameUrl = fileUrls[1];
+                } else if (videoMode === 'ingredients-to-video' && fileUrls.length > 0) {
+                    videoParams.referenceImageUrls = fileUrls.slice(0, 3);
+                } else if (fileUrls.length > 0) {
+                    videoParams.fileUrls = fileUrls;
+                }
+
+                // Add queued status message
+                const queueMsg = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'model',
+                    content: `🎬 Đang gửi yêu cầu tạo video với **${model?.name || 'Veo 3.1'}**...\n\n⏳ Video sẽ mất khoảng 30 giây - 2 phút để tạo.`,
+                    timestamp: new Date(),
+                    type: 'video',
+                    modelId: model?.id,
+                    inputType: 'video',
+                };
+                setMessages(prev => [...prev, queueMsg]);
+                setIsLoading(false);
+                toast.loading('Đang gửi yêu cầu tạo video...', { id: 'video-gen' });
+
+                // Create Firestore video request (trigger backend)
+                const requestId = await createVideoRequest({
+                    userId: user.uid,
+                    prompt: text || 'Generate a video',
+                    model: model?.id || 'veo-3.1-fast',
+                    aspectRatio: videoAspectRatio || '16:9',
+                    duration: videoDuration || 8,
+                    language: videoLanguage2 || 'EN',
+                    videoMode: videoMode,
+                    ...(videoParams.fileUrls && { fileUrls: videoParams.fileUrls }),
+                    ...(videoParams.firstFrameUrl && { firstFrameUrl: videoParams.firstFrameUrl }),
+                    ...(videoParams.lastFrameUrl && { lastFrameUrl: videoParams.lastFrameUrl }),
+                    ...(videoParams.referenceImageUrls && { referenceImageUrls: videoParams.referenceImageUrls }),
+                    ...(videoParams.resolution && { resolution: videoParams.resolution }),
+                    ...(videoParams.personGeneration && { personGeneration: videoParams.personGeneration }),
+                });
+
+                // Listen for status updates
+                const unsubscribe = subscribeVideoRequest(requestId, (request) => {
+                    if (request.status === 'processing') {
+                        toast.loading('Đang tạo video...', { id: 'video-gen' });
+                        setMessages(prev => prev.map(m =>
+                            m.id === queueMsg.id
+                                ? {
+                                    ...m,
+                                    content: `🎬 Video đang được tạo...\n\n⚙️ Trạng thái: **Đang xử lý**`,
+                                }
+                                : m
+                        ));
+                    }
+
+                    if (request.status === 'error') {
+                        setVideoGenerating(false);
+                        toast.dismiss('video-gen');
+                        toast.error(request.error || 'Tạo video thất bại');
+                        setMessages(prev => prev.map(m =>
+                            m.id === queueMsg.id
+                                ? {
+                                    ...m,
+                                    content: `❌ Tạo video thất bại: ${request.error || 'Đã xảy ra lỗi trong quá trình tạo video.'}`,
+                                    isError: true,
+                                }
+                                : m
+                        ));
+                        unsubscribe();
+                    }
+
+                    if (request.status === 'completed' && request.videoUrl) {
+                        setVideoGenerating(false);
+                        toast.dismiss('video-gen');
+                        toast.success('Video đã tạo xong! Kiểm tra Assets của bạn.');
+
+                        const finalMsg = {
+                            ...queueMsg,
+                            content: '✅ Video đã tạo thành công!',
+                            mediaUrl: request.videoUrl,
+                            type: 'video',
+                        };
+
+                        // Replace queue message with final video result
+                        setMessages(prev => prev.map(m =>
+                            m.id === queueMsg.id ? finalMsg : m
+                        ));
+
+                        // Save project (auto-save video as asset)
+                        const updatedMessages = [...messages, userMsg, finalMsg];
+                        saveProject({
+                            projectId: projectId || undefined,
+                            title: text.length > 30 ? text.substring(0, 30) + '...' : text,
+                            type: 'video',
+                            content: { videoUrl: request.videoUrl },
+                            messages: updatedMessages.map(m => ({
+                                id: m.id,
+                                role: m.role,
+                                content: m.content,
+                                timestamp: m.timestamp,
+                                mediaUrl: m.mediaUrl || null,
+                                attachedFiles: m.attachedFiles || null,
+                                modelId: m.modelId ?? null,
+                                inputType: m.inputType ?? null,
+                                isError: m.isError ?? null,
+                            })),
+                        }).then(saveResult => {
+                            if (saveResult?.projectId && !projectId) {
+                                setProjectId(saveResult.projectId);
+                                window.history.pushState({}, '', `/dashboard/project/${saveResult.projectId}`);
+                            }
+                            if (isHistoryOpen) fetchHistory();
+                        }).catch(e => console.error('Background save failed:', e));
+
+                        unsubscribe();
+                    }
+                });
+
+            } catch (error) {
+                console.error('Video Generation Error:', error);
+                setIsLoading(false);
+                setVideoGenerating(false);
+                const errorMsg = {
+                    id: (Date.now() + 2).toString(),
+                    role: 'model',
+                    content: `❌ Lỗi tạo video: ${error.message || 'Xin lỗi, tôi gặp sự cố khi xử lý yêu cầu video.'}`,
+                    timestamp: new Date(),
+                    isError: true,
+                };
+                setMessages(prev => [...prev, errorMsg]);
+            }
+            return;
+        }
+
+        // ===== TEXT / IMAGE: Logic hiện tại giữ nguyên =====
         try {
             // Determine provider
             let provider = 'gemini'; // Default
             if (inputType === 'text') {
                 provider = model?.id === 'groq' ? 'groq' : 'gemini';
             } else if (inputType === 'image') {
-                provider = model?.id === 'sdxl' ? 'stability' : 'gemini'; // Nano = Gemini
+                if (model?.id === 'sdxl') provider = 'stability';
+                else if (model?.id === 'pollinations') provider = 'pollination';
+                else provider = 'gemini'; // Nano = Gemini
             }
 
             // Collect file URLs (from uploadedFiles and uploadedImage if it's a URL)
-            const fileUrls = uploadedFiles.map(f => f.url);
+            const fileUrls = uploadedFiles.filter(Boolean).map(f => f.url);
             if (uploadedImage && typeof uploadedImage === 'string' && uploadedImage.startsWith('http')) {
                 fileUrls.push(uploadedImage);
             }
@@ -554,36 +901,89 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                 provider: provider,
                 modelId: model?.id,
                 length: selectedLength?.id,
-                ratio: isAutoRatio ? undefined : selectedRatio,
+                ratio: inputType === 'image' ? imageAspectRatio : undefined,
+                count: inputType === 'image' ? imageCount : undefined,
                 image: uploadedImage && !uploadedImage.startsWith('http') ? uploadedImage : undefined, // Legacy base64 image
                 fileUrls: fileUrls.length > 0 ? fileUrls : undefined // New file URLs for Gemini File API
             });
 
-            let imageUrlToSave = result.contentType === 'image' ? result.content : null;
-            if (result.contentType === 'image' && isDataUrl(result.content) && user?.uid) {
+            // Handle multi-image response (count > 1 returns JSON array)
+            let imageUrls = [];
+            if (result.contentType === 'image') {
                 try {
-                    imageUrlToSave = await uploadDataUrlToStorage(result.content, user.uid);
-                } catch (e) {
-                    console.warn('Upload generated image to Storage failed:', e);
-                    // Fallback: send Data URL to server to handle
-                    imageUrlToSave = result.content;
+                    const parsed = JSON.parse(result.content);
+                    if (Array.isArray(parsed)) {
+                        imageUrls = parsed;
+                    } else {
+                        imageUrls = [result.content];
+                    }
+                } catch {
+                    imageUrls = [result.content];
                 }
             }
-            const displayImageUrl = result.contentType === 'image' ? (imageUrlToSave || result.content) : null;
+
+            // Upload generated images to Storage
+            const processedUrls = [];
+            for (const imgData of imageUrls) {
+                if (isDataUrl(imgData) && user?.uid) {
+                    try {
+                        const uploaded = await uploadDataUrlToStorage(imgData, user.uid);
+                        processedUrls.push(uploaded);
+                    } catch (e) {
+                        console.warn('Upload generated image to Storage failed:', e);
+                        processedUrls.push(imgData);
+                    }
+                } else {
+                    processedUrls.push(imgData);
+                }
+            }
+
+            const displayImageUrl = result.contentType === 'image' ? (processedUrls[0] || result.content) : null;
+            const isVideoResponse = result.contentType === 'video' || (result.metadata && result.metadata.queueId);
 
             const aiMsg = {
                 id: (Date.now() + 1).toString(),
                 role: 'model',
-                content: result.contentType === 'image' ? "" : result.content,
+                content: isVideoResponse
+                    ? `🎬 Đang tạo video... (Queue ID: ${result.metadata?.queueId || '...'})\n\n⏳ Quá trình này có thể mất vài phút.`
+                    : (result.contentType === 'image' ? (processedUrls.length > 1 ? `Đã tạo ${processedUrls.length} ảnh` : "") : result.content),
                 timestamp: new Date(),
                 type: result.contentType,
                 mediaUrl: displayImageUrl,
+                mediaUrls: processedUrls.length > 1 ? processedUrls : undefined,
                 modelId: model?.id,
-                inputType: inputType
+                inputType: inputType,
+                metadata: result.metadata
             };
 
-            const updatedMessages = [...messages, userMsg, aiMsg];
             setMessages(prev => [...prev, aiMsg]);
+
+            // If it's a video from generateContent, start polling
+            if (isVideoResponse && result.metadata?.queueId) {
+                const qId = result.metadata.queueId;
+                pollVideoStatus(qId, (status) => {
+                    if (status.status === 'processing') {
+                        setMessages(prev => prev.map(m =>
+                            m.id === aiMsg.id ? { ...m, content: `🎬 Video đang được xử lý...\n\n⚙️ Trạng thái: **Đang xử lý**` } : m
+                        ));
+                    }
+                }).then(pollResult => {
+                    if (pollResult.success) {
+                        setMessages(prev => prev.map(m =>
+                            m.id === aiMsg.id ? { ...m, content: `✅ Video đã tạo thành công!`, mediaUrl: pollResult.videoUrl, type: 'video' } : m
+                        ));
+                        // Update mediaUrl locally for future reference in this session
+                        aiMsg.mediaUrl = pollResult.videoUrl;
+                        aiMsg.type = 'video';
+                    } else {
+                        setMessages(prev => prev.map(m =>
+                            m.id === aiMsg.id ? { ...m, content: `❌ Tạo video thất bại: ${pollResult.error}`, isError: true } : m
+                        ));
+                    }
+                });
+            }
+
+            const updatedMessages = [...messages, userMsg, aiMsg];
             setIsLoading(false);
 
             const sanitizeUrl = (u) => (u && !isDataUrl(u) ? u : null);
@@ -608,7 +1008,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                 type: inputType,
                 content: {
                     text: result.contentType === 'text' ? result.content : undefined,
-                    imageUrl: imageUrlToSave ?? undefined
+                    imageUrl: (processedUrls.length > 0 ? processedUrls[0] : undefined)
                 },
                 messages: updatedMessages.map(m => ({
                     id: m.id,
@@ -617,6 +1017,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                     timestamp: m.timestamp,
                     // Use getSafeMediaUrl logic: allow Data URL if it's what we want to save
                     mediaUrl: m.mediaUrl || null,
+                    mediaUrls: Array.isArray(m.mediaUrls) ? m.mediaUrls : null,
                     attachedFiles: sanitizeAttached(m.attachedFiles) ?? null,
                     modelId: m.modelId ?? null,
                     inputType: m.inputType ?? null,
@@ -753,6 +1154,10 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                             msg={msg}
                             onShare={handleShareClick}
                             onImageClick={(url) => setLightboxImage(url)}
+                            setMessages={setMessages}
+                            selectedModel={selectedModel}
+                            videoAspectRatio={videoAspectRatio}
+                            videoDuration={videoDuration}
                         />
                     ))}
 
@@ -761,11 +1166,10 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                         <div className="flex justify-start w-full">
                             <div className="flex gap-4">
                                 <div className="w-8 h-8 rounded-full border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 text-purple-600 flex items-center justify-center shrink-0 shadow-sm animate-pulse">
-                                    {(effectiveModel && effectiveModel.icon) ? (
-                                        <effectiveModel.icon size={16} isActive={true} />
-                                    ) : (
-                                        <Icons.Sparkles size={16} />
-                                    )}
+                                    {(() => {
+                                        const ModelIcon = (effectiveModel && effectiveModel.icon) ? effectiveModel.icon : Icons.Sparkles;
+                                        return <ModelIcon size={16} isActive={true} />;
+                                    })()}
                                 </div>
                                 <div className="flex items-center gap-1.5 h-8">
                                     <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
@@ -779,281 +1183,464 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                 </div>
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 pb-4 pt-4 px-4 md:px-8 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#0f172a] dark:via-[#0f172a]/95 z-10">
-                <div
-                    className="max-w-3xl mx-auto relative bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-[2.5rem] p-6 shadow-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-xl focus-within:border-gray-400 dark:focus-within:border-gray-500 focus-within:ring-2 focus-within:ring-gray-200/80 dark:focus-within:ring-gray-600/50 focus-within:shadow-xl"
-                    style={{
-                        transform: `translate3d(0, ${formOffsetY}px, 0)`,
-                        transition: `transform ${MORPH_DURATION}ms ${MORPH_EASING}`,
-                        willChange: formOffsetY !== 0 ? 'transform' : 'auto',
-                    }}
-                >
-                    {/* File đã chọn: trong form input (kiểu ảnh 3), không để ngoài */}
-                    {(uploadedImage || uploadedFiles.length > 0) && (
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {uploadedImage && (
-                                <FileCard
-                                    file={{ url: uploadedImage, name: 'Image', type: 'image' }}
-                                    showRemove
-                                    onRemove={() => setUploadedImage(null)}
-                                    onImageClick={(url) => setLightboxImage(url)}
-                                />
-                            )}
-                            {uploadedFiles.map((file, index) => (
-                                <FileCard
-                                    key={index}
-                                    file={file}
-                                    showRemove
-                                    onRemove={() => removeFile(index)}
-                                    onImageClick={(url) => setLightboxImage(url)}
-                                />
-                            ))}
-                        </div>
-                    )}
-                    <textarea
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={
-                            inputType === 'video'
-                                ? "Hãy mô tả video bạn muốn tạo. Thêm liên kết, hình ảnh hoặc tài liệu để có kết quả chính xác hơn."
-                                : inputType === 'image'
-                                    ? 'Mô tả hình ảnh bạn muốn thiết kế và sử dụng "/" để đánh dấu văn bản cần thêm'
-                                    : 'Mô tả nội dung bạn muốn viết hoặc chỉnh sửa...'
-                        }
-                        className="w-full h-16 bg-transparent border-0 focus:border-0 focus:ring-0 ring-0 focus:outline-none outline-none appearance-none text-lg text-gray-600 dark:text-gray-300 placeholder-gray-400 focus:placeholder-gray-500 dark:focus:placeholder-gray-400 resize-none leading-relaxed shadow-none transition-colors duration-200"
-                        rows={1}
-                        autoFocus
-                    />
-
-                    <div className="flex items-center justify-between mt-4 px-1 transition-opacity duration-100">
-                        <div className="flex items-center gap-2 relative">
-                            {/* Plus Button with Menu (Shared - match Home) */}
-                            <div className="relative" ref={menuRef}>
-                                <button
-                                    onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isPlusMenuOpen ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
-                                >
-                                    <Icons.PlusCircle size={24} isActive={isPlusMenuOpen} />
-                                </button>
-
-                                {isPlusMenuOpen && (
-                                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                        <button
-                                            onClick={() => {
-                                                fileInputRef.current?.click();
-                                                setIsPlusMenuOpen(false);
-                                            }}
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left"
-                                        >
-                                            <Icons.Monitor size={18} className="text-black/60" />
-                                            Tải lên từ máy tính
-                                        </button>
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            accept="image/*,application/pdf,text/plain,text/markdown,text/csv"
-                                            onChange={handleFileUpload}
-                                            className="hidden"
-                                        />
-                                        <button
-                                            onClick={() => {
-                                                handleSelectFromAssets();
-                                                setIsPlusMenuOpen(false);
-                                            }}
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left"
-                                        >
-                                            <Icons.Folder size={18} className="text-black/60" />
-                                            Chọn từ Tài nguyên
-                                        </button>
-                                        <div className="relative group">
-                                            <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors">
-                                                <div className="flex items-center gap-3">
-                                                    <Icons.MoreHorizontal size={18} className="text-black/60" />
-                                                    Thêm
-                                                </div>
-                                                <Icons.ChevronRight size={14} className="text-black/40" />
-                                            </button>
-                                            <div className="absolute top-0 left-full ml-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 translate-x-[-10px] group-hover:translate-x-0">
-                                                <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
-                                                    <Icons.Link size={18} className="text-black/60" />
-                                                    Nhập từ liên kết sản phẩm
-                                                </button>
-                                                <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
-                                                    <Icons.Box size={18} className="text-black/60" />
-                                                    Tải lên từ Dropbox
-                                                </button>
-                                                <div className="relative group/qr">
-                                                    <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
-                                                        <div className="flex items-center gap-3">
-                                                            <Icons.Smartphone size={18} className="text-black/60" />
-                                                            Tải lên từ điện thoại
-                                                        </div>
-                                                        <Icons.ChevronRight size={14} className="text-black/40" />
-                                                    </button>
-                                                    <div className="absolute top-0 left-full ml-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-6 invisible opacity-0 group-hover/qr:visible group-hover/qr:opacity-100 transition-all duration-200 translate-x-[-10px] group-hover/qr:translate-x-0 flex flex-col items-center text-center">
-                                                        <h3 className="font-bold text-black dark:text-white mb-4">Quét mã QR để tải lên</h3>
-                                                        <div className="bg-white p-2 rounded-lg shadow-inner mb-4">
-                                                            <Icons.QrCode size={120} className="text-black" />
-                                                        </div>
-                                                        <p className="text-xs text-black/60 dark:text-gray-400">Sử dụng camera điện thoại để quét mã và tải ảnh lên</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
+            <div className="absolute bottom-0 left-0 right-0 pb-2 pt-3 px-6 md:px-8 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#0f172a] dark:via-[#0f172a]/95 z-40">
+                <div className="w-full max-w-3xl mx-auto">
+                    <div className="relative w-full bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-[#27272a] rounded-3xl md:rounded-[2.5rem] p-3 md:p-4 shadow-xl transition-all duration-300 focus-within:border-gray-300 dark:focus-within:border-zinc-600 focus-within:ring-2 focus-within:ring-gray-200/80 dark:focus-within:ring-zinc-700/50 relative z-20">
+                    {/* Top row: left = mode/label, right = badges */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-0 mb-2 transition-opacity duration-300">
+                        <div className="relative min-w-0" ref={inputType === 'video' ? modeMenuRef : null}>
                             {inputType === 'video' && (
                                 <>
-                                    <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
-                                        <Icons.Box size={16} isActive={false} />
-                                    </button>
-                                    <div className="relative">
-                                        <button className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-black dark:text-gray-400 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
-                                            <Icons.Lightbulb size={16} isActive={false} />
-                                        </button>
-                                        <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1e293b]"></span>
-                                    </div>
-                                    <div className="relative" ref={videoRatioLangMenuRef}>
-                                        <button
-                                            onClick={() => setIsVideoRatioLangMenuOpen(!isVideoRatioLangMenuOpen)}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isVideoRatioLangMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
-                                        >
-                                            <Icons.TuningSquare size={14} isActive={isVideoRatioLangMenuOpen} />
-                                            <span>{videoAspectRatio}</span>
-                                            <span className="text-gray-400 dark:text-gray-600 mx-1">|</span>
-                                            <span className="text-black/60 dark:text-gray-400">{videoLanguage}</span>
-                                        </button>
-                                        {isVideoRatioLangMenuOpen && (
-                                            <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                                <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-3 tracking-tight">Tỷ lệ khung hình</h3>
-                                                <div className="flex flex-wrap gap-2 mb-5">
-                                                    {VIDEO_RATIOS.map((r) => (
-                                                        <button
-                                                            key={r.id}
-                                                            onClick={() => setVideoAspectRatio(r.id)}
-                                                            className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${videoAspectRatio === r.id ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 dark:border-purple-400 text-purple-700 dark:text-purple-300' : 'bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'}`}
-                                                        >
-                                                            <span className={`block border-2 border-current rounded-sm ${r.width} ${r.height}`} />
-                                                            <span className="text-xs font-semibold">{r.label}</span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-2 tracking-tight">Ngôn ngữ</h3>
-                                                <div className="space-y-0.5">
-                                                    {VIDEO_LANGUAGES.map((lang) => (
-                                                        <button
-                                                            key={lang.id}
-                                                            onClick={() => setVideoLanguage(lang.id)}
-                                                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${videoLanguage === lang.id ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300'}`}
-                                                        >
-                                                            {lang.label}
-                                                            {videoLanguage === lang.id && <Icons.CheckCircle size={16} className="text-purple-500 shrink-0" />}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group">
-                                        <Icons.Clock size={14} isActive={false} />
-                                        <span>Schedule</span>
-                                    </button>
-                                </>
-                            )}
-
-                            {(inputType === 'image' || inputType === 'text') && (
-                                <div className="relative" ref={modelMenuRef}>
                                     <button
-                                        onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isModelMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
+                                        type="button"
+                                        onClick={() => setIsModeMenuOpen(!isModeMenuOpen)}
+                                        className="group flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-900 dark:text-white rounded-full text-sm font-medium transition-all duration-150 border border-transparent dark:border-gray-800"
                                     >
-                                        <effectiveModel.icon size={14} isActive />
-                                        <span>{effectiveModel.name}</span>
+                                        <span className="text-gray-500 dark:text-gray-400 shrink-0">
+                                            {VIDEO_MODES.find(m => m.id === videoMode)?.icon && (() => {
+                                                const MIcon = VIDEO_MODES.find(m => m.id === videoMode)?.icon;
+                                                return MIcon ? <MIcon size={20} /> : null;
+                                            })()}
+                                        </span>
+                                        <span className="max-w-[220px] truncate">{VIDEO_MODES.find(m => m.id === videoMode)?.label || 'Video'}</span>
+                                        <Icons.ChevronDown size={20} className={`shrink-0 transition-transform ${isModeMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
-                                    {isModelMenuOpen && (
-                                        <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                            {currentModels.map((model) => (
+                                    {isModeMenuOpen && (
+                                        <div className="absolute bottom-full left-0 mb-2 w-72 bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl border border-gray-200 dark:border-[#27272a] p-2 z-50">
+                                            {VIDEO_MODES.map((mode) => (
                                                 <button
-                                                    key={model.id}
-                                                    onClick={() => { setSelectedModel(model); setIsModelMenuOpen(false); }}
-                                                    className={`flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer text-left transition-colors group ${effectiveModel.id === model.id ? 'bg-gray-50 dark:bg-gray-700/50' : ''}`}
+                                                    key={mode.id}
+                                                    type="button"
+                                                    onClick={() => { setVideoMode(mode.id); setIsModeMenuOpen(false); }}
+                                                    className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${videoMode === mode.id ? 'bg-gray-100 dark:bg-[#252525] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#252525] text-gray-700 dark:text-gray-300'}`}
                                                 >
-                                                    <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-white transition-colors">
-                                                        <model.icon size={20} isActive={effectiveModel.id === model.id} />
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-bold text-sm text-black dark:text-white mb-0.5">{model.name}</div>
-                                                        <div className="text-[11px] text-black dark:text-gray-400 leading-tight">{model.desc}</div>
-                                                    </div>
+                                                    <span className={`shrink-0 ${videoMode === mode.id ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                        <mode.icon size={20} isActive={videoMode === mode.id} />
+                                                    </span>
+                                                    <span className="font-medium text-sm">{mode.label}</span>
                                                 </button>
                                             ))}
                                         </div>
                                     )}
+                                </>
+                            )}
+                            {inputType === 'image' && (
+                                <button
+                                    type="button"
+                                    className="group flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#1A1A1A] text-gray-900 dark:text-white rounded-full text-sm font-medium border border-transparent dark:border-gray-800 cursor-default"
+                                >
+                                    <span className="text-gray-500 dark:text-gray-400 shrink-0"><Icons.Gallery size={20} /></span>
+                                    <span>{t.dashboard.nav?.images || 'Tạo hình ảnh'}</span>
+                                </button>
+                            )}
+                            {inputType === 'text' && (
+                                <button
+                                    type="button"
+                                    className="group flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#1A1A1A] text-gray-900 dark:text-white rounded-full text-sm font-medium border border-transparent dark:border-gray-800 cursor-default"
+                                >
+                                    <span className="text-gray-500 dark:text-gray-400 shrink-0"><Icons.Notebook size={20} /></span>
+                                    <span>{t.dashboard.nav?.textContent || 'Nội dung văn bản'}</span>
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-3 self-end md:self-auto shrink-0">
+                            {/* Model Badge */}
+                            <div className="flex items-center h-9 gap-1.5 px-3 bg-gray-100 dark:bg-[#1A1A1A] rounded-full text-sm font-medium text-gray-900 dark:text-white border border-transparent dark:border-gray-800 cursor-default select-none transition-colors">
+                                <span className="shrink-0 text-gray-900 dark:text-white">
+                                    {(() => {
+                                        const ModelIcon = effectiveModel.icon || Icons.Sparkles;
+                                        return <ModelIcon size={20} />;
+                                    })()}
+                                </span>
+                                <span className="max-w-[120px] truncate leading-none">{effectiveModel.name}</span>
+                            </div>
+
+                            {/* Ratio/Count Badge (for Video & Image) - giống Dashboard Home */}
+                            {(inputType === 'video' || inputType === 'image') && (
+                                <div className="flex items-center h-9 gap-1.5 px-3 text-gray-500 dark:text-gray-400 cursor-default select-none border border-transparent rounded-full transition-colors" title={inputType === 'video' ? `Tỷ lệ: ${videoAspectRatio}` : `Tỷ lệ: ${imageAspectRatio}`}>
+                                    <Icons.RectangleFrame size={20} className={((inputType === 'video' ? videoAspectRatio : imageAspectRatio).includes('9:16') || (inputType === 'image' && imageAspectRatio === '3:4')) ? 'rotate-90' : ''} />
+                                    <span className="text-sm font-medium leading-none">x{inputType === 'video' ? (videoX2 ? '2' : '1') : imageCount}</span>
                                 </div>
                             )}
 
-                            {inputType === 'image' && (
-                                <div className="relative" ref={ratioMenuRef}>
-                                    <button
-                                        onClick={() => setIsRatioMenuOpen(!isRatioMenuOpen)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] group ${isRatioMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 dark:border-gray-500 ring-2 ring-gray-200 dark:ring-gray-600' : 'border-gray-300 dark:border-gray-600'}`}
-                                    >
-                                        <Icons.Pip size={14} isActive={isRatioMenuOpen} />
-                                        <span>{isAutoRatio ? 'Tỉ lệ' : selectedRatio}</span>
-                                    </button>
-                                    {isRatioMenuOpen && (
-                                        <div className="absolute bottom-full left-0 mb-2 w-72 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                            <div className="flex items-center justify-between mb-5">
-                                                <span className="font-bold text-sm text-gray-900 dark:text-white tracking-tight">Tỉ lệ khung hình</span>
-                                                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-full border border-gray-100 dark:border-gray-700">
-                                                    <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Auto</span>
-                                                    <button onClick={() => setIsAutoRatio(!isAutoRatio)} className={`w-8 h-4.5 rounded-full p-0.5 transition-colors ${isAutoRatio ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                                                        <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm transform transition-transform ${isAutoRatio ? 'translate-x-3.5' : 'translate-x-0'}`}></div>
+                            {/* Unified Tuning Icon + Dropdown */}
+                            <div className="relative" ref={tuningRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => { setIsTuningOpen(!isTuningOpen); setTuningSubMenu(null); }}
+                                    className={`group h-9 w-9 flex items-center justify-center transition-colors border rounded-full ${isTuningOpen ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 border-transparent shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border-transparent hover:bg-gray-100 dark:hover:bg-[#1A1A1A]'}`}
+                                    title={inputType === 'video' ? "Cài đặt video" : inputType === 'image' ? "Cài đặt hình ảnh" : "Cài đặt văn bản"}
+                                >
+                                    <Icons.TuningSquare size={20} isActive={isTuningOpen} />
+                                </button>
+                                {isTuningOpen && (
+                                    <div className="absolute bottom-full right-0 mb-2 w-[32rem] bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-3 z-50 space-y-3">
+                                        {/* Row 1: Ratio + Count (Only for Video & Image) */}
+                                        {(inputType === 'video' || inputType === 'image') && (
+                                            <div className="flex gap-3">
+                                                {/* Aspect Ratio */}
+                                                <div className="flex-1 relative">
+                                                    <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'ratio' ? null : 'ratio')}
+                                                        className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-tight">Tỷ lệ khung hình</span>
+                                                            <span className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white truncate mt-0.5">
+                                                                <Icons.Rectangle size={16} className={((inputType === 'video' ? videoAspectRatio : imageAspectRatio).includes('9:16') || (inputType === 'image' && imageAspectRatio === '3:4')) ? 'rotate-90' : ''} />
+                                                                {inputType === 'video'
+                                                                    ? (VIDEO_RATIOS.find(r => r.id === videoAspectRatio)?.desc || videoAspectRatio)
+                                                                    : (IMAGE_RATIOS.find(r => r.id === imageAspectRatio)?.desc || imageAspectRatio)
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${tuningSubMenu === 'ratio' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
                                                     </button>
+                                                    {tuningSubMenu === 'ratio' && (
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[calc(100%-12px)] bg-white dark:bg-[#252525] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-[60]">
+                                                            {(inputType === 'video' ? VIDEO_RATIOS : IMAGE_RATIOS).map((r) => (
+                                                                <button key={r.id} type="button"
+                                                                    onClick={() => { inputType === 'video' ? setVideoAspectRatio(r.id) : setImageAspectRatio(r.id); setTuningSubMenu(null); }}
+                                                                    className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors rounded-lg ${(inputType === 'video' ? videoAspectRatio : imageAspectRatio) === r.id ? 'bg-gray-100 dark:bg-[#303030] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#303030] text-gray-700 dark:text-gray-300'}`}>
+                                                                    <Icons.Rectangle size={18} className={(r.id === '9:16' || r.id === '3:4') ? 'rotate-90' : ''} />
+                                                                    <span className="font-medium text-sm">{r.desc} ({r.label})</span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {/* Number of videos/images */}
+                                                <div className="flex-1 relative">
+                                                    <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'count' ? null : 'count')}
+                                                        className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-tight">Số lượng</span>
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-white truncate mt-0.5">{inputType === 'video' ? (videoX2 ? '2' : '1') : imageCount}</span>
+                                                        </div>
+                                                        <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${tuningSubMenu === 'count' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
+                                                    </button>
+                                                    {tuningSubMenu === 'count' && (
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[calc(100%-12px)] bg-white dark:bg-[#252525] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-[60]">
+                                                            {inputType === 'video' ? (
+                                                                [{ v: false, l: '1' }, { v: true, l: '2' }].map((opt) => (
+                                                                    <button key={String(opt.v)} type="button"
+                                                                        onClick={() => { setVideoX2(opt.v); setTuningSubMenu(null); }}
+                                                                        className={`w-full px-3 py-2 text-left text-sm font-medium transition-colors rounded-lg ${videoX2 === opt.v ? 'bg-gray-100 dark:bg-[#303030] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#303030] text-gray-700 dark:text-gray-300'}`}>
+                                                                        {opt.l}
+                                                                    </button>
+                                                                ))
+                                                            ) : (
+                                                                [1, 2, 3, 4].map((n) => (
+                                                                    <button key={n} type="button"
+                                                                        onClick={() => { setImageCount(n); setTuningSubMenu(null); }}
+                                                                        className={`w-full px-3 py-2 text-left text-sm font-medium transition-colors rounded-lg ${imageCount === n ? 'bg-gray-100 dark:bg-[#303030] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#303030] text-gray-700 dark:text-gray-300'}`}>
+                                                                        {n}
+                                                                    </button>
+                                                                ))
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <div className={`grid grid-cols-4 gap-2 transition-opacity duration-200 ${isAutoRatio ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
-                                                {ratios.map((ratio) => (
-                                                    <button
-                                                        key={ratio.label}
-                                                        onClick={() => { setSelectedRatio(ratio.label); setIsRatioMenuOpen(false); }}
-                                                        className={`flex flex-col items-center justify-center gap-2 p-2 rounded-xl transition-all border ${selectedRatio === ratio.label ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800' : 'bg-white dark:bg-gray-800/40 border-gray-100 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}
-                                                    >
-                                                        <div className="h-8 flex items-center justify-center">
-                                                            <div className={`${ratio.width} ${ratio.height} border-[1.5px] rounded-sm transition-colors ${selectedRatio === ratio.label ? 'border-purple-600 dark:border-purple-400 bg-purple-100/50 dark:bg-purple-400/20' : 'border-gray-400 dark:border-gray-500'}`}></div>
+                                        )}
+
+                                        {/* Row 2: Duration + Resolution (Only for Video) */}
+                                        {inputType === 'video' && (
+                                            <div className="flex gap-3">
+                                                <div className="flex-1 relative">
+                                                    <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'duration' ? null : 'duration')}
+                                                        className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-tight">Thời lượng</span>
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-white truncate mt-0.5">{videoDuration}s</span>
                                                         </div>
-                                                        <span className={`text-[10px] font-bold ${selectedRatio === ratio.label ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>{ratio.label}</span>
+                                                        <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${tuningSubMenu === 'duration' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
                                                     </button>
-                                                ))}
+                                                    {tuningSubMenu === 'duration' && (
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[calc(100%-12px)] bg-white dark:bg-[#252525] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-[60]">
+                                                            {[4, 6, 8].map((d) => (
+                                                                <button key={d} type="button"
+                                                                    onClick={() => { setVideoDuration(d); setTuningSubMenu(null); }}
+                                                                    className={`w-full px-3 py-2 text-left text-sm font-medium transition-colors rounded-lg ${videoDuration === d ? 'bg-gray-100 dark:bg-[#303030] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#303030] text-gray-700 dark:text-gray-300'}`}>
+                                                                    {d}s
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 relative">
+                                                    <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'resolution' ? null : 'resolution')}
+                                                        className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-tight">Độ phân giải</span>
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-white truncate mt-0.5">{videoResolution === '4k' ? '4K' : videoResolution}</span>
+                                                        </div>
+                                                        <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${tuningSubMenu === 'resolution' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
+                                                    </button>
+                                                    {tuningSubMenu === 'resolution' && (
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[calc(100%-12px)] bg-white dark:bg-[#252525] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-[60]">
+                                                            {[{ v: '720p', l: '720p' }, { v: '1080p', l: '1080p' }, { v: '4k', l: '4K' }].map((r) => (
+                                                                <button key={r.v} type="button"
+                                                                    onClick={() => { setVideoResolution(r.v); setTuningSubMenu(null); }}
+                                                                    className={`w-full px-3 py-2 text-left text-sm font-medium transition-colors rounded-lg ${videoResolution === r.v ? 'bg-gray-100 dark:bg-[#303030] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#303030] text-gray-700 dark:text-gray-300'}`}>
+                                                                    {r.l}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            {isAutoRatio && (
-                                                <div className="mt-4 p-2.5 bg-purple-50/50 dark:bg-purple-900/10 rounded-xl border border-purple-100/50 dark:border-purple-800/30">
-                                                    <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium leading-relaxed">Chế độ tự động sẽ chọn tỉ lệ tối ưu dựa trên nội dung bạn mô tả.</p>
+                                        )}
+
+                                        {/* Row 3: Model selection (Common for all) */}
+                                        <div className="relative">
+                                            <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'model' ? null : 'model')}
+                                                className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
+                                                <div className="flex flex-col min-w-0">
+                                                    <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-tight">Mô hình</span>
+                                                    <span className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white truncate mt-0.5">
+                                                        {(() => {
+                                                            const ModelIcon = effectiveModel.icon || Icons.Sparkles;
+                                                            return <ModelIcon size={16} />;
+                                                        })()}
+                                                        {effectiveModel.name}
+                                                    </span>
+                                                </div>
+                                                <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${tuningSubMenu === 'model' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
+                                            </button>
+                                            {tuningSubMenu === 'model' && (
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[calc(100%-12px)] bg-white dark:bg-[#252525] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-[60]">
+                                                    {currentModels.map((model) => (
+                                                        <button key={model.id} type="button"
+                                                            onClick={() => { setSelectedModel(model); setTuningSubMenu(null); }}
+                                                            className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors rounded-lg ${effectiveModel.id === model.id ? 'bg-gray-100 dark:bg-[#303030]' : 'hover:bg-gray-50 dark:hover:bg-[#303030]'}`}>
+                                                            <span className={effectiveModel.id === model.id ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
+                                                                {(() => {
+                                                                    const ModelIcon = model.icon || Icons.Sparkles;
+                                                                    return <ModelIcon size={18} />;
+                                                                })()}
+                                                            </span>
+                                                            <span className={`text-sm font-medium ${effectiveModel.id === model.id ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>{model.name}</span>
+                                                            {model.free ? (<span className="text-xs font-semibold ml-auto text-emerald-500">Free</span>) : model.credits != null && (<span className={`text-xs font-semibold ml-auto ${effectiveModel.id === model.id ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{model.credits}cr</span>)}
+                                                        </button>
+                                                    ))}
                                                 </div>
                                             )}
                                         </div>
-                                    )}
-                                </div>
-                            )}
 
-
+                                        {/* Credit info */}
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-1">
+                                            Dựa trên chế độ cài đặt hiện tại, bạn cần dùng <span className="text-gray-900 dark:text-white font-bold underline cursor-pointer">
+                                                {(() => {
+                                                    const m = effectiveModel;
+                                                    if (inputType === 'video') {
+                                                        const qty = videoX2 ? 2 : 1;
+                                                        return `${(m.credits || 0) * qty} tín dụng`;
+                                                    } else if (inputType === 'image') {
+                                                        if (m.free || m.id === 'pollinations') return 'Miễn phí ✨';
+                                                        // Gemini image = 8cr, Stability = 4cr
+                                                        const perImage = m.id === 'sdxl' ? 4 : 8;
+                                                        return `${perImage * imageCount} tín dụng`;
+                                                    } else {
+                                                        // Text: Groq = 0, Gemini ≈ 1-2
+                                                        return m.id === 'groq' ? '0 tín dụng' : '~1-2 tín dụng';
+                                                    }
+                                                })()}
+                                            </span> cho mỗi lần tạo.
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-
-                        <button
-                            onClick={() => handleSend(inputValue)}
-                            disabled={(!inputValue.trim() && !uploadedImage && uploadedFiles.length === 0) || isLoading}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1e293b] ${(inputValue.trim() || uploadedImage || uploadedFiles.length > 0) && !isLoading ? 'bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 active:scale-95 focus-visible:ring-gray-400 dark:focus-visible:ring-gray-500' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'}`}
-                        >
-                            <Icons.ArrowUp size={16} />
-                        </button>
                     </div>
 
-                </div>
+                    {/* Form input: textarea / files */}
+                    <div className="flex flex-col gap-2">
+                        {/* File đã chọn: trong form input; ẩn khi video frame-to-video (hiển thị ở 2 ô tròn dưới) */}
+                        {(uploadedImage || uploadedFiles.filter(Boolean).length > 0) && !(inputType === 'video' && videoMode === 'frame-to-video') && (
+                            <div className="flex flex-wrap gap-2 mb-2">
+                                {uploadedImage && (
+                                    <FileCard
+                                        file={{ url: uploadedImage, name: 'Image', type: 'image' }}
+                                        showRemove
+                                        onRemove={() => setUploadedImage(null)}
+                                        onImageClick={(url) => setLightboxImage(url)}
+                                    />
+                                )}
+                                {uploadedFiles.map((file, index) => file ? (
+                                    <FileCard
+                                        key={index}
+                                        file={file}
+                                        showRemove
+                                        onRemove={() => removeFile(index)}
+                                        onImageClick={(url) => setLightboxImage(url)}
+                                    />
+                                ) : null)}
+                            </div>
+                        )}
+
+                        <div className="w-full min-h-[2.75rem] py-1 mb-1 relative z-10 transition-all duration-300">
+                            <textarea
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                rows={1}
+                                className="w-full min-h-[2.75rem] bg-transparent border-none p-0 text-base text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:ring-0 resize-none leading-relaxed"
+                                placeholder={
+                                    inputType === 'video'
+                                        ? "Hãy mô tả video bạn muốn tạo. Thêm liên kết, hình ảnh hoặc tài liệu để có kết quả chính xác hơn."
+                                        : inputType === 'image'
+                                            ? 'Mô tả hình ảnh bạn muốn thiết kế và sử dụng "/" để đánh dấu văn bản cần thêm'
+                                            : 'Mô tả nội dung bạn muốn viết hoặc chỉnh sửa...'
+                                }
+                                autoFocus
+                            />
+                        </div>
+                    </div>
+
+                    {/* Bottom toolbar Row: left = Action icons or frame slots, right = Send Button */}
+                    <div className="flex justify-between items-end mt-2 pt-2 relative z-20">
+                        {/* Left: empty for text-to-video; two frame slots + swap for frame-to-video; Plus + menu otherwise */}
+                        {inputType === 'video' && videoMode === 'text-to-video' && <div />}
+                        {inputType === 'video' && videoMode === 'frame-to-video' && (
+                            <div className="flex items-center gap-2" ref={menuRef}>
+                                <input type="file" ref={frameFileInputRef} accept="image/*" onChange={handleFrameFileUpload} className="hidden" />
+                                {/* Slot 0: first frame */}
+                                <div className="relative shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => { plusMenuFrameSlotRef.current = 0; setPlusMenuFrameSlot(0); setIsPlusMenuOpen(!isPlusMenuOpen); }}
+                                        className={`relative group/thumb w-10 h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600 transition-all ${isPlusMenuOpen && plusMenuFrameSlot === 0 ? 'bg-gray-200 dark:bg-[#252525]' : ''}`}
+                                        title={uploadedFiles[0] ? 'Khung hình đầu tiên' : 'Ảnh đầu (khung hình đầu video)'}
+                                    >
+                                        {uploadedFiles[0] ? (
+                                            uploadedFiles[0].type?.startsWith('image/') ? (
+                                                <img src={uploadedFiles[0].url} alt={uploadedFiles[0].name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400"><Icons.FileText size={18} /></div>
+                                            )
+                                        ) : (
+                                            <span className="flex items-center justify-center w-full h-full text-gray-500 dark:text-gray-400">{isPlusMenuOpen && plusMenuFrameSlot === 0 ? <Icons.X size={20} /> : <Icons.Plus size={20} />}</span>
+                                        )}
+                                        {uploadedFiles[0] && (
+                                            <span className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity cursor-pointer" onClick={(e) => { e.stopPropagation(); removeFile(0); }} aria-label="Remove">
+                                                <Icons.X size={18} className="text-white" />
+                                            </span>
+                                        )}
+                                    </button>
+                                    {isPlusMenuOpen && plusMenuFrameSlot === 0 && (
+                                        <div className="absolute bottom-full left-0 mb-2 w-[min(90vw,380px)] bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-200 p-2">
+                                            <div className="flex gap-2">
+                                                <button type="button" onClick={() => frameFileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl bg-gray-900 dark:bg-gray-800 hover:bg-black dark:hover:bg-gray-700 text-white transition-colors text-sm font-medium">
+                                                    <Icons.ArrowUp size={18} className="shrink-0" />
+                                                    <span>{t.dashboard.uploadModal?.upload ?? 'Tải lên'}</span>
+                                                </button>
+                                                <button type="button" onClick={() => { handleSelectFromAssets(); }} className="flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 transition-colors text-sm font-medium">
+                                                    <Icons.Folder size={18} className="shrink-0" />
+                                                    <span>{t.dashboard.home?.chooseFromAssets ?? 'Chọn từ Asset'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={swapFrameOrder}
+                                    disabled={(uploadedFiles[0] ? 1 : 0) + (uploadedFiles[1] ? 1 : 0) !== 2}
+                                    className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-500 dark:text-gray-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                                    title="Đổi thứ tự ảnh đầu / ảnh cuối"
+                                >
+                                    <Icons.ArrowLeftRight size={18} />
+                                </button>
+                                {/* Slot 1: last frame */}
+                                <div className="relative shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => { plusMenuFrameSlotRef.current = 1; setPlusMenuFrameSlot(1); setIsPlusMenuOpen(!isPlusMenuOpen); }}
+                                        className={`relative group/thumb w-10 h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600 transition-all ${isPlusMenuOpen && plusMenuFrameSlot === 1 ? 'bg-gray-200 dark:bg-[#252525]' : ''}`}
+                                        title={uploadedFiles[1] ? 'Khung hình cuối' : 'Ảnh cuối (khung hình cuối video)'}
+                                    >
+                                        {uploadedFiles[1] ? (
+                                            uploadedFiles[1].type?.startsWith('image/') ? (
+                                                <img src={uploadedFiles[1].url} alt={uploadedFiles[1].name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400"><Icons.FileText size={18} /></div>
+                                            )
+                                        ) : (
+                                            <span className="flex items-center justify-center w-full h-full text-gray-500 dark:text-gray-400">{isPlusMenuOpen && plusMenuFrameSlot === 1 ? <Icons.X size={20} /> : <Icons.Plus size={20} />}</span>
+                                        )}
+                                        {uploadedFiles[1] && (
+                                            <span className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity cursor-pointer" onClick={(e) => { e.stopPropagation(); removeFile(1); }} aria-label="Remove">
+                                                <Icons.X size={18} className="text-white" />
+                                            </span>
+                                        )}
+                                    </button>
+                                    {isPlusMenuOpen && plusMenuFrameSlot === 1 && (
+                                        <div className="absolute bottom-full left-0 mb-2 w-[min(90vw,380px)] bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-200 p-2">
+                                            <div className="flex gap-2">
+                                                <button type="button" onClick={() => frameFileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl bg-gray-900 dark:bg-gray-800 hover:bg-black dark:hover:bg-gray-700 text-white transition-colors text-sm font-medium">
+                                                    <Icons.ArrowUp size={18} className="shrink-0" />
+                                                    <span>{t.dashboard.uploadModal?.upload ?? 'Tải lên'}</span>
+                                                </button>
+                                                <button type="button" onClick={() => { handleSelectFromAssets(); }} className="flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 transition-colors text-sm font-medium">
+                                                    <Icons.Folder size={18} className="shrink-0" />
+                                                    <span>{t.dashboard.home?.chooseFromAssets ?? 'Chọn từ Asset'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        {!(inputType === 'video' && (videoMode === 'text-to-video' || videoMode === 'frame-to-video')) && (
+                            <div className="flex items-center gap-1.5 md:gap-2">
+                                <div className="relative" ref={menuRef}>
+                                    <button
+                                        onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 border border-transparent hover:bg-gray-100 dark:hover:bg-zinc-800/50 active:scale-[0.98] ${isPlusMenuOpen ? 'bg-gray-100 dark:bg-zinc-800 shadow-inner' : ''}`}
+                                        title={t.dashboard.home?.addContent || 'Thêm nội dung'}
+                                    >
+                                        <Icons.Plus size={24} className={`transition-transform duration-200 ${isPlusMenuOpen ? 'rotate-45' : ''}`} />
+                                    </button>
+                                    {isPlusMenuOpen && (
+                                        <div className="absolute bottom-full left-0 mb-3 w-64 bg-white dark:bg-[#1A1A1A] rounded-3xl shadow-2xl border border-gray-200 dark:border-[#27272a] p-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                            <button
+                                                onClick={() => { fileInputRef.current?.click(); setIsPlusMenuOpen(false); }}
+                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-[#252525] text-gray-700 dark:text-gray-300 transition-colors text-left font-medium"
+                                            >
+                                                <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#252525] flex items-center justify-center text-gray-500 dark:text-gray-400">
+                                                    <Icons.Monitor size={18} />
+                                                </div>
+                                                <span>Tải từ máy tính</span>
+                                            </button>
+                                            <input type="file" ref={fileInputRef} accept={getAcceptTypes(inputType)} multiple onChange={handleFileUpload} className="hidden" />
+                                            <button
+                                                onClick={() => { handleSelectFromAssets(); setIsPlusMenuOpen(false); }}
+                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-[#252525] text-gray-700 dark:text-gray-300 transition-colors text-left font-medium"
+                                            >
+                                                <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#252525] flex items-center justify-center text-gray-500 dark:text-gray-400">
+                                                    <Icons.Folder size={18} />
+                                                </div>
+                                                <span>Chọn từ Tài nguyên</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Send Button */}
+                        <button
+                            onClick={() => handleSend(inputValue)}
+                            disabled={(!inputValue.trim() && !uploadedImage && uploadedFiles.filter(Boolean).length === 0) || isLoading}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shrink-0 ${(inputValue.trim() || uploadedImage || uploadedFiles.filter(Boolean).length > 0) && !isLoading ? 'bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 active:scale-95 shadow-md hover:shadow-lg focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600' : 'bg-gray-100 dark:bg-[#1E293B] text-gray-400 dark:text-gray-600 cursor-not-allowed scale-95 opacity-50'}`}
+                        >
+                            <Icons.ArrowRight size={20} className={isLoading ? 'animate-pulse' : ''} />
+                        </button>
+                    </div>
+                    </div>
                 <div className="text-center mt-2 pb-1">
                     <p className="text-[10px] text-gray-400">AI có thể mắc lỗi. Vui lòng kiểm tra lại nội dung được tạo.</p>
+                </div>
                 </div>
             </div>
 
@@ -1071,10 +1658,16 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
 
             <SelectFileModal
                 isOpen={isSelectingFromAssets}
-                onClose={() => setIsSelectingFromAssets(false)}
+                onClose={() => { setIsSelectingFromAssets(false); setPlusMenuFrameSlot(null); plusMenuFrameSlotRef.current = null; }}
                 onSelectFile={(file) => {
-                    setUploadedFiles(prev => [...prev, file]);
+                    const slot = plusMenuFrameSlotRef.current;
+                    if (slot !== undefined && slot !== null) {
+                        handleFileSelectedForSlot(slot, file);
+                    } else {
+                        setUploadedFiles(prev => [...prev, file]);
+                    }
                     toast.success('Đã chọn file từ Tài nguyên');
+                    setIsSelectingFromAssets(false);
                 }}
             />
 
@@ -1092,27 +1685,29 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
             />
 
             {/* Lightbox: xem full ảnh, nút X thoát */}
-            {lightboxImage && (
-                <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
-                    onClick={() => setLightboxImage(null)}
-                >
-                    <button
-                        type="button"
+            {
+                lightboxImage && (
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
                         onClick={() => setLightboxImage(null)}
-                        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
-                        title="Đóng"
                     >
-                        <Icons.X size={24} />
-                    </button>
-                    <img
-                        src={lightboxImage}
-                        alt="Xem ảnh"
-                        className="max-w-full max-h-full object-contain rounded-lg"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                </div>
-            )}
+                        <button
+                            type="button"
+                            onClick={() => setLightboxImage(null)}
+                            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
+                            title="Đóng"
+                        >
+                            <Icons.X size={24} />
+                        </button>
+                        <img
+                            src={lightboxImage}
+                            alt="Xem ảnh"
+                            className="max-w-full max-h-full object-contain rounded-lg"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                )
+            }
         </div>
     );
 };

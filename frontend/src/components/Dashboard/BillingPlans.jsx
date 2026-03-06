@@ -43,26 +43,52 @@ const BillingPlans = ({ onBack }) => {
       setHistoryLoading(true);
       try {
         const q = query(
-          collection(db, 'payment_links'),
-          where('userId', '==', user.uid),
-          where('status', '==', 'success') // Only show successful payments
+          collection(db, 'transactions'),
+          where('userId', '==', user.uid)
         );
 
         const querySnapshot = await getDocs(q);
-        console.log('📊 [Billing History] Query returned', querySnapshot.size, 'successful transactions');
+        console.log('📊 [Billing History] Query returned', querySnapshot.size, 'transactions');
 
         const historyData = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           console.log('📄 [Billing History] Document:', doc.id, data);
+
+          let amountStr = '0';
+          let styleClass = '';
+          if (data.type === 'deduct') {
+            amountStr = `-${data.amount} Credits`;
+            styleClass = 'text-red-500';
+          } else if (data.type === 'add' || data.type === 'purchase') {
+            amountStr = `+${data.amount} Credits`;
+            styleClass = 'text-green-500';
+          } else {
+            amountStr = `${data.amount}`;
+            styleClass = 'text-gray-500';
+          }
+
           historyData.push({
             id: doc.id,
             date: data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('vi-VN') : 'N/A',
-            description: data.description || `Plan Upgrade (${data.planName})`,
-            amount: data.amount ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.amount) : '0 ₫',
-            invoiceId: data.orderCode || doc.id.substring(0, 8),
-            status: data.status
+            description: data.description || `Transaction`,
+            amount: amountStr,
+            amountStyle: styleClass,
+            invoiceId: data.referenceId || doc.id.substring(0, 8),
+            status: data.status || 'completed'
           });
+        });
+
+        // Sort by date descending
+        historyData.sort((a, b) => {
+          try {
+            const dateA = new Date(a.date.split('/').reverse().join('-'));
+            const dateB = new Date(b.date.split('/').reverse().join('-'));
+            return dateB - dateA;
+            // eslint-disable-next-line no-unused-vars
+          } catch (e) {
+            return 0;
+          }
         });
 
         console.log('✅ [Billing History] Processed history:', historyData);
@@ -526,7 +552,7 @@ const BillingPlans = ({ onBack }) => {
                       <tr key={item.id} className={`transition-colors ${theme === 'dark' ? 'hover:bg-[#433E38]/30' : 'hover:bg-[#F9F9F9]'}`}>
                         <td className={`p-4 text-sm ${theme === 'dark' ? 'text-[#A8A29E]' : 'text-[#5D5A53]'}`}>{item.date}</td>
                         <td className={`p-4 text-sm font-medium ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>{item.description}</td>
-                        <td className={`p-4 text-sm font-medium text-emerald-600`}>{item.amount}</td>
+                        <td className={`p-4 text-sm font-medium ${item.amountStyle || 'text-emerald-600'}`}>{item.amount}</td>
                         <td className="p-4 text-right">
                           <span className={`text-xs font-mono opacity-70 ${theme === 'dark' ? 'text-[#F5F2EB]' : 'text-[#2C2A26]'}`}>#{item.invoiceId}</span>
                         </td>

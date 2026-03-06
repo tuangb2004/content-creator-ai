@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Icons } from '../Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { VIDEO_MODELS, requestVideoGeneration, pollVideoStatus } from '../../services/videoGeneration';
+import { VIDEO_MODELS, createVideoRequest, subscribeVideoRequest } from '../../services/videoGeneration';
+import { uploadFile, saveProject } from '../../services/firebaseFunctions';
 import toast from '../../utils/toast';
 
 const RATIOS = [
@@ -18,7 +19,7 @@ const LANGUAGES = [
 
 const VideoGenerator = () => {
     const { t } = useLanguage();
-    const { userData, refreshUserData } = useAuth();
+    const { user, userData, refreshUserData } = useAuth();
     const [inputValue, setInputValue] = useState('');
     const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
     const [isRatioLangMenuOpen, setIsRatioLangMenuOpen] = useState(false);
@@ -29,10 +30,12 @@ const VideoGenerator = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationStatus, setGenerationStatus] = useState(null);
     const [generatedVideo, setGeneratedVideo] = useState(null);
+    const [uploadedFiles, setUploadedFiles] = useState([]);
 
     const menuRef = useRef(null);
     const ratioLangMenuRef = useRef(null);
     const modelMenuRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const userCredits = userData?.credits || 0;
     const userPlan = userData?.plan || 'free';
@@ -58,6 +61,62 @@ const VideoGenerator = () => {
         };
     }, []);
 
+    const handleFileUpload = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        setIsPlusMenuOpen(false);
+
+        for (const file of files) {
+            if (file.size > 20 * 1024 * 1024) {
+                toast.error((t.dashboard.uploadModal?.fileTooLarge || 'File {name} exceeds 20MB').replace('{name}', file.name));
+                continue;
+            }
+
+            toast.loading(t.dashboard.chat?.uploadingImage || 'Uploading...', { id: `uploading-${file.name}` });
+
+            try {
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = (err) => reject(err);
+                    reader.readAsDataURL(file);
+                });
+
+                if (!base64Data || typeof base64Data !== 'string' || !base64Data.includes(',')) {
+                    throw new Error('Invalid file data format');
+                }
+
+                const base64 = base64Data.split(',')[1];
+                const result = await uploadFile({
+                    fileName: file.name,
+                    fileType: file.type || 'application/octet-stream',
+                    fileSize: file.size,
+                    fileData: base64
+                });
+
+                if (result.success) {
+                    setUploadedFiles(prev => [...prev, { url: result.fileUrl, name: file.name, type: file.type }]);
+                    toast.dismiss(`uploading-${file.name}`);
+                    toast.success(t.dashboard.chat?.fileUploaded || 'File uploaded');
+                } else {
+                    throw new Error(result.message || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('File upload error:', error);
+                toast.dismiss(`uploading-${file.name}`);
+                const errorMessage = error.message === 'Invalid file data format'
+                    ? (t.dashboard.chat?.fileReadError || 'Error reading file')
+                    : (t.dashboard.chat?.uploadError || 'Upload failed');
+                toast.error(`${errorMessage}: ${file.name}`);
+            }
+        }
+        e.target.value = '';
+    };
+
+    const removeFile = (index) => {
+        setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleSend = async () => {
         if (!inputValue.trim()) return;
 
@@ -73,57 +132,87 @@ const VideoGenerator = () => {
             return;
         }
 
+        if (!user?.uid) {
+            toast.error('Bạn cần đăng nhập để tạo video.');
+            return;
+        }
+
         setIsGenerating(true);
-        setGenerationStatus({ status: 'requesting', message: 'Sending request...' });
+        setGenerationStatus({ status: 'queued', message: 'Đã gửi yêu cầu tạo video. Đang chờ xử lý...' });
+        toast.loading('Đang gửi yêu cầu tạo video...', { id: 'video-gen' });
 
         try {
-            // Request video generation
-            const result = await requestVideoGeneration({
+            // Tạo document yêu cầu video trong Firestore
+            const requestId = await createVideoRequest({
+                userId: user.uid,
                 prompt: inputValue.trim(),
                 model: selectedModel.id,
                 aspectRatio: selectedRatio,
-                duration: 8,
+                duration: 6,
+                language: selectedLanguage,
+                videoMode: 'text-to-video',
+                ...(uploadedFiles.length > 0 && { fileUrls: uploadedFiles.map(f => f.url) }),
             });
 
-            if (!result.success) {
-                throw new Error(result.message || 'Failed to queue video');
-            }
-
-            setGenerationStatus({
-                status: 'queued',
-                message: result.message,
-                position: result.position,
-                queueId: result.queueId,
-            });
-
-            toast.success(`Video queued! Position: ${result.position}`);
-
-            // Start polling for completion
-            const pollResult = await pollVideoStatus(
-                result.queueId,
-                (status) => {
+            // Lắng nghe realtime trạng thái của request
+            const unsubscribe = subscribeVideoRequest(requestId, (request) => {
+                if (request.status === 'processing') {
+                    toast.loading('Đang tạo video...', { id: 'video-gen' });
                     setGenerationStatus({
-                        status: status.status,
-                        message: status.status === 'processing' ? 'Generating video...' : 'In queue...',
-                        position: status.position,
+                        status: 'processing',
+                        message: request.statusDetail || 'Đang tạo video...',
                     });
                 }
-            );
 
-            if (pollResult.success) {
-                setGeneratedVideo({
-                    url: pollResult.videoUrl,
-                    thumbnail: pollResult.thumbnailUrl,
-                });
-                toast.success('Video generated successfully!');
-                refreshUserData(); // Refresh credits
-            } else {
-                throw new Error(pollResult.error || 'Video generation failed');
-            }
+                if (request.status === 'error') {
+                    setIsGenerating(false);
+                    toast.dismiss('video-gen');
+                    setGenerationStatus({
+                        status: 'error',
+                        message: request.error || 'Video generation failed',
+                    });
+                    toast.error(request.error || 'Video generation failed');
+                    unsubscribe();
+                }
+
+                if (request.status === 'completed' && request.videoUrl) {
+                    setIsGenerating(false);
+                    toast.dismiss('video-gen');
+                    setGeneratedVideo({
+                        url: request.videoUrl,
+                        thumbnail: request.thumbnailUrl || null,
+                    });
+                    setGenerationStatus({
+                        status: 'completed',
+                        message: 'Video đã tạo xong!',
+                    });
+                    toast.success('Video đã tạo xong! Kiểm tra Assets của bạn.');
+                    refreshUserData();
+
+                    const promptText = inputValue.trim();
+                    const title = promptText.length > 30 ? promptText.substring(0, 30) + '...' : promptText;
+
+                    saveProject({
+                        title: title,
+                        type: 'video',
+                        content: {
+                            videoUrl: request.videoUrl,
+                            imageUrl: request.thumbnailUrl || null
+                        },
+                        metadata: { prompt: promptText, model: selectedModel.id, aspectRatio: selectedRatio },
+                        messages: [
+                            { role: 'user', content: promptText, timestamp: new Date() },
+                            { role: 'model', content: '✅ Video đã tạo thành công!', mediaUrl: request.videoUrl, timestamp: new Date(), type: 'video' }
+                        ]
+                    }).catch(e => console.error('Failed to auto-save video to Assets:', e));
+
+                    unsubscribe();
+                }
+            });
         } catch (error) {
             console.error('Video generation error:', error);
             toast.error(error.message || 'Failed to generate video');
-            setGenerationStatus({ status: 'failed', message: error.message });
+            setGenerationStatus({ status: 'error', message: error.message });
         } finally {
             setIsGenerating(false);
         }
@@ -225,6 +314,25 @@ const VideoGenerator = () => {
                                 placeholder={t?.dashboard?.videoGen?.placeholder || 'Describe the video you want to create...'}
                             ></textarea>
 
+                            {/* Uploaded Files Preview */}
+                            {uploadedFiles.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2 px-1">
+                                    {uploadedFiles.map((file, idx) => (
+                                        <div key={idx} className="relative flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 text-sm">
+                                            {file.type?.startsWith('image/') ? (
+                                                <img src={file.url} alt={file.name} className="w-8 h-8 rounded object-cover" />
+                                            ) : (
+                                                <Icons.Video size={16} className="text-purple-500" />
+                                            )}
+                                            <span className="text-gray-700 dark:text-gray-300 max-w-[120px] truncate">{file.name}</span>
+                                            <button onClick={() => removeFile(idx)} className="ml-1 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                                                <Icons.X size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             <div className="flex items-center justify-between mt-4 px-1">
                                 <div className="flex items-center gap-2 relative">
                                     {/* Plus Menu */}
@@ -239,7 +347,10 @@ const VideoGenerator = () => {
 
                                         {isPlusMenuOpen && (
                                             <div className="absolute top-14 left-0 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                                                <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
+                                                <button
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left"
+                                                >
                                                     <Icons.Monitor size={18} className="text-black/60" />
                                                     {t?.dashboard?.home?.uploadFromComputer || 'Upload from computer'}
                                                 </button>
@@ -249,6 +360,16 @@ const VideoGenerator = () => {
                                                 </button>
                                             </div>
                                         )}
+
+                                        {/* Hidden file input */}
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            accept="image/*,video/mp4,video/webm,video/quicktime"
+                                            multiple
+                                            onChange={handleFileUpload}
+                                            className="hidden"
+                                        />
                                     </div>
 
                                     {/* Model Selector */}

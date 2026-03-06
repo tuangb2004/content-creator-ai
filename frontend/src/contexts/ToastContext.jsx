@@ -33,6 +33,11 @@ const ToastIcon = ({ type }) => {
       </svg>
     );
   }
+  if (type === 'loading') {
+    return (
+      <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+    );
+  }
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -46,6 +51,7 @@ const ToastItem = ({ toast, onRemove }) => {
     error: 'border-rose-500/50 bg-rose-50/90 dark:bg-rose-900/20 text-rose-900 dark:text-rose-100',
     warning: 'border-amber-500/50 bg-amber-50/90 dark:bg-amber-900/20 text-amber-900 dark:text-amber-100',
     info: 'border-slate-500/50 bg-slate-50/90 dark:bg-slate-900/20 text-slate-900 dark:text-slate-100',
+    loading: 'border-slate-500/50 bg-slate-50/90 dark:bg-slate-900/20 text-slate-900 dark:text-slate-100',
     ai: 'border-yellow-600/50 bg-white/90 dark:bg-black/80 text-yellow-900 dark:text-yellow-100 shadow-[0_0_20px_rgba(202,138,4,0.15)]'
   };
 
@@ -84,8 +90,10 @@ export const ToastProvider = ({ children }) => {
   }, [removeToast]);
 
   useEffect(() => {
-    setToastHandler(showToast);
-  }, [showToast]);
+    const handler = (...args) => showToast(...args);
+    handler.dismiss = removeToast;
+    setToastHandler(handler);
+  }, [showToast, removeToast]);
 
   return (
     <ToastContext.Provider value={{ toasts, showToast, removeToast }}>

@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateAuth } from './utils/validation';
 
+
 function getDb() {
     return admin.firestore();
 }
@@ -59,6 +60,9 @@ export const addComment = functions.https.onCall(
             await db.collection('posts').doc(data.postId).update({
                 comments: FieldValue.increment(1),
             });
+
+            // Notification is now handled by Firestore Trigger: onCommentCreated
+
 
             return {
                 success: true,

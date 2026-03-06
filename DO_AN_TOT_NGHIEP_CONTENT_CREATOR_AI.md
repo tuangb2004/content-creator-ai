@@ -186,7 +186,22 @@ Vite là build tool thế hệ mới cho các ứng dụng web hiện đại.
 - **Hot Module Replacement (HMR)**: Cập nhật code tức thì không cần reload
 - **Build tối ưu**: Sử dụng Rollup cho production build
 
-#### 1.2.3. Firebase
+#### 1.2.3. Các dịch vụ API sử dụng
+
+Để triển khai các chức năng sáng tạo nội dung và thanh toán, hệ thống tích hợp nhiều dịch vụ API từ các nhà cung cấp khác nhau:
+
+| API | Nhà cung cấp | Chức năng chính | Mô hình/Đặc điểm |
+|-----|-------------|-----------------|------------------|
+| Gemini API | Google | Tạo và phân tích nội dung văn bản, hiểu ngữ cảnh, hỗ trợ đa ngôn ngữ | Gemini 2.x |
+| Groq API | Groq | Tạo nội dung văn bản với tốc độ cao, chi phí thấp | LLaMA 3.x |
+| Pollination API | Pollinations | Tạo hình ảnh từ mô tả văn bản | Text-to-Image |
+| Stability AI API | Stability AI | Tạo hình ảnh chất lượng cao | Stable Diffusion |
+| Veo API | Google | Tạo video từ văn bản hoặc hình ảnh | Veo 3.1 |
+| PayOS API | PayOS | Xử lý thanh toán trực tuyến (QR Code, MoMo, ZaloPay, Bank Transfer) | REST + Webhook |
+
+Việc sử dụng kết hợp nhiều dịch vụ API giúp hệ thống tận dụng được thế mạnh của từng công nghệ, đồng thời mang lại sự linh hoạt và tính chuyên nghiệp trong xử lý nghiệp vụ. Cách tiếp cận này cũng giúp giảm sự phụ thuộc vào một nhà cung cấp duy nhất, nâng cao khả năng mở rộng và duy trì hệ thống trong tương lai.
+
+#### 1.2.4. Firebase
 
 Firebase là nền tảng Backend-as-a-Service (BaaS) của Google, cung cấp các dịch vụ:
 
@@ -198,7 +213,7 @@ Firebase là nền tảng Backend-as-a-Service (BaaS) của Google, cung cấp c
 | **Storage** | Lưu trữ file (ảnh, video) |
 | **Hosting** | Deploy static assets |
 
-#### 1.2.4. Tailwind CSS
+#### 1.2.5. Tailwind CSS
 
 Tailwind CSS là utility-first CSS framework, cho phép xây dựng giao diện nhanh chóng.
 
@@ -213,15 +228,6 @@ Tailwind CSS là utility-first CSS framework, cho phép xây dựng giao diện 
   Tạo nội dung
 </button>
 ```
-
-#### 1.2.5. Các API AI sử dụng
-
-| API | Nhà cung cấp | Mục đích |
-|-----|-------------|----------|
-| **Gemini API** | Google | Tạo văn bản, phân tích hình ảnh |
-| **Groq API** | Groq | Tạo văn bản nhanh (Llama 3) |
-| **Replicate API** | Replicate | Tạo hình ảnh (SDXL) |
-| **Veo API** | Google | Tạo video từ text/image |
 
 ### 1.3. Các công cụ hỗ trợ phát triển hệ thống
 

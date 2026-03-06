@@ -14,6 +14,8 @@ export const initializeUserIfNeeded = functions.https.onCall(
 
     const userId = context.auth.uid;
     const email = context.auth.token.email;
+    const displayName = context.auth.token.name;
+    const photoURL = context.auth.token.picture;
 
     if (!email) {
       throw new functions.https.HttpsError('invalid-argument', 'User email not found');
@@ -21,7 +23,7 @@ export const initializeUserIfNeeded = functions.https.onCall(
 
     try {
       console.log(`🔄 initializeUserIfNeeded called for user: ${userId}`);
-      await initializeUser(userId, email);
+      await initializeUser(userId, email, displayName, photoURL);
       console.log(`✅ User ${userId} initialized successfully`);
       return { success: true, message: 'User initialized successfully' };
     } catch (error: any) {

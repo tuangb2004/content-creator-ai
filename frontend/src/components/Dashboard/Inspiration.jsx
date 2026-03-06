@@ -1,14 +1,191 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Icons } from '../Icons';
-import { getPosts, getTopCreators, likePost, savePostToFavorites, incrementPostUsage } from '../../services/firebaseFunctions';
+import { getPosts, incrementPostUsage } from '../../services/firebaseFunctions';
 import { useLanguage } from '../../contexts/LanguageContext';
 import toast from '../../utils/toast';
 import PostModal from './PostModal';
+import PostCard, { getThumbnailUrl } from './PostCard';
+import { useAuth } from '../../contexts/AuthContext';
+import { useInteractions } from '../../hooks/useInteractions';
 
-const Inspiration = () => {
+// ─── UTILS ────────────────────────────────────────────────────────────
+const formatNumber = (num) => {
+    num = Math.max(0, num || 0);
+    if (!num) return '0';
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
+    return String(num || 0);
+};
+
+const VideoCard = memo(({ src, className }) => {
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    video.play().catch(() => { });
+                } else {
+                    video.pause();
+                    video.currentTime = 0;
+                }
+            },
+            { threshold: 0.5 }
+        );
+
+        observer.observe(video);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <video
+            ref={videoRef}
+            src={src}
+            className={className}
+            muted
+            loop
+            playsInline
+        />
+    );
+});
+VideoCard.displayName = 'VideoCard';
+
+// ─── Skeleton Components ───────────────────────────────────────────────
+const SkeletonCard = memo(({ index }) => (
+    <div
+        className="animate-pulse"
+        style={{ animationDelay: `${index * 80} ms` }}
+    >
+        <div className="aspect-[9/16] rounded-xl bg-gray-200 dark:bg-gray-700/60 mb-3" />
+        <div className="h-4 bg-gray-200 dark:bg-gray-700/60 rounded-md w-3/4 mb-2" />
+        <div className="flex items-center gap-2 mb-2">
+            <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700/60" />
+            <div className="h-3 bg-gray-200 dark:bg-gray-700/60 rounded w-20" />
+        </div>
+        <div className="flex gap-3">
+            <div className="h-3 bg-gray-200 dark:bg-gray-700/60 rounded w-8" />
+            <div className="h-3 bg-gray-200 dark:bg-gray-700/60 rounded w-8" />
+            <div className="h-3 bg-gray-200 dark:bg-gray-700/60 rounded w-8" />
+        </div>
+    </div>
+));
+SkeletonCard.displayName = 'SkeletonCard';
+
+const SkeletonTrendingCard = memo(({ index }) => (
+    <div
+        className="min-w-[320px] bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 rounded-2xl p-4 flex gap-4 items-center animate-pulse"
+        style={{ animationDelay: `${index * 100} ms` }}
+    >
+        <div className="w-24 h-32 rounded-lg bg-gray-200 dark:bg-gray-700/60 flex-shrink-0" />
+        <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700/60" />
+                <div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700/60 rounded w-24 mb-1" />
+                    <div className="h-2 bg-gray-200 dark:bg-gray-700/60 rounded w-16" />
+                </div>
+            </div>
+            <div className="flex gap-3">
+                <div className="h-3 bg-gray-200 dark:bg-gray-700/60 rounded w-12" />
+                <div className="h-3 bg-gray-200 dark:bg-gray-700/60 rounded w-12" />
+            </div>
+        </div>
+    </div>
+));
+SkeletonTrendingCard.displayName = 'SkeletonTrendingCard';
+
+const TrendingCard = memo(({ post, index, isLiked, onClick }) => {
+    const defaultImg = 'https://placehold.co/200x260/f3f4f6/9ca3af?text=No+Preview';
+
+    // Sử dụng state để quản lý việc fallback ảnh (thử thumbnail trước, nếu lỗi thì quay về mediaUrl)
+    const [imgSource, setImgSource] = useState(post.thumbnailUrl || getThumbnailUrl(post.mediaUrl) || post.mediaUrl || defaultImg);
+
+    useEffect(() => {
+        setImgSource(post.thumbnailUrl || getThumbnailUrl(post.mediaUrl) || post.mediaUrl || defaultImg);
+    }, [post.id, post.mediaUrl, post.thumbnailUrl, defaultImg]);
+
+    const handleImgError = () => {
+        // Nếu ảnh hiện tại đang là thumbnail và bị lỗi, thử chuyển sang mediaUrl gốc
+        if (imgSource !== post.mediaUrl && post.mediaUrl && post.mediaUrl !== 'undefined' && post.mediaUrl !== 'null') {
+            setImgSource(post.mediaUrl);
+        } else if (imgSource !== defaultImg) {
+            // Nếu mediaUrl cũng lỗi, dùng ảnh placeholder
+            setImgSource(defaultImg);
+        }
+    };
+
+    return (
+        <div
+            className="min-w-[320px] bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 rounded-2xl p-4 flex gap-4 items-center shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
+            onClick={() => onClick(post)}
+        >
+            {/* Media Container */}
+            <div className="relative w-24 h-32 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-800 border border-gray-50 dark:border-gray-700">
+                {post.type === 'text' ? (
+                    <div className="w-full h-full flex items-center justify-center p-2 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30">
+                        <p className="text-[10px] text-gray-600 dark:text-gray-300 line-clamp-5 text-center leading-tight">
+                            {post.content || post.prompt || post.title}
+                        </p>
+                    </div>
+                ) : post.type === 'video' ? (
+                    <div className="w-full h-full relative">
+                        <VideoCard src={post.mediaUrl} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/20 pointer-events-none flex items-center justify-center">
+                            <Icons.Play className="text-white opacity-90" size={32} />
+                        </div>
+                    </div>
+                ) : (
+                    <img
+                        src={imgSource}
+                        alt={post.title}
+                        className="w-full h-full object-cover block"
+                        onError={handleImgError}
+                    />
+                )}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                    <img
+                        src={post.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.authorName || 'U')}&background=random&size=32`}
+                        alt={post.authorName}
+                        className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-600 flex-shrink-0"
+                    />
+                    <div className="min-w-0 overflow-hidden">
+                        <h4 className="text-sm font-bold dark:text-white truncate">{post.authorName || 'Anonymous'}</h4>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wide">Creator</p>
+                    </div>
+                </div >
+                <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                    <span className="flex items-center gap-1"><Icons.Eye size={12} /> {formatNumber(post.views || 0)}</span>
+                    <span className="flex items-center gap-1"><Icons.Heart size={12} isActive={isLiked} noHover={true} /> {formatNumber(post.likes || 0)}</span>
+                </div>
+            </div >
+        </div >
+    );
+});
+TrendingCard.displayName = 'TrendingCard';
+
+// ─── Main Component ────────────────────────────────────────────────────
+const Inspiration = ({ onTabChange }) => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const { t } = useLanguage();
+
+    // Helper to handle navigation to dashboard tab
+    const navigateToDashboard = useCallback(() => {
+        if (onTabChange) {
+            onTabChange('dashboard');
+        } else {
+            navigate('/dashboard');
+        }
+    }, [onTabChange, navigate]);
 
     // Map categories to translation keys
     const categoryKeys = {
@@ -23,16 +200,21 @@ const Inspiration = () => {
 
     const categories = ['Trending on TikTok', 'Video templates', 'Image templates', 'Writing templates', 'Favorites'];
     const [activeTab, setActiveTab] = useState('Trending on TikTok');
-    const [posts, setPosts] = useState([]);
-    const [creators, setCreators] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [trendingPosts, setTrendingPosts] = useState([]);
+    const [isTrendingLoading, setIsTrendingLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedPostId, setSelectedPostId] = useState(null);
+    const [selectedPost, setSelectedPost] = useState(null);
 
     // Filter states
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedTimeRange, setSelectedTimeRange] = useState('all');
     const [selectedSortBy, setSelectedSortBy] = useState('recent');
+
+    const loadMoreRef = useRef(null);
+    const queryClient = useQueryClient();
+
+    // 1. Get Interaction status and toggle functions
+    const { isLiked, isSaved, toggleLike, toggleSave } = useInteractions();
 
     const categoryOptions = [
         { value: '', label: 'Tất cả ngành' },
@@ -52,363 +234,310 @@ const Inspiration = () => {
         { value: 'month', label: 'Tháng này' },
     ];
 
-    // Fetch posts based on active tab and filters
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                if (activeTab === 'Favorites') {
-                    const { posts: savedPosts } = await getPosts({ savedByMe: true });
-                    setPosts(savedPosts);
-                } else {
-                    // Map tab to type filter
-                    let typeFilter;
-                    if (activeTab === 'Video templates') typeFilter = 'video';
-                    else if (activeTab === 'Image templates') typeFilter = 'image';
-                    else if (activeTab === 'Writing templates') typeFilter = 'text';
+    const sortByOptions = [
+        { value: 'recent', label: 'Mới nhất' },
+        { value: 'popular', label: 'Phổ biến nhất' },
+        { value: 'views', label: 'Xem nhiều nhất' },
+    ];
 
-                    const { posts: fetchedPosts } = await getPosts({
-                        type: typeFilter,
-                        category: selectedCategory || undefined,
-                        sortBy: selectedSortBy,
-                        timeRange: selectedTimeRange,
-                        limit: 20
-                    });
-                    setPosts(fetchedPosts);
-                }
-            } catch (error) {
-                console.error('Error fetching posts:', error);
-            }
-            setIsLoading(false);
-        };
-        fetchData();
-    }, [activeTab, selectedCategory, selectedSortBy, selectedTimeRange]);
+    const fetchPostsPage = async ({ pageParam = null }) => {
+        if (activeTab === 'Favorites') {
+            const { posts: savedPosts } = await getPosts({ savedByMe: true });
+            return { posts: savedPosts, hasMore: false, lastId: null };
+        }
 
-    // Fetch top creators on mount
-    useEffect(() => {
-        const fetchCreators = async () => {
-            try {
-                const { creators: topCreators } = await getTopCreators(6);
-                if (topCreators.length > 0) {
-                    setCreators(topCreators);
-                } else {
-                    // Fallback mock data if no creators yet
-                    setCreators([
-                        { id: '1', displayName: 'Sarah Jenkins', role: 'Pro Creator', totalLikes: 45000, followersCount: 1200000, avatar: 'https://picsum.photos/id/64/100/100', coverImage: 'https://picsum.photos/id/20/300/400' },
-                        { id: '2', displayName: 'Davide M.', role: 'AI Artist', totalLikes: 22000, followersCount: 890000, avatar: 'https://picsum.photos/id/91/100/100', coverImage: 'https://picsum.photos/id/30/300/400' },
-                        { id: '3', displayName: 'Elena Code', role: 'Prompt Eng.', totalLikes: 15000, followersCount: 650000, avatar: 'https://picsum.photos/id/65/100/100', coverImage: 'https://picsum.photos/id/40/300/400' },
-                    ]);
-                }
-            } catch (error) {
-                console.error('Error fetching creators:', error);
-            }
+        let typeFilter;
+        if (activeTab === 'Video templates') typeFilter = 'video';
+        else if (activeTab === 'Image templates') typeFilter = 'image';
+        else if (activeTab === 'Writing templates') typeFilter = 'text';
+
+        const params = {
+            type: typeFilter,
+            category: selectedCategory || undefined,
+            sortBy: selectedSortBy,
+            timeRange: selectedTimeRange,
+            limit: 20,
+            ...(pageParam ? { startAfter: pageParam } : {})
         };
-        fetchCreators();
+
+        const { posts: fetchedPosts, hasMore: moreAvailable } = await getPosts(params);
+        const lastId = fetchedPosts.length > 0 ? fetchedPosts[fetchedPosts.length - 1].id : null;
+        return { posts: fetchedPosts, hasMore: moreAvailable, lastId };
+    };
+
+    const queryKey = ['posts', activeTab, selectedCategory, selectedSortBy, selectedTimeRange];
+
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        status
+    } = useInfiniteQuery({
+        queryKey,
+        queryFn: fetchPostsPage,
+        getNextPageParam: (lastPage) => lastPage?.hasMore ? lastPage.lastId : undefined,
+        staleTime: 5 * 60 * 1000, // 5 minutes cache
+    });
+
+    const posts = data?.pages.flatMap(page => page.posts) || [];
+    const isLoading = status === 'pending';
+    const hasMore = hasNextPage;
+    const isLoadingMore = isFetchingNextPage;
+
+    // Infinite scroll – IntersectionObserver for "load more"
+    useEffect(() => {
+        if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+                    fetchNextPage();
+                }
+            },
+            { rootMargin: '200px' }
+        );
+
+        observer.observe(loadMoreRef.current);
+        return () => observer.disconnect();
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+    // Fetch trending posts on mount
+    // We fetch recent posts (which has a working Firestore index) then sort by views client-side
+    useEffect(() => {
+        const fetchTrendingPosts = async () => {
+            setIsTrendingLoading(true);
+            try {
+                // Fetch a batch of recent posts (default sort = createdAt, has index)
+                const { posts: allPosts } = await getPosts({ limit: 20 });
+                // Sort by views descending and pick top 3
+                const sorted = (allPosts || [])
+                    .sort((a, b) => (b.views || 0) - (a.views || 0))
+                    .slice(0, 3);
+                setTrendingPosts(sorted);
+            } catch (error) {
+                console.error('Error fetching trending posts:', error);
+                setTrendingPosts([]);
+            }
+            setIsTrendingLoading(false);
+        };
+        fetchTrendingPosts();
     }, []);
 
-    const formatNumber = (num) => {
-        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-        if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
-        return String(num || 0);
-    };
+    // ── Interactions ────────────────────────────────────────────────
 
-    // Optimistic Like - UI updates instantly
-    const handleLike = async (postId, e) => {
-        e.stopPropagation();
+    const handleLike = useCallback((postId) => {
+        const currentInteractions = queryClient.getQueryData(['userInteractions', user?.uid]);
+        const wasLiked = currentInteractions?.likedPostIds?.includes(postId);
 
-        // 1. Get current state for potential rollback
-        const currentPost = posts.find(p => p.id === postId);
-        const wasLiked = currentPost?.isLiked;
+        setTrendingPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+                return {
+                    ...post,
+                    likes: Math.max(0, (post.likes || 0) + (wasLiked ? -1 : 1))
+                };
+            }
+            return post;
+        }));
 
-        // 2. Optimistic update - UI changes immediately
-        setPosts(prev => prev.map(p =>
-            p.id === postId
-                ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? (p.likes || 1) - 1 : (p.likes || 0) + 1 }
-                : p
-        ));
+        toggleLike(postId);
+    }, [queryClient, user?.uid, toggleLike]);
 
-        // 3. Sync with server in background
-        try {
-            await likePost(postId);
-        } catch (error) {
-            // 4. Rollback on error
-            setPosts(prev => prev.map(p =>
-                p.id === postId
-                    ? { ...p, isLiked: wasLiked, likes: wasLiked ? (p.likes || 0) + 1 : (p.likes || 1) - 1 }
-                    : p
-            ));
-            toast.error('Vui lòng đăng nhập để thích bài viết');
-        }
-    };
+    const handleSave = useCallback((postId) => {
+        setTrendingPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+                const wasSaved = isSaved(postId);
+                return {
+                    ...post,
+                    saves: Math.max(0, (post.saves || 0) + (wasSaved ? -1 : 1))
+                };
+            }
+            return post;
+        }));
 
-    // Optimistic Save - UI updates instantly
-    const handleSave = async (postId, e) => {
-        e.stopPropagation();
+        toggleSave(postId);
 
-        // 1. Get current state for potential rollback
-        const currentPost = posts.find(p => p.id === postId);
-        const wasSaved = currentPost?.isSaved;
+        setTimeout(() => {
+            const currentInteractions = queryClient.getQueryData(['userInteractions', user?.uid]);
+            const currentlySaved = currentInteractions?.savedPostIds?.includes(postId);
+            toast.success(currentlySaved ? 'Đã lưu vào yêu thích' : 'Đã xóa khỏi yêu thích');
+        }, 100);
+    }, [queryClient, user?.uid, isSaved, toggleSave]);
 
-        // 2. Optimistic update - UI changes immediately
-        setPosts(prev => prev.map(p =>
-            p.id === postId
-                ? { ...p, isSaved: !p.isSaved, saves: p.isSaved ? (p.saves || 1) - 1 : (p.saves || 0) + 1 }
-                : p
-        ));
-        toast.success(!wasSaved ? 'Đã lưu vào yêu thích' : 'Đã xóa khỏi yêu thích');
-
-        // 3. Sync with server in background
-        try {
-            await savePostToFavorites(postId);
-        } catch (error) {
-            // 4. Rollback on error
-            setPosts(prev => prev.map(p =>
-                p.id === postId
-                    ? { ...p, isSaved: wasSaved, saves: wasSaved ? (p.saves || 0) + 1 : (p.saves || 1) - 1 }
-                    : p
-            ));
-            toast.error('Vui lòng đăng nhập để lưu bài viết');
-        }
-    };
-
-    // Use prompt - navigate to dashboard with prefilled prompt (no auto-send)
-    const handleUsePrompt = async (post, e) => {
-        e.stopPropagation();
+    const handleUsePrompt = useCallback(async (post) => {
         if (!post?.prompt) {
             toast.error('Bài viết này không có prompt');
             return;
         }
 
-        // Track usage
-        try {
-            await incrementPostUsage(post.id);
-        } catch (error) {
-            console.error('Error tracking usage:', error);
-        }
+        try { await incrementPostUsage(post.id); } catch { }
 
-        // Navigate to dashboard with prefillPrompt (won't auto-send)
         navigate('/dashboard', {
-            state: {
-                prefillPrompt: post.prompt,
-                prefillType: post.type === 'video' ? 'video' : 'image'
-            }
+            state: { prefillPrompt: post.prompt, prefillType: post.type === 'video' ? 'video' : 'image' }
         });
         toast.success('Đã chuyển đến bảng điều khiển với prompt!');
-    };
+    }, [navigate]);
 
-    const handleCopyPrompt = async (post, e) => {
-        e.stopPropagation();
+    const handleCopyPrompt = useCallback(async (post) => {
         try {
             await navigator.clipboard.writeText(post.prompt);
             await incrementPostUsage(post.id);
             toast.success('Đã sao chép prompt!');
-        } catch (error) {
+        } catch {
             toast.error('Không thể sao chép');
         }
-    };
+    }, []);
 
-    const handleUseTemplate = (template) => {
-        navigate('/dashboard', {
-            state: {
-                initialPrompt: template.content,
-                autoFocus: true
-            }
-        });
-    };
+    const handleTrendingPostClick = useCallback((post) => setSelectedPost(post), []);
 
-    const handlePostClick = (post) => {
-        setSelectedPostId(post.id);
-    };
+    const handlePostClick = useCallback((post) => {
+        setSelectedPost(post);
+    }, []);
 
-    // PostCard Component
-    const PostCard = ({ post }) => (
-        <div className="group cursor-pointer" onClick={() => handleUsePrompt(post)}>
-            <div className="relative aspect-[9/16] rounded-xl overflow-hidden mb-3 bg-gray-100 dark:bg-gray-800">
-                {post.type === 'text' ? (
-                    // Text post display
-                    <div className="w-full h-full p-6 flex flex-col bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Icons.FileText size={20} className="text-purple-600 dark:text-purple-400" />
-                            <span className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase">Văn bản</span>
-                        </div>
-                        <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-3 line-clamp-2">{post.title}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-6 leading-relaxed whitespace-pre-wrap">
-                            {post.content}
-                        </p>
-                        {post.prompt && (
-                            <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 italic line-clamp-2">
-                                    Prompt: "{post.prompt}"
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                ) : post.type === 'video' ? (
-                    <video
-                        src={post.mediaUrl}
-                        className="w-full h-full object-cover"
-                        muted
-                        loop
-                        onMouseEnter={(e) => e.target.play()}
-                        onMouseLeave={(e) => { e.target.pause(); e.target.currentTime = 0; }}
-                    />
-                ) : (
-                    <img src={post.mediaUrl || post.thumbnailUrl} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                )}
+    const handleAvatarClick = useCallback((authorId) => {
+        navigate(`/dashboard?profile=${authorId}`);
+    }, [navigate]);
 
-                {/* Trending Badge */}
-                {post.isTrending && (
-                    <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
-                        <Icons.TrendingUp size={10} />
-                        {t.dashboard.inspiration.trending}
-                    </div>
-                )}
-
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 mb-3">
-                        <button
-                            onClick={(e) => handleLike(post.id, e)}
-                            className={`p-2 rounded-full transition-all ${post.isLiked ? 'bg-red-500 text-white' : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'}`}
-                        >
-                            <Icons.Heart size={16} className={post.isLiked ? 'fill-current' : ''} />
-                        </button>
-                        <button
-                            onClick={(e) => handleSave(post.id, e)}
-                            className={`p-2 rounded-full transition-all ${post.isSaved ? 'bg-purple-500 text-white' : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'}`}
-                        >
-                            <Icons.Bookmark size={16} className={post.isSaved ? 'fill-current' : ''} />
-                        </button>
-                        <button
-                            onClick={(e) => handleCopyPrompt(post, e)}
-                            className="p-2 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-all"
-                            title="Sao chép prompt"
-                        >
-                            <Icons.Copy size={16} />
-                        </button>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); handlePostClick(post); }}
-                            className="p-2 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-all"
-                            title="Bình luận"
-                        >
-                            <Icons.MessageCircle size={16} />
-                        </button>
-                    </div>
-
-                    {/* Use Button */}
-                    <button
-                        onClick={(e) => handleUsePrompt(post, e)}
-                        className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1"
-                    >
-                        <Icons.Wand2 size={14} />
-                        {post.type === 'text' ? 'Sử dụng ngay' : t.dashboard.inspiration.tryThisStyle}
-                    </button>
-                </div>
-            </div>
-
-            {/* Post Info with Avatar */}
-            <div>
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-white mb-2 line-clamp-1">{post.title}</h3>
-                <div className="flex items-center gap-2 mb-2">
-                    <img
-                        src={post.authorAvatar || `https://ui-avatars.com/api/?name=${post.authorName}&size=32&background=random`}
-                        alt={post.authorName}
-                        className="w-5 h-5 rounded-full object-cover"
-                        loading="lazy"
-                    />
-                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate">{post.authorName}</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                    <span className="flex items-center gap-1">
-                        <Icons.Heart size={10} className={post.isLiked ? 'text-red-500 fill-red-500' : ''} />
-                        {formatNumber(post.likes || 0)}
-                    </span>
-                    <span className="flex items-center gap-1"><Icons.Eye size={10} /> {formatNumber(post.views || 0)}</span>
-                    <span className="flex items-center gap-1"><Icons.MessageCircle size={10} /> {formatNumber(post.comments || 0)}</span>
-                </div>
-            </div>
-        </div>
-    );
+    // Filter posts by search query (client-side)
+    const filteredPosts = searchQuery.trim()
+        ? posts.filter(post => {
+            const q = searchQuery.toLowerCase();
+            return (
+                (post.title && post.title.toLowerCase().includes(q)) ||
+                (post.prompt && post.prompt.toLowerCase().includes(q)) ||
+                (post.description && post.description.toLowerCase().includes(q)) ||
+                (post.authorName && post.authorName.toLowerCase().includes(q)) ||
+                (post.tags && post.tags.some(tag => tag.toLowerCase().includes(q)))
+            );
+        })
+        : posts;
 
     return (
-        <div className="p-8 pb-20">
-            {/* Weekly Top Creators */}
+        <div className="px-4 md:px-8 pt-2 md:pt-4 pb-20">
+            {/* ── Inline CSS for animations ── */}
+            <style>{`
+@keyframes fadeSlideIn {
+                    from { opacity: 0; transform: translateY(16px); }
+                    to   { opacity: 1; transform: translateY(0); }
+}
+`}</style>
+
+            {/* ── Header ── */}
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Icons.Lightbulb size={24} className="text-yellow-500" />
+                        {t.dashboard.inspiration.title || 'Cảm Hứng'}
+                    </h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        Khám phá xu hướng, mẫu sáng tạo và prompt từ cộng đồng
+                    </p>
+                </div>
+                <button
+                    onClick={navigateToDashboard}
+                    className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl text-sm font-bold transition-all shadow-md"
+                >
+                    <Icons.Wand2 size={16} />
+                    Tạo nội dung
+                </button>
+            </div>
+
+            {/* ── Weekly Trending Posts ── */}
             <div className="mb-10">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-6">
-                    <span className="text-yellow-500"><Icons.Wand2 /></span> {t.dashboard.inspiration.weeklyTopCreators}
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-5">
+                    <span className="text-yellow-500">🏆</span> {t.dashboard.inspiration.weeklyTopCreators}
                 </h2>
-                <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
-                    {creators.map((creator, i) => (
-                        <div key={creator.id || i} className="min-w-[320px] bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 rounded-2xl p-4 flex gap-4 items-center shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                            <div className="relative w-24 h-32 rounded-lg overflow-hidden flex-shrink-0">
-                                <img src={creator.coverImage || 'https://picsum.photos/id/20/300/400'} alt="work" className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                    <Icons.Play className="text-white drop-shadow-lg" size={32} />
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <img src={creator.avatar || creator.photoURL || `https://ui-avatars.com/api/?name=${creator.displayName}`} alt={creator.displayName} className="w-8 h-8 rounded-full border border-white dark:border-gray-600" />
-                                    <div>
-                                        <h4 className="text-sm font-bold dark:text-white">{creator.displayName}</h4>
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-wide">{creator.role || 'Creator'}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
-                                    <span className="flex items-center gap-1"><Icons.Users size={12} /> {formatNumber(creator.followersCount || 0)}</span>
-                                    <span className="flex items-center gap-1"><Icons.Heart size={12} /> {formatNumber(creator.totalLikes || 0)}</span>
-                                </div>
-                            </div>
+                <div className="flex gap-5 overflow-x-auto pb-4 no-scrollbar">
+                    {isTrendingLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <SkeletonTrendingCard key={i} index={i} />
+                        ))
+                    ) : trendingPosts.length === 0 ? (
+                        <div className="w-full py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
+                            Chưa có bài viết xu hướng nào trong tuần này
                         </div>
+                    ) : trendingPosts.map((post, i) => (
+                        <TrendingCard
+                            key={post.id}
+                            post={post}
+                            index={i}
+                            isLiked={isLiked(post.id)}
+                            onClick={handleTrendingPostClick}
+                        />
                     ))}
                 </div>
             </div>
 
-            {/* Category Tabs */}
-            <div className="border-b border-gray-200 dark:border-gray-700 mb-6 flex gap-8 overflow-x-auto no-scrollbar">
-                {categories.map((cat) => (
-                    <button
-                        key={cat}
-                        onClick={() => setActiveTab(cat)}
-                        className={`pb-3 text-sm font-medium whitespace-nowrap transition-colors ${activeTab === cat ? 'text-gray-900 dark:text-white border-b-2 border-black dark:border-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                    >
-                        {getCategoryLabel(cat)}
-                    </button>
-                ))}
+            {/* ── Category Tabs ── */}
+            <div className="border-b border-gray-200 dark:border-gray-700 mb-6 flex gap-6 overflow-x-auto no-scrollbar">
+                {
+                    categories.map((cat) => (
+                        <button
+                            key={cat}
+                            onClick={() => setActiveTab(cat)}
+                            className={`pb-3 text-sm font-medium whitespace-nowrap transition-all duration-200 relative ${activeTab === cat
+                                ? 'text-gray-900 dark:text-white'
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                                }`}
+                        >
+                            {getCategoryLabel(cat)}
+                            {activeTab === cat && (
+                                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-white rounded-full" />
+                            )}
+                        </button>
+                    ))
+                }
             </div>
 
-            {/* Filters */}
-            <div className="flex gap-3 mb-8 flex-wrap">
-                {/* Category Filter */}
+            {/* ── Filters ── */}
+            <div className="flex gap-3 mb-8 flex-wrap items-center">
                 <div className="relative">
                     <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="appearance-none flex items-center gap-2 px-4 py-2 pr-8 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 cursor-pointer focus:ring-2 focus:ring-purple-500 outline-none"
+                        className="appearance-none px-4 py-2 pr-8 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 cursor-pointer focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 outline-none transition-all hover:border-gray-400 dark:hover:border-gray-500"
                     >
                         {categoryOptions.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                     </select>
-                    <Icons.ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                    <Icons.ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
 
-                {/* Time Range Filter */}
                 <div className="relative">
                     <select
                         value={selectedTimeRange}
                         onChange={(e) => setSelectedTimeRange(e.target.value)}
-                        className="appearance-none flex items-center gap-2 px-4 py-2 pr-8 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 cursor-pointer focus:ring-2 focus:ring-purple-500 outline-none"
+                        className="appearance-none px-4 py-2 pr-8 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 cursor-pointer focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 outline-none transition-all hover:border-gray-400 dark:hover:border-gray-500"
                     >
                         {timeRangeOptions.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                     </select>
-                    <Icons.ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                    <Icons.ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
 
-                {/* Search */}
+                <div className="relative">
+                    <select
+                        value={selectedSortBy}
+                        onChange={(e) => setSelectedSortBy(e.target.value)}
+                        className="appearance-none px-4 py-2 pr-8 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 cursor-pointer focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 outline-none transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                    >
+                        {sortByOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
+                    <Icons.ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+
+                {
+                    !isLoading && (
+                        <span className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-full text-xs font-bold">
+                            {filteredPosts.length} bài viết
+                        </span>
+                    )
+                }
+
                 <div className="relative ml-auto">
                     <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input
@@ -416,42 +545,103 @@ const Inspiration = () => {
                         placeholder={t.dashboard.inspiration.searchPlaceholder}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 pr-4 py-2 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-white w-64 focus:ring-2 focus:ring-purple-500 outline-none"
+                        className="pl-9 pr-4 py-2 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-white w-64 focus:ring-2 focus:ring-purple-500 outline-none transition-all hover:border-purple-300 dark:hover:border-purple-600"
                     />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            <Icons.X size={14} />
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Loading State */}
-            {isLoading && (
-                <div className="flex justify-center py-12">
-                    <Icons.Loader size={32} className="animate-spin text-purple-500" />
-                </div>
-            )}
-
-            {/* Posts Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                {posts.length === 0 && !isLoading ? (
-                    <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl">
-                        <Icons.Image size={48} className="mx-auto mb-4 opacity-20" />
-                        <p>{t.dashboard.inspiration.noTemplates || 'Chưa có bài đăng nào'}</p>
-                        <button
-                            onClick={() => navigate('/dashboard')}
-                            className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-full text-sm font-bold hover:bg-purple-700"
-                        >
-                            {t.dashboard.inspiration.createTemplate || 'Tạo và chia sẻ ngay'}
-                        </button>
+            {/* ── Posts Grid ── */}
+            {
+                isLoading ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                        {Array.from({ length: 10 }).map((_, i) => (
+                            <SkeletonCard key={i} index={i} />
+                        ))}
+                    </div>
+                ) : filteredPosts.length === 0 ? (
+                    <div className="py-20 text-center">
+                        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                            <Icons.Image size={32} className="text-gray-300 dark:text-gray-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                            {searchQuery ? `Không tìm thấy kết quả` : 'Chưa có bài đăng nào'}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                            {searchQuery
+                                ? `Không có bài viết nào phù hợp với "${searchQuery}". Thử từ khóa khác nhé.`
+                                : 'Hãy là người đầu tiên chia sẻ tác phẩm sáng tạo của bạn!'
+                            }
+                        </p>
+                        {!searchQuery && (
+                            <button
+                                onClick={navigateToDashboard}
+                                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-sm font-bold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg shadow-purple-500/20"
+                            >
+                                <Icons.Wand2 size={16} className="inline mr-2" />
+                                Tạo và chia sẻ ngay
+                            </button>
+                        )}
                     </div>
                 ) : (
-                    posts.map((post) => <PostCard key={post.id} post={post} />)
-                )}
-            </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                        {filteredPosts.map((post, index) => (
+                            <PostCard
+                                key={post.id}
+                                post={post}
+                                index={index}
+                                isLiked={isLiked(post.id)}
+                                isSaved={isSaved(post.id)}
+                                onLike={handleLike}
+                                onSave={handleSave}
+                                onCopyPrompt={handleCopyPrompt}
+                                onUsePrompt={handleUsePrompt}
+                                onClick={handlePostClick}
+                                onAvatarClick={handleAvatarClick}
+                                t={t}
+                            />
+                        ))}
+                    </div>
+                )
+            }
 
-            {/* Post Detail Modal */}
+            {/* ── Load More / Infinite Scroll ── */}
+            {
+                hasMore && !searchQuery && (
+                    <div ref={loadMoreRef} className="flex justify-center py-8">
+                        {isLoadingMore ? (
+                            <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+                                <Icons.Loader size={20} className="animate-spin text-purple-500" />
+                                <span className="text-sm">Đang tải thêm...</span>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => fetchNextPage()}
+                                className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            >
+                                Xem thêm
+                            </button>
+                        )}
+                    </div>
+                )
+            }
+
+            {/* ── Post Detail Modal ── */}
             <PostModal
-                postId={selectedPostId}
-                isOpen={!!selectedPostId}
-                onClose={() => setSelectedPostId(null)}
+                postId={selectedPost?.id}
+                initialPost={selectedPost}
+                isOpen={!!selectedPost}
+                onClose={() => setSelectedPost(null)}
                 onUsePrompt={handleUsePrompt}
+                onLike={handleLike}
+                onSave={handleSave}
             />
         </div>
     );

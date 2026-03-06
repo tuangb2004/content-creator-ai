@@ -123,11 +123,34 @@ const CommentSection = ({ postId, onClose }) => {
                         <div key={comment.id} className="group">
                             <div className="flex gap-3">
                                 {/* Avatar */}
-                                <img
-                                    src={comment.authorAvatar || `https://ui-avatars.com/api/?name=${comment.authorName}&background=random`}
-                                    alt={comment.authorName}
-                                    className="w-8 h-8 rounded-full shrink-0"
-                                />
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border border-white dark:border-gray-700 overflow-hidden shadow-sm bg-gradient-to-br from-purple-500 to-blue-500">
+                                    {comment.authorAvatar ? (
+                                        <img
+                                            src={comment.authorAvatar}
+                                            alt={comment.authorName}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.style.display = 'none';
+                                                e.target.parentElement.classList.add('bg-gradient-to-br', 'from-purple-500', 'to-blue-500');
+                                                const initials = comment.authorName
+                                                    ? (comment.authorName.split(' ').filter(Boolean).length >= 2
+                                                        ? (comment.authorName.split(' ').filter(Boolean)[0][0] + comment.authorName.split(' ').filter(Boolean).pop()[0]).toUpperCase()
+                                                        : comment.authorName.substring(0, 2).toUpperCase())
+                                                    : 'U';
+                                                e.target.parentElement.innerHTML = `<span class="text-[10px] font-bold text-white uppercase tracking-tighter">${initials}</span>`;
+                                            }}
+                                        />
+                                    ) : (
+                                        <span className="text-[10px] font-bold text-white uppercase tracking-tighter">
+                                            {comment.authorName
+                                                ? (comment.authorName.split(' ').filter(Boolean).length >= 2
+                                                    ? (comment.authorName.split(' ').filter(Boolean)[0][0] + comment.authorName.split(' ').filter(Boolean).pop()[0]).toUpperCase()
+                                                    : comment.authorName.substring(0, 2).toUpperCase())
+                                                : 'U'}
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-0.5">
                                         <span className="font-semibold text-sm text-gray-900 dark:text-white">{comment.authorName}</span>
@@ -142,7 +165,7 @@ const CommentSection = ({ postId, onClose }) => {
                                             className={`flex items-center gap-1 text-xs transition-colors ${comment.isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
                                                 }`}
                                         >
-                                            <Icons.Heart size={14} className={comment.isLiked ? 'fill-current' : ''} />
+                                            <Icons.Heart size={14} isActive={comment.isLiked} />
                                             {comment.likes > 0 && comment.likes}
                                         </button>
                                         {user?.uid === comment.authorId && (
@@ -165,11 +188,34 @@ const CommentSection = ({ postId, onClose }) => {
             <form onSubmit={handleSubmit} className="p-4 border-t border-gray-100 dark:border-gray-700">
                 <div className="flex gap-3 items-start">
                     {user && (
-                        <img
-                            src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || user.email}&background=random`}
-                            alt="You"
-                            className="w-8 h-8 rounded-full shrink-0"
-                        />
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border border-white dark:border-gray-700 overflow-hidden shadow-sm bg-gradient-to-br from-purple-500 to-blue-500">
+                            {user.photoURL ? (
+                                <img
+                                    src={user.photoURL}
+                                    alt="You"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.style.display = 'none';
+                                        e.target.parentElement.classList.add('bg-gradient-to-br', 'from-purple-500', 'to-blue-500');
+                                        const name = user.displayName || user.email?.split('@')[0] || 'User';
+                                        const initials = name.split(' ').filter(Boolean).length >= 2
+                                            ? (name.split(' ').filter(Boolean)[0][0] + name.split(' ').filter(Boolean).pop()[0]).toUpperCase()
+                                            : name.substring(0, 2).toUpperCase();
+                                        e.target.parentElement.innerHTML = `<span class="text-[10px] font-bold text-white uppercase tracking-tighter">${initials}</span>`;
+                                    }}
+                                />
+                            ) : (
+                                <span className="text-[10px] font-bold text-white uppercase tracking-tighter">
+                                    {(() => {
+                                        const name = user.displayName || user.email?.split('@')[0] || 'User';
+                                        return name.split(' ').filter(Boolean).length >= 2
+                                            ? (name.split(' ').filter(Boolean)[0][0] + name.split(' ').filter(Boolean).pop()[0]).toUpperCase()
+                                            : name.substring(0, 2).toUpperCase();
+                                    })()}
+                                </span>
+                            )}
+                        </div>
                     )}
                     <div className="flex-1 relative">
                         <textarea

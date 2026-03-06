@@ -2,23 +2,26 @@ import * as admin from 'firebase-admin';
 import { generateContent } from './generateContent';
 import { createPaymentLinkFunction } from './createPaymentLink';
 import { payosWebhook } from './payosWebhook';
-import { onUserCreate } from './authTrigger';
+import { onUserCreate, onUserDelete } from './authTrigger';
 import { saveProject, getProjects, getProject, deleteProject } from './projects';
 import { uploadFile, getUploads, deleteUpload } from './uploads';
 import { chat } from './chat';
 import { initializeUserIfNeeded } from './initializeUser';
 import { getTikTokAuthUrl, handleTikTokCallback } from './tiktokAuth';
 import { logUserLogin } from './logUserLogin';
-import { requestVideoGeneration, getVideoQueueStatus, processVideoQueue } from './generateVideo';
+import { generateVideoDirect, onVideoRequestCreate } from './generateVideo';
 import {
   createPost,
   getPosts,
   getPost,
   likePost,
   savePost,
+  reportPost,
   deletePost,
   incrementPostUsage,
   getTopCreators,
+  getWeeklyTrendingPosts,
+  reconcilePostCounts,
 } from './posts';
 import {
   addComment,
@@ -40,6 +43,15 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
 } from './notifications';
+
+import {
+  getUserInteractions
+} from './interactions';
+import {
+  onLikeCreated,
+  onCommentCreated,
+  onFollowCreated
+} from './triggers';
 
 const resolveStorageBucket = (): string | undefined => {
   const explicitBucket = process.env.FIREBASE_STORAGE_BUCKET;
@@ -74,6 +86,7 @@ export {
   createPaymentLinkFunction as createPaymentLink,
   payosWebhook,
   onUserCreate,
+  onUserDelete,
   saveProject,
   getProjects,
   getProject,
@@ -86,19 +99,21 @@ export {
   getTikTokAuthUrl,
   handleTikTokCallback,
   logUserLogin,
-  // Video Generation
-  requestVideoGeneration,
-  getVideoQueueStatus,
-  processVideoQueue,
+  // Video Generation (simplified)
+  generateVideoDirect,
+  onVideoRequestCreate,
   // Community Posts
   createPost,
   getPosts,
   getPost,
   likePost,
   savePost,
+  reportPost,
   deletePost,
   incrementPostUsage,
   getTopCreators,
+  getWeeklyTrendingPosts,
+  reconcilePostCounts,
   // Comments
   addComment,
   getComments,
@@ -116,5 +131,10 @@ export {
   getNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  getUserInteractions,
+  // Triggers
+  onLikeCreated,
+  onCommentCreated,
+  onFollowCreated,
 };
 

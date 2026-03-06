@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateAuth } from './utils/validation';
 
+
 // Lazy load firestore
 function getDb() {
     return admin.firestore();
@@ -37,6 +38,7 @@ export interface Post {
     isPublic: boolean;
     createdAt: FirebaseFirestore.Timestamp;
     updatedAt: FirebaseFirestore.Timestamp;
+    isDeleted?: boolean;
 }
 
 export interface CreatePostRequest {
@@ -122,6 +124,7 @@ export const createPost = functions.https.onCall(
             usageCount: 0,
             isTrending: false,
             isPublic: true,
+            isDeleted: false,
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
             // Optional fields - only include if defined
@@ -159,9 +162,8 @@ export const createPost = functions.https.onCall(
 // ============================================================================
 
 export const getPosts = functions.https.onCall(
-    async (data: GetPostsRequest, context: functions.https.CallableContext) => {
+    async (data: GetPostsRequest, _context: functions.https.CallableContext) => {
         // Auth is optional for viewing public posts
-        const userId = context.auth?.uid;
 
         const db = getDb();
         // Determine sort order
@@ -169,6 +171,7 @@ export const getPosts = functions.https.onCall(
 
         let query: FirebaseFirestore.Query = db.collection('posts')
             .where('isPublic', '==', true)
+            .where('isDeleted', '==', false)
             .orderBy(sortField, 'desc');
 
         // Time range filter
@@ -216,40 +219,15 @@ export const getPosts = functions.https.onCall(
 
         try {
             const snapshot = await query.get();
-            const posts: (Post & { id: string; isLiked?: boolean; isSaved?: boolean })[] = [];
-
-            // Get user's likes and saves if authenticated
-            let userLikes = new Set<string>();
-            let userSaves = new Set<string>();
-
-            if (userId) {
-                const [likesSnap, savesSnap] = await Promise.all([
-                    db.collection('postLikes').where('userId', '==', userId).get(),
-                    db.collection('postSaves').where('userId', '==', userId).get(),
-                ]);
-                likesSnap.forEach(doc => userLikes.add(doc.data().postId));
-                savesSnap.forEach(doc => userSaves.add(doc.data().postId));
-            }
+            const posts: (Post & { id: string })[] = [];
 
             snapshot.forEach((doc) => {
                 const postData = doc.data() as Post;
                 posts.push({
                     ...postData,
-                    id: doc.id,
-                    isLiked: userLikes.has(doc.id),
-                    isSaved: userSaves.has(doc.id),
+                    id: doc.id
                 });
             });
-
-            // Handle savedByMe and likedByMe filters
-            if (userId && data.savedByMe) {
-                const savedPosts = posts.filter(p => p.isSaved);
-                return { success: true, posts: savedPosts, count: savedPosts.length };
-            }
-            if (userId && data.likedByMe) {
-                const likedPosts = posts.filter(p => p.isLiked);
-                return { success: true, posts: likedPosts, count: likedPosts.length };
-            }
 
             return {
                 success: true,
@@ -285,6 +263,10 @@ export const getPost = functions.https.onCall(
             }
 
             const postData = postDoc.data() as Post;
+            if (postData.isDeleted === true) {
+                throw new functions.https.HttpsError('not-found', 'Post was deleted');
+            }
+
             let newViewCount = postData.views || 0;
 
             // View spam prevention: Only count view if user hasn't viewed in last 24 hours
@@ -327,43 +309,11 @@ export const getPost = functions.https.onCall(
                 newViewCount += 1;
             }
 
-            // Check if user liked/saved
-            let isLiked = false;
-            let isSaved = false;
-            let isFollowing = false;
-
-            if (userId) {
-                const [likeDoc, saveDoc, followDoc] = await Promise.all([
-                    db.collection('postLikes')
-                        .where('postId', '==', data.postId)
-                        .where('userId', '==', userId)
-                        .limit(1)
-                        .get(),
-                    db.collection('postSaves')
-                        .where('postId', '==', data.postId)
-                        .where('userId', '==', userId)
-                        .limit(1)
-                        .get(),
-                    db.collection('follows')
-                        .where('followerId', '==', userId)
-                        .where('followingId', '==', postData.authorId)
-                        .limit(1)
-                        .get(),
-                ]);
-                isLiked = !likeDoc.empty;
-                isSaved = !saveDoc.empty;
-                isFollowing = !followDoc.empty;
-            }
-
             return {
                 success: true,
                 post: {
-                    ...postData,
                     id: postDoc.id,
-                    views: newViewCount,
-                    isLiked,
-                    isSaved,
-                    isFollowing,
+                    ...postData
                 },
             };
         } catch (error: any) {
@@ -379,7 +329,7 @@ export const getPost = functions.https.onCall(
 // ============================================================================
 
 export const likePost = functions.https.onCall(
-    async (data: { postId: string }, context: functions.https.CallableContext) => {
+    async (data: { postId: string, action?: 'like' | 'unlike' }, context: functions.https.CallableContext) => {
         const userId = validateAuth(context);
 
         if (!data.postId) {
@@ -388,33 +338,77 @@ export const likePost = functions.https.onCall(
 
         const db = getDb();
         const postRef = db.collection('posts').doc(data.postId);
-        const likesRef = db.collection('postLikes');
+        const likeRef = db.collection('postLikes').doc(`${data.postId}_${userId}`);
 
         try {
-            // Check if already liked
-            const existingLike = await likesRef
-                .where('postId', '==', data.postId)
-                .where('userId', '==', userId)
-                .limit(1)
-                .get();
+            return await db.runTransaction(async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                const likeDoc = await transaction.get(likeRef);
 
-            if (!existingLike.empty) {
-                // Unlike
-                await existingLike.docs[0].ref.delete();
-                await postRef.update({ likes: FieldValue.increment(-1) });
-                return { success: true, liked: false, message: 'Post unliked' };
-            } else {
-                // Like
-                await likesRef.add({
-                    postId: data.postId,
-                    userId,
-                    createdAt: FieldValue.serverTimestamp(),
-                });
-                await postRef.update({ likes: FieldValue.increment(1) });
-                return { success: true, liked: true, message: 'Post liked' };
-            }
+                if (!postDoc.exists) {
+                    throw new Error('Post not found');
+                }
+
+                const postData = postDoc.data()!;
+                const currentLikes = postData.likes || 0;
+                const authorId = postData.authorId;
+                const exists = likeDoc.exists;
+
+                // If explicit action is requested and already matches, return current state
+                if (data.action === 'like' && exists) {
+                    return { success: true, liked: true, newCount: currentLikes, message: 'Already liked' };
+                }
+                if (data.action === 'unlike' && !exists) {
+                    return { success: true, liked: false, newCount: currentLikes, message: 'Already unliked' };
+                }
+
+                if (exists) {
+                    // Unlike
+                    transaction.delete(likeRef);
+                    transaction.update(postRef, {
+                        likes: Math.max(0, currentLikes - 1),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+
+                    // Sync totalLikes in userProfiles
+                    if (authorId) {
+                        const profileRef = db.collection('userProfiles').doc(authorId);
+                        transaction.set(profileRef, {
+                            totalLikes: FieldValue.increment(-1),
+                            updatedAt: FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    }
+
+                    return { success: true, liked: false, newCount: Math.max(0, currentLikes - 1), message: 'Post unliked' };
+                } else {
+                    // Like
+                    transaction.set(likeRef, {
+                        postId: data.postId,
+                        userId,
+                        createdAt: FieldValue.serverTimestamp(),
+                    });
+                    transaction.update(postRef, {
+                        likes: currentLikes + 1,
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+
+                    // Sync totalLikes in userProfiles
+                    if (authorId) {
+                        const profileRef = db.collection('userProfiles').doc(authorId);
+                        transaction.set(profileRef, {
+                            totalLikes: FieldValue.increment(1),
+                            updatedAt: FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    }
+
+                    return { success: true, liked: true, newCount: currentLikes + 1, message: 'Post liked' };
+                }
+            });
         } catch (error: any) {
             console.error('Error liking post:', error);
+            if (error.message === 'Post not found') {
+                throw new functions.https.HttpsError('not-found', error.message);
+            }
             throw new functions.https.HttpsError('internal', 'Failed to like post', error.message);
         }
     }
@@ -434,34 +428,100 @@ export const savePost = functions.https.onCall(
 
         const db = getDb();
         const postRef = db.collection('posts').doc(data.postId);
-        const savesRef = db.collection('postSaves');
+        const saveRef = db.collection('postSaves').doc(`${data.postId}_${userId}`);
 
         try {
-            // Check if already saved
-            const existingSave = await savesRef
-                .where('postId', '==', data.postId)
-                .where('userId', '==', userId)
-                .limit(1)
-                .get();
+            return await db.runTransaction(async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                const saveDoc = await transaction.get(saveRef);
 
-            if (!existingSave.empty) {
-                // Unsave
-                await existingSave.docs[0].ref.delete();
-                await postRef.update({ saves: FieldValue.increment(-1) });
-                return { success: true, saved: false, message: 'Post unsaved' };
-            } else {
-                // Save
-                await savesRef.add({
-                    postId: data.postId,
-                    userId,
-                    createdAt: FieldValue.serverTimestamp(),
-                });
-                await postRef.update({ saves: FieldValue.increment(1) });
-                return { success: true, saved: true, message: 'Post saved' };
-            }
+                if (!postDoc.exists) {
+                    throw new Error('Post not found');
+                }
+
+                const postData = postDoc.data()!;
+                const currentSaves = postData.saves || 0;
+
+                if (saveDoc.exists) {
+                    // Unsave
+                    transaction.delete(saveRef);
+                    transaction.update(postRef, {
+                        saves: Math.max(0, currentSaves - 1),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                    return { success: true, saved: false, newCount: Math.max(0, currentSaves - 1), message: 'Post unsaved' };
+                } else {
+                    // Save
+                    transaction.set(saveRef, {
+                        postId: data.postId,
+                        userId,
+                        createdAt: FieldValue.serverTimestamp(),
+                    });
+                    transaction.update(postRef, {
+                        saves: currentSaves + 1,
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                    return { success: true, saved: true, newCount: currentSaves + 1, message: 'Post saved' };
+                }
+            });
         } catch (error: any) {
             console.error('Error saving post:', error);
+            if (error.message === 'Post not found') {
+                throw new functions.https.HttpsError('not-found', error.message);
+            }
             throw new functions.https.HttpsError('internal', 'Failed to save post', error.message);
+        }
+    }
+);
+
+// ============================================================================
+// REPORT POST
+// ============================================================================
+
+export const reportPost = functions.https.onCall(
+    async (data: { postId: string, reason?: string }, context: functions.https.CallableContext) => {
+        const userId = validateAuth(context);
+
+        if (!data.postId) {
+            throw new functions.https.HttpsError('invalid-argument', 'postId is required');
+        }
+
+        const db = getDb();
+
+        try {
+            // Verify post exists
+            const postDoc = await db.collection('posts').doc(data.postId).get();
+            if (!postDoc.exists) {
+                throw new functions.https.HttpsError('not-found', 'Post not found');
+            }
+
+            // Check if user already reported this post
+            const existingReport = await db.collection('reports')
+                .where('postId', '==', data.postId)
+                .where('userId', '==', userId)
+                .get();
+
+            if (!existingReport.empty) {
+                return { success: true, message: 'You have already reported this post' };
+            }
+
+            const reportData = {
+                postId: data.postId,
+                postTitle: postDoc.data()?.title || '',
+                postAuthorId: postDoc.data()?.authorId || '',
+                userId,
+                reason: data.reason || 'Báo cáo vi phạm',
+                status: 'pending', // pending, reviewed, resolved
+                createdAt: FieldValue.serverTimestamp(),
+            };
+
+            await db.collection('reports').add(reportData);
+
+            return { success: true, message: 'Report submitted successfully' };
+        } catch (error: any) {
+            console.error('Error reporting post:', error);
+            if (error instanceof functions.https.HttpsError) throw error;
+            throw new functions.https.HttpsError('internal', 'Failed to report post', error.message);
         }
     }
 );
@@ -494,23 +554,13 @@ export const deletePost = functions.https.onCall(
                 throw new functions.https.HttpsError('permission-denied', 'Not your post');
             }
 
-            // Delete post and related data
+            // Perform soft delete
             const batch = db.batch();
 
-            // Delete likes
-            const likesSnap = await db.collection('postLikes').where('postId', '==', data.postId).get();
-            likesSnap.forEach(doc => batch.delete(doc.ref));
-
-            // Delete saves
-            const savesSnap = await db.collection('postSaves').where('postId', '==', data.postId).get();
-            savesSnap.forEach(doc => batch.delete(doc.ref));
-
-            // Delete comments
-            const commentsSnap = await db.collection('comments').where('postId', '==', data.postId).get();
-            commentsSnap.forEach(doc => batch.delete(doc.ref));
-
-            // Delete post
-            batch.delete(postRef);
+            batch.update(postRef, {
+                isDeleted: true,
+                updatedAt: FieldValue.serverTimestamp()
+            });
 
             // Update user post count
             batch.update(db.collection('userProfiles').doc(userId), {
@@ -568,9 +618,30 @@ export const getTopCreators = functions.https.onCall(
                 .limit(limit)
                 .get();
 
-            const creators = creatorsSnap.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
+            const creators = await Promise.all(creatorsSnap.docs.map(async (doc) => {
+                const profileData = doc.data();
+                const userId = doc.id;
+
+                // Fetch basic user info
+                const userDoc = await db.collection('users').doc(userId).get();
+                const userData = userDoc.data() || {};
+
+                // Fetch latest post for cover image
+                // We use a broader query and filter client-side to avoid complex index requirements for now
+                const latestPost = (await db.collection('posts')
+                    .where('authorId', '==', userId)
+                    .orderBy('createdAt', 'desc')
+                    .limit(5)
+                    .get()).docs.find(d => !d.data().isDeleted);
+
+                return {
+                    id: userId,
+                    ...profileData,
+                    displayName: userData.displayName || userData.email?.split('@')[0] || 'Anonymous',
+                    photoURL: userData.photoURL,
+                    coverImage: latestPost?.data()?.mediaUrl || latestPost?.data()?.thumbnailUrl || null,
+                    latestPostId: latestPost?.id || null
+                };
             }));
 
             return { success: true, creators };
@@ -580,3 +651,198 @@ export const getTopCreators = functions.https.onCall(
         }
     }
 );
+
+// ============================================================================
+// GET WEEKLY TRENDING POSTS (Top posts by views this week)
+// ============================================================================
+
+export const getWeeklyTrendingPosts = functions.https.onCall(
+    async (data: { limit?: number }, _context: functions.https.CallableContext) => {
+        const db = getDb();
+        const limit = Math.min(data?.limit || 3, 10);
+
+        try {
+            // Calculate start of current week (7 days ago)
+            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+            // Query posts from the last week, sorted by views
+            const weeklySnap = await db.collection('posts')
+                .where('isPublic', '==', true)
+                .orderBy('views', 'desc')
+                .limit(limit * 2) // fetch extra to cover soft-deleted posts
+                .get();
+
+            let trendingPosts: (Post & { id: string })[] = [];
+
+            weeklySnap.forEach((doc) => {
+                if (trendingPosts.length >= limit) return;
+                const postData = doc.data() as Post;
+                if (postData.isDeleted === true) return;
+
+                // Check if post was created within the last week
+                const createdAt = postData.createdAt?.toDate?.() || new Date(0);
+                if (createdAt >= weekAgo) {
+                    trendingPosts.push({
+                        ...postData,
+                        id: doc.id,
+                    });
+                }
+            });
+
+            // If not enough weekly posts, fall back to all-time top viewed posts
+            if (trendingPosts.length < limit) {
+                const allTimeSnap = await db.collection('posts')
+                    .where('isPublic', '==', true)
+                    .orderBy('views', 'desc')
+                    .limit(limit * 2)
+                    .get();
+
+                const existingIds = new Set(trendingPosts.map(p => p.id));
+
+                allTimeSnap.forEach((doc) => {
+                    if (trendingPosts.length >= limit) return;
+                    if (existingIds.has(doc.id)) return;
+                    const postData = doc.data() as Post;
+                    if (postData.isDeleted === true) return;
+
+                    trendingPosts.push({
+                        ...postData,
+                        id: doc.id,
+                    });
+                });
+            }
+
+            return {
+                success: true,
+                posts: trendingPosts.slice(0, limit),
+            };
+        } catch (error: any) {
+            console.error('Error getting weekly trending posts:', error);
+            throw new functions.https.HttpsError('internal', 'Failed to get trending posts', error.message);
+        }
+    }
+);
+
+// ============================================================================
+// TEMPORARY RECONCILIATION FUNCTION (Admin)
+// ============================================================================
+
+export const reconcilePostCounts = functions.https.onRequest(async (req, res) => {
+    const db = getDb();
+    let updatedPosts = 0;
+    const traceTitle = req.query.traceTitle as string;
+    const debugInfo: any[] = [];
+
+    try {
+        // --- Part 1: Reconcile Post Counts & Migrate isDeleted Field ---
+        const postsSnap = await db.collection('posts').get();
+        for (const postDoc of postsSnap.docs) {
+            const postId = postDoc.id;
+            const postData = postDoc.data();
+
+            // Count actual documents
+            const likesCount = (await db.collection('postLikes').where('postId', '==', postId).count().get()).data().count;
+            const savesCount = (await db.collection('postSaves').where('postId', '==', postId).count().get()).data().count;
+
+            const updates: any = {};
+            if (postData.likes !== likesCount || postData.saves !== savesCount) {
+                updates.likes = likesCount;
+                updates.saves = savesCount;
+            }
+
+            // MIGRATION: Ensure isDeleted field exists
+            if (postData.isDeleted === undefined) {
+                updates.isDeleted = false;
+            }
+
+            // CLEANUP: Orphaned posts (author doesn't exist)
+            const authorDoc = await db.collection('users').doc(postData.authorId).get();
+            if (!authorDoc.exists) {
+                updates.isDeleted = true;
+            }
+
+            if (Object.keys(updates).length > 0) {
+                await postDoc.ref.update({
+                    ...updates,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                updatedPosts++;
+            }
+
+            if (traceTitle && postData.title?.toLowerCase().includes(traceTitle.toLowerCase())) {
+                const likers = await db.collection('postLikes').where('postId', '==', postId).get();
+                const likerUserIds = likers.docs.map(d => d.data().userId);
+                debugInfo.push({
+                    id: postId,
+                    title: postData.title,
+                    currentLikes: postData.likes,
+                    actualLikes: likesCount,
+                    likerUserIds
+                });
+            }
+        }
+
+        // --- Part 2: Reconcile User Profile Metrics (totalLikes & followersCount) ---
+        let updatedProfiles = 0;
+        const usersSnap = await db.collection('users').get();
+
+        for (const userDoc of usersSnap.docs) {
+            const userId = userDoc.id;
+
+            // 1. Calculate total likes from all their posts
+            const userPostsSnap = await db.collection('posts')
+                .where('authorId', '==', userId)
+                .get();
+
+            let totalLikes = 0;
+            userPostsSnap.forEach(p => {
+                const pData = p.data();
+                if (pData.isDeleted !== true) {
+                    totalLikes += (pData.likes || 0);
+                }
+            });
+
+            // 2. Calculate actual follower count
+            const followersCount = (await db.collection('follows')
+                .where('followingId', '==', userId)
+                .count()
+                .get()).data().count;
+
+            // 3. Calculate actual unread notification count
+            const unreadSnap = await db.collection('notifications')
+                .where('userId', '==', userId)
+                .where('isRead', '==', false)
+                .get();
+            let unreadNotificationCount = 0;
+            unreadSnap.forEach(doc => {
+                unreadNotificationCount += (doc.data().count || 1);
+            });
+
+            // 4. Update userProfiles document
+            const profileRef = db.collection('userProfiles').doc(userId);
+            const profileDoc = await profileRef.get();
+            const profileData = profileDoc.exists ? profileDoc.data() : {};
+
+            if (profileData?.totalLikes !== totalLikes ||
+                profileData?.followersCount !== followersCount ||
+                profileData?.unreadNotificationCount !== unreadNotificationCount) {
+                await profileRef.set({
+                    totalLikes,
+                    followersCount,
+                    unreadNotificationCount,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                updatedProfiles++;
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Reconciled counters for ${updatedPosts} posts and ${updatedProfiles} user profiles with mismatching data.`,
+            debugInfo: traceTitle ? debugInfo : undefined
+        });
+    } catch (error: any) {
+        console.error('Reconciliation failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
