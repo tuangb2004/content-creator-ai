@@ -163,34 +163,34 @@ const PostModal = ({ postId, isOpen, onClose, onUsePrompt, initialPost, onLike, 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/80" onClick={onClose} />
 
             {/* Modal */}
-            <div className="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200 flex">
-                {/* Left: Media or Text Content */}
-                <div className={`w-1/2 flex items-center justify-center relative ${post?.type === 'text' ? 'bg-gray-900 border-r border-gray-800' : 'bg-black'}`}>
+            <div className="relative bg-white dark:bg-slate-800 md:rounded-3xl shadow-2xl w-full h-full md:h-auto md:max-w-5xl md:max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col md:flex-row">
+                {/* Left/Top: Media or Text Content */}
+                <div className={`w-full md:w-1/2 h-[40vh] md:h-auto flex items-center justify-center relative shrink-0 ${post?.type === 'text' ? 'bg-gray-900 md:border-r border-gray-800' : 'bg-black'}`}>
                     {isLoading && !post ? (
                         <div className="flex flex-col items-center gap-3">
                             <Icons.Loader size={32} className="animate-spin text-white/50" />
                             <span className="text-white/30 text-xs">Đang tải...</span>
                         </div>
                     ) : post?.type === 'text' ? (
-                        <div className="w-full h-full p-8 flex flex-col justify-center overflow-y-auto animate-in fade-in duration-500">
-                            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 max-h-full overflow-y-auto border border-white/10 shadow-2xl">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <Icons.FileText size={28} className="text-white/80" />
-                                    <span className="text-white/80 text-sm font-bold uppercase tracking-widest">Văn bản</span>
+                        <div className="w-full h-full p-4 md:p-8 flex flex-col justify-center overflow-y-auto">
+                            <div className="bg-white/10 rounded-2xl md:rounded-3xl p-4 md:p-8 max-h-full overflow-y-auto border border-white/10 shadow-2xl">
+                                <div className="flex items-center gap-2 mb-4 md:mb-6">
+                                    <Icons.FileText size={24} className="text-white/80 md:w-7 md:h-7" />
+                                    <span className="text-white/80 text-xs md:text-sm font-bold uppercase tracking-widest">Văn bản</span>
                                 </div>
-                                <h2 className="text-3xl font-bold text-white mb-6 leading-tight tracking-tight">{post.title}</h2>
-                                <div className="text-white/90 text-lg leading-relaxed whitespace-pre-wrap font-medium">
+                                <h2 className="text-xl md:text-3xl font-bold text-white mb-4 md:mb-6 leading-tight tracking-tight">{post.title}</h2>
+                                <div className="text-white/90 text-base md:text-lg leading-relaxed whitespace-pre-wrap font-medium">
                                     {post.content}
                                 </div>
                                 {post.prompt && (
-                                    <div className="mt-8 pt-6 border-t border-white/20">
-                                        <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">Generation Prompt</p>
-                                        <p className="text-white/80 text-base italic leading-relaxed bg-black/20 p-4 rounded-xl border border-white/5">
+                                    <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-white/20">
+                                        <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 md:mb-3">Generation Prompt</p>
+                                        <p className="text-white/80 text-sm md:text-base italic leading-relaxed bg-black/20 p-3 md:p-4 rounded-xl border border-white/5">
                                             "{post.prompt}"
                                         </p>
                                     </div>
@@ -199,18 +199,20 @@ const PostModal = ({ postId, isOpen, onClose, onUsePrompt, initialPost, onLike, 
                         </div>
                     ) : post?.type === 'video' ? (
                         <video
+                            key={post.id}
                             src={post.mediaUrl}
                             poster={post.thumbnailUrl}
-                            className="max-w-full max-h-full object-contain animate-in fade-in duration-500"
+                            className="max-w-full max-h-full object-contain"
                             controls
-                            autoPlay
                             playsInline
+                            loop
+                            autoPlay
                         />
                     ) : post?.mediaUrl || post?.thumbnailUrl ? (
                         <img
                             src={post?.mediaUrl || post?.thumbnailUrl}
                             alt={post?.title}
-                            className="max-w-full max-h-full object-contain animate-in fade-in zoom-in-95 duration-500"
+                            className="max-w-full max-h-full object-contain"
                         />
                     ) : (
                         <Icons.Loader size={32} className="animate-spin text-white/50" />
@@ -225,8 +227,8 @@ const PostModal = ({ postId, isOpen, onClose, onUsePrompt, initialPost, onLike, 
                     </button>
                 </div>
 
-                {/* Right: Info & Comments */}
-                <div className="w-1/2 flex flex-col">
+                {/* Right/Bottom: Info & Comments */}
+                <div className="w-full md:w-1/2 flex flex-col flex-1 min-h-0 overflow-hidden">
                     {/* Author Header — show immediately from initialPost */}
                     {post && (
                         <div className="p-4 border-b border-gray-100 dark:border-gray-700">

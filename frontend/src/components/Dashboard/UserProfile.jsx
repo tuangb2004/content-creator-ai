@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Icons } from '../Icons';
 import { getUserProfile, getUserPosts, followUserById, likePost, savePostToFavorites } from '../../services/firebaseFunctions';
@@ -11,7 +11,7 @@ import FollowersModal from './FollowersModal';
 import PostCard from './PostCard';
 import toast from '../../utils/toast';
 
-const UserProfile = ({ userId: propUserId, onBack }) => {
+const UserProfile = ({ userId: propUserId, onBack, onOpenSettings }) => {
     const { userId: paramUserId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -27,6 +27,7 @@ const UserProfile = ({ userId: propUserId, onBack }) => {
     const [selectedPost, setSelectedPost] = useState(null);
     const [activeTab, setActiveTab] = useState('posts');
     const [showEditModal, setShowEditModal] = useState(false);
+    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
     const [showFollowersModal, setShowFollowersModal] = useState(false);
     const [followersModalType, setFollowersModalType] = useState('followers');
 
@@ -34,6 +35,7 @@ const UserProfile = ({ userId: propUserId, onBack }) => {
     const { isLiked, isSaved, isFollowing, toggleLike, toggleSave, toggleFollow } = useInteractions();
 
     const profileIsFollowing = isFollowing(userId);
+    const moreMenuRef = useRef(null);
 
 
     useEffect(() => {
@@ -136,6 +138,16 @@ const UserProfile = ({ userId: propUserId, onBack }) => {
         return String(num || 0);
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+                setIsMoreMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -235,10 +247,34 @@ const UserProfile = ({ userId: propUserId, onBack }) => {
                             <button className="px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-[#ffffff1f] dark:hover:bg-[#ffffff33] text-gray-900 dark:text-white rounded transition-colors">
                                 <Icons.Share2 size={20} />
                             </button>
-                            {/* ... button */}
-                            <button className="px-3 py-2 bg-transparent text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors ml-1">
-                                <Icons.MoreHorizontal size={20} />
-                            </button>
+                            {/* More / settings menu */}
+                            <div className="relative" ref={moreMenuRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsMoreMenuOpen((v) => !v)}
+                                    className="px-3 py-2 bg-transparent text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors ml-1"
+                                >
+                                    <Icons.MoreHorizontal size={20} />
+                                </button>
+                                {isMoreMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#020617] border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-30 py-1 text-left">
+                                        {profile.isOwnProfile && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsMoreMenuOpen(false);
+                                                    if (onOpenSettings) onOpenSettings();
+                                                }}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                            >
+                                                <Icons.Settings size={16} className="text-gray-500" />
+                                                <span>Cài đặt tài khoản</span>
+                                            </button>
+                                        )}
+                                        {/* Future: report/block for other profiles */}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Stats TikTok Style */}

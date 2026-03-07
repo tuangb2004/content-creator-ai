@@ -69,8 +69,8 @@ const MODELS = {
         { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Reasoning & complexity', icon: Icons.Gemini },
     ],
     video: [
-        { id: 'veo-3.1-fast', name: 'Veo 3.1 Fast', desc: 'Nhanh, tiết kiệm', icon: Icons.Veo, credits: 300 },
-        { id: 'veo-3.1-standard', name: 'Veo 3.1 Standard', desc: 'Chất lượng cao', icon: Icons.Veo, credits: 500 },
+        { id: 'veo-3.1-fast', name: 'Veo 3.1 Fast', desc: 'Nhanh, tiết kiệm', icon: Icons.Veo, credits: 30 },
+        { id: 'veo-3.1-standard', name: 'Veo 3.1 Standard', desc: 'Chất lượng cao', icon: Icons.Veo, credits: 50 },
     ]
 };
 
@@ -408,6 +408,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
     const fileInputRef = useRef(null);
     const frameFileInputRef = useRef(null);
     const assetsFileInputRef = useRef(null);
+    const textareaRef = useRef(null);
 
     const currentModels = MODELS[inputType] || MODELS.image;
     const effectiveModel = (selectedModel && currentModels.find(m => m.id === selectedModel.id)) ? selectedModel : currentModels[0];
@@ -457,6 +458,16 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
     useEffect(() => {
         scrollToBottom();
     }, [messages, isLoading]);
+
+    // Auto-resize textarea như DashboardHome: mở rộng dần, không scroll ngang
+    useEffect(() => {
+        const ta = textareaRef.current;
+        if (!ta) return;
+        ta.style.height = 'auto';
+        const maxH = 12 * 16; // ~12rem
+        const h = Math.min(ta.scrollHeight, maxH);
+        ta.style.height = `${h}px`;
+    }, [inputValue]);
 
     // Load project by id when opening from Assets (realtime: no wait in Home)
     const loadedProjectIdRef = useRef(null);
@@ -1184,7 +1195,14 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 pb-2 pt-3 px-6 md:px-8 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#0f172a] dark:via-[#0f172a]/95 z-40">
-                <div className="w-full max-w-3xl mx-auto">
+                <div
+                    className="w-full max-w-3xl mx-auto"
+                    style={{
+                        transform: formOffsetY ? `translate3d(0, ${formOffsetY}px, 0)` : 'none',
+                        transition: 'transform 400ms cubic-bezier(0.32, 0.72, 0, 1)',
+                        willChange: formOffsetY ? 'transform' : 'auto',
+                    }}
+                >
                     <div className="relative w-full bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-[#27272a] rounded-3xl md:rounded-[2.5rem] p-3 md:p-4 shadow-xl transition-all duration-300 focus-within:border-gray-300 dark:focus-within:border-zinc-600 focus-within:ring-2 focus-within:ring-gray-200/80 dark:focus-within:ring-zinc-700/50 relative z-20">
                     {/* Top row: left = mode/label, right = badges */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-0 mb-2 transition-opacity duration-300">
@@ -1478,13 +1496,14 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                             </div>
                         )}
 
-                        <div className="w-full min-h-[2.75rem] py-1 mb-1 relative z-10 transition-all duration-300">
+                        <div className="w-full min-h-[2.75rem] py-1 mb-1 relative z-10 transition-all duration-300 overflow-hidden">
                             <textarea
+                                ref={textareaRef}
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 rows={1}
-                                className="w-full min-h-[2.75rem] bg-transparent border-none p-0 text-base text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:ring-0 resize-none leading-relaxed"
+                                className="w-full min-h-[2.75rem] max-h-48 bg-transparent border-none p-0 text-base text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:ring-0 resize-none leading-relaxed overflow-x-hidden overflow-y-auto break-words"
                                 placeholder={
                                     inputType === 'video'
                                         ? "Hãy mô tả video bạn muốn tạo. Thêm liên kết, hình ảnh hoặc tài liệu để có kết quả chính xác hơn."
@@ -1498,7 +1517,7 @@ export const AgentChat = ({ initialPrompt, initialMessages, projectId: initialPr
                     </div>
 
                     {/* Bottom toolbar Row: left = Action icons or frame slots, right = Send Button */}
-                    <div className="flex justify-between items-end mt-2 pt-2 relative z-20">
+                    <div className="flex justify-between items-end mt-2 relative z-20">
                         {/* Left: empty for text-to-video; two frame slots + swap for frame-to-video; Plus + menu otherwise */}
                         {inputType === 'video' && videoMode === 'text-to-video' && <div />}
                         {inputType === 'video' && videoMode === 'frame-to-video' && (

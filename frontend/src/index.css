@@ -1085,3 +1085,221 @@ body.restoring-scroll [class*="animate"] {
 }
 
 /* ========== END CREATORAI LANDING PAGE STYLES ========== */
+
+/* ========== MOBILE RESPONSIVE UTILITIES ========== */
+
+/* Safe area for mobile devices with notch */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Prevent text selection on mobile navigation */
+.mobile-nav {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ========== END MOBILE RESPONSIVE UTILITIES ========== */
+
+/* ========== COMPREHENSIVE RESPONSIVE DESIGN FOR MOBILE & TABLET ========== */
+
+/* Mobile-specific styles (up to 639px) */
+@media (max-width: 639px) {
+  /* Base font size adjustment for mobile */
+  html {
+    font-size: 14px;
+  }
+  
+  /* Touch-friendly improvements */
+  body {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+  
+  /* Improve button touch targets */
+  button, 
+  [role="button"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Remove hover effects on touch devices */
+  .hover\:scale:hover {
+    transform: none;
+  }
+  
+  /* Fix bottom sheet/modals on mobile */
+  .bottom-sheet-mobile {
+    border-radius: 1.5rem 1.5rem 0 0;
+    max-height: 85vh;
+  }
+  
+  /* Mobile card styles */
+  .mobile-card {
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+  
+  /* Hide elements that don't work well on mobile */
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  /* Full-width buttons on mobile */
+  .mobile-full-width {
+    width: 100%;
+  }
+  
+  /* Bottom navigation spacer */
+  .mobile-nav-spacer {
+    height: 80px;
+  }
+  
+  /* Pull to refresh indicator area */
+  .ptr-indicator {
+    height: 60px;
+  }
+}
+
+/* Tablet-specific styles (640px to 1023px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+  /* Slightly larger base font for tablet */
+  html {
+    font-size: 15px;
+  }
+  
+  /* Improve tablet touch */
+  button, 
+  [role="button"],
+  a {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Tablet-specific card */
+  .tablet-card {
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+  }
+  
+  /* Two-column layout for tablet */
+  .tablet-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  /* Sidebar behavior on tablet */
+  .tablet-sidebar {
+    position: fixed;
+    z-index: 50;
+  }
+}
+
+/* Large tablet / Small desktop (1024px to 1279px) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+  .safe-area-inset-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-inset-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+  
+  .safe-area-inset-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+  
+  .safe-area-inset-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+  .landscape-compact {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .landscape-reduce-spacing > * {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* Prevent overscroll/bounce on iOS */
+@supports (-webkit-touch-callout: none) {
+  .ios-no-bounce {
+    overscroll-behavior-y: none;
+  }
+  
+  .ios-smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Responsive text truncation */
+.truncate-2-lines {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.truncate-3-lines {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Responsive spacing utilities */
+.p-safe {
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .p-safe {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .p-safe {
+    padding: 2rem;
+  }
+}
+
+/* ========== END COMPREHENSIVE RESPONSIVE DESIGN ========== */

@@ -40,29 +40,22 @@ export const getThumbnailUrl = (originalUrl) => {
     return originalUrl;
 };
 
-// ─── Video with IntersectionObserver autoplay ──────────────────────────
-const VideoCard = memo(({ src, className }) => {
+// ─── Video with hover-to-play ──────────────────────────
+const VideoCard = memo(({ src, className, isHovered }) => {
     const videoRef = useRef(null);
 
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
 
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    video.play().catch(() => { });
-                } else {
-                    video.pause();
-                    video.currentTime = 0;
-                }
-            },
-            { threshold: 0.5 }
-        );
-
-        observer.observe(video);
-        return () => observer.disconnect();
-    }, []);
+        if (isHovered) {
+            video.currentTime = 0;
+            video.play().catch(() => { });
+        } else {
+            video.pause();
+            video.currentTime = 0;
+        }
+    }, [isHovered]);
 
     return (
         <video
@@ -70,8 +63,9 @@ const VideoCard = memo(({ src, className }) => {
             src={src}
             className={className}
             muted
-            loop
             playsInline
+            loop
+            preload="metadata"
         />
     );
 });
@@ -130,6 +124,7 @@ const PostCard = memo(({ post, index, isLiked, isSaved, onLike, onSave, onCopyPr
     const initialUrl = post.thumbnailUrl || getThumbnailUrl(post.mediaUrl) || defaultImg;
     const [imgSource, setImgSource] = useState(initialUrl);
     const [avatarError, setAvatarError] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     // Reset errors when post changes
     useEffect(() => {
@@ -161,18 +156,20 @@ const PostCard = memo(({ post, index, isLiked, isSaved, onLike, onSave, onCopyPr
             className="group cursor-pointer animate-fade-in-up flex flex-col gap-2 w-full"
             style={{ animationDelay: `${(index || 0) * 60}ms`, animationFillMode: 'both' }}
             onClick={() => onClick && onClick(post)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
             {/* Media Container */}
             <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-sm transition-all duration-300">
                 {post.type === 'text' ? (
-                    <div className="w-full h-full p-6 flex flex-col justify-center bg-gray-900 dark:bg-white text-center">
-                        <Icons.FileText size={28} className="text-white dark:text-gray-900 mx-auto mb-3" />
-                        <p className="text-sm text-white dark:text-gray-900 font-medium line-clamp-6 leading-snug">
+                    <div className="w-full h-full p-4 sm:p-6 flex flex-col justify-center bg-gray-900 dark:bg-white text-center">
+                        <Icons.FileText size={24} className="text-white dark:text-gray-900 mx-auto mb-2 sm:mb-3 w-6 h-6 sm:w-7 sm:h-7" />
+                        <p className="text-xs sm:text-sm text-white dark:text-gray-900 font-medium line-clamp-6 leading-snug">
                             {post.content}
                         </p>
                     </div>
                 ) : post.type === 'video' ? (
-                    <VideoCard src={post.mediaUrl} className="w-full h-full object-cover" />
+                    <VideoCard src={post.mediaUrl} className="w-full h-full object-cover" isHovered={isHovered} />
                 ) : (
                     <img
                         src={imgSource}
@@ -183,32 +180,32 @@ const PostCard = memo(({ post, index, isLiked, isSaved, onLike, onSave, onCopyPr
                 )}
 
                 {/* Top Left Badges */}
-                <div className="absolute top-3 left-3 flex gap-2 z-10">
+                <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex gap-1.5 sm:gap-2 z-10">
                     {post.type === 'video' && (
-                        <div className="bg-black/40 backdrop-blur-md rounded-md p-1.5 flex items-center justify-center">
-                            <Icons.Play size={14} className="text-white fill-white" />
+                        <div className="bg-black/40 backdrop-blur-md rounded-md p-1 sm:p-1.5 flex items-center justify-center">
+                            <Icons.Play size={12} className="text-white fill-white w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         </div>
                     )}
-                    <div className="bg-black/40 backdrop-blur-md rounded-md px-2 py-1 flex items-center justify-center">
-                        <span className="text-[10px] sm:text-xs font-bold text-white tracking-wide uppercase">
+                    <div className="bg-black/40 backdrop-blur-md rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1 flex items-center justify-center">
+                        <span className="text-[9px] sm:text-xs font-bold text-white tracking-wide uppercase">
                             {post.type === 'video' ? 'Video' : post.type === 'text' ? 'Text' : 'Image'}
                         </span>
                     </div>
                 </div>
 
-                {/* Hover Actions Overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 z-20">
-                    <div className="flex flex-col gap-3 items-end justify-end mt-auto translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                {/* Hover Actions Overlay - Also visible on touch devices */}
+                <div className="lg:opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2 sm:p-3 z-20 touch-manipulation">
+                    <div className="flex flex-col gap-2 sm:gap-3 items-end justify-end mt-auto translate-y-2 lg:group-hover:translate-y-0 transition-transform duration-300">
                         {/* Avatar & Follow Button Stack */}
                         {post.authorId && (
-                            <div className="relative mb-2 w-10 h-10 flex cursor-pointer z-30" onClick={(e) => { e.stopPropagation(); if (onAvatarClick) onAvatarClick(post.authorId); }}>
+                            <div className="relative mb-1 sm:mb-2 w-8 h-8 sm:w-10 sm:h-10 flex cursor-pointer z-30" onClick={(e) => { e.stopPropagation(); if (onAvatarClick) onAvatarClick(post.authorId); }}>
                                 <img
                                     src={!avatarError && post.authorAvatar ? post.authorAvatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(post.authorName || 'User')}&background=random`}
                                     alt={post.authorName || 'User'}
-                                    className="w-10 h-10 rounded-full object-cover border-2 border-white bg-white"
+                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white bg-white"
                                     onError={() => setAvatarError(true)}
                                 />
-                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                                <div className="absolute -bottom-1 sm:-bottom-2 left-1/2 -translate-x-1/2">
                                     <FollowButton authorId={post.authorId} isFollowing={post.isFollowing} />
                                 </div>
                             </div>
@@ -216,31 +213,31 @@ const PostCard = memo(({ post, index, isLiked, isSaved, onLike, onSave, onCopyPr
 
                         <button
                             onClick={(e) => { e.stopPropagation(); onLike && onLike(post.id); }}
-                            className="w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-200 shadow-md bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600"
+                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full transition-colors duration-200 shadow-md bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 touch-manipulation"
                             title="Like"
                         >
-                            <Icons.Heart size={18} isActive={isLiked} noHover={true} />
+                            <Icons.Heart size={16} isActive={isLiked} noHover={true} className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onClick && onClick(post); }}
-                            className="w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-200 shadow-md bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600"
+                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full transition-colors duration-200 shadow-md bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 touch-manipulation"
                             title="Comment"
                         >
-                            <Icons.MessageCircle size={18} className="text-gray-800" />
+                            <Icons.MessageCircle size={16} className="text-gray-800 w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onSave && onSave(post.id); }}
-                            className="w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-200 shadow-md bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600"
+                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full transition-colors duration-200 shadow-md bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 touch-manipulation"
                             title="Save"
                         >
-                            <Icons.Bookmark size={18} className={isSaved ? 'text-yellow-500 fill-current' : 'text-gray-800'} />
+                            <Icons.Bookmark size={16} className={`w-4 h-4 sm:w-[18px] sm:h-[18px] ${isSaved ? 'text-yellow-500 fill-current' : 'text-gray-800'}`} />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onUsePrompt && onUsePrompt(post); }}
-                            className="w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-200 shadow-md bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600"
+                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full transition-colors duration-200 shadow-md bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 touch-manipulation"
                             title="Use Prompt"
                         >
-                            <Icons.Wand2 size={18} className="text-gray-800" />
+                            <Icons.Wand2 size={16} className="text-gray-800 w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                         </button>
                     </div>
                 </div>

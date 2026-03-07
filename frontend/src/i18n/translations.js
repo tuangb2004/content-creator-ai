@@ -776,7 +776,7 @@ export const translations = {
         recentUploads: 'Recent uploads',
       },
       profileSettings: {
-        title: 'Profile Settings',
+        title: 'Account Settings',
         subtitle: 'Manage your personal information and preferences.',
         profilePhoto: 'Profile Photo',
         acceptedFileTypes: 'Accepted file types: png, jpg. Max size: 2MB',
@@ -1690,7 +1690,7 @@ export const translations = {
         searchPlaceholder: 'Search for inspiration',
         noTemplates: 'No templates shared yet. Be the first!',
         createTemplate: 'Create Template',
-        trendingOnTikTok: 'Trending on TikTok',
+        trendingOnTikTok: 'Trending',
         videoTemplates: 'Video templates',
         imageTemplates: 'Image templates',
         writingTemplates: 'Writing templates',
@@ -2510,7 +2510,7 @@ export const translations = {
         history: 'Lịch sử',
         popularFeatures: 'Tính năng phổ biến',
         recentCreations: 'Sáng tạo gần đây',
-        trendingTikTok: 'Thịnh hành trên TikTok',
+        trendingTikTok: 'Thịnh hành',
         visualInspiration: 'Cảm hứng hình ảnh',
         viewAll: 'Xem tất cả',
         autoModeDesc: 'Chế độ tự động sẽ chọn tỉ lệ tối ưu dựa trên nội dung bạn mô tả.',
@@ -2622,7 +2622,7 @@ export const translations = {
         searchPlaceholder: 'Tìm kiếm cảm hứng',
         noTemplates: 'Chưa có mẫu nào được chia sẻ. Hãy là người đầu tiên!',
         createTemplate: 'Tạo mẫu ngay',
-        trendingOnTikTok: 'Thịnh hành trên TikTok',
+        trendingOnTikTok: 'Thịnh hành',
         videoTemplates: 'Mẫu video',
         imageTemplates: 'Mẫu hình ảnh',
         writingTemplates: 'Mẫu văn bản',
@@ -2970,8 +2970,8 @@ export const translations = {
       deleteWarning: 'Khi bạn xóa tài khoản, sẽ không thể khôi phục.',
     },
     // Profile Settings
-    profileSettings: {
-      title: 'Cài Đặt Hồ Sơ',
+      profileSettings: {
+      title: 'Cài Đặt Tài Khoản',
       subtitle: 'Quản lý thông tin cá nhân và tùy chọn của bạn.',
       profilePhoto: 'Ảnh Đại Diện',
       acceptedFileTypes: 'Định dạng chấp nhận: png, jpg. Kích thước tối đa: 2MB',

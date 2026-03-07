@@ -453,7 +453,16 @@ function Home() {
               />
             )}
 
-            {dashboardTab === 'profile' && <UserProfile userId={view.profileUserId} onBack={() => { setDashboardTab('inspiration'); setView({ type: 'home' }); }} />}
+            {dashboardTab === 'profile' && (
+              <UserProfile
+                userId={view.profileUserId}
+                onBack={() => {
+                  setDashboardTab('inspiration');
+                  setView({ type: 'home' });
+                }}
+                onOpenSettings={() => setDashboardTab('settings')}
+              />
+            )}
 
             {dashboardTab === 'settings' && <ProfileSettings />}
             {dashboardTab === 'billing' && (

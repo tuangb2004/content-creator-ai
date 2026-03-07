@@ -19,28 +19,21 @@ const formatNumber = (num) => {
     return String(num || 0);
 };
 
-const VideoCard = memo(({ src, className }) => {
+const VideoCard = memo(({ src, className, isHovered }) => {
     const videoRef = useRef(null);
 
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
 
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    video.play().catch(() => { });
-                } else {
-                    video.pause();
-                    video.currentTime = 0;
-                }
-            },
-            { threshold: 0.5 }
-        );
-
-        observer.observe(video);
-        return () => observer.disconnect();
-    }, []);
+        if (isHovered) {
+            video.currentTime = 0;
+            video.play().catch(() => { });
+        } else {
+            video.pause();
+            video.currentTime = 0;
+        }
+    }, [isHovered]);
 
     return (
         <video
@@ -48,8 +41,9 @@ const VideoCard = memo(({ src, className }) => {
             src={src}
             className={className}
             muted
-            loop
             playsInline
+            loop
+            preload="metadata"
         />
     );
 });
@@ -99,8 +93,67 @@ const SkeletonTrendingCard = memo(({ index }) => (
 ));
 SkeletonTrendingCard.displayName = 'SkeletonTrendingCard';
 
+// Reusable pill-style dropdown matching dashboard UI
+const FilterDropdown = ({ value, options, onChange, ariaLabel }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selected = options.find(o => o.value === value) || options[0];
+
+    return (
+        <div className="relative" ref={ref} aria-label={ariaLabel}>
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 shadow-sm transition-colors"
+            >
+                <span className="truncate max-w-[140px]">{selected?.label}</span>
+                <Icons.ChevronDown
+                    size={14}
+                    className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+                />
+            </button>
+            {open && (
+                <div className="absolute z-30 mt-2 w-48 bg-white dark:bg-[#020617] border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl py-1">
+                    {options.map(opt => (
+                        <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => {
+                                onChange(opt.value);
+                                setOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left ${
+                                opt.value === value
+                                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                            }`}
+                        >
+                            <span className="truncate">{opt.label}</span>
+                            {opt.value === value && (
+                                <Icons.Check size={14} className="text-purple-500" />
+                            )}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const TrendingCard = memo(({ post, index, isLiked, onClick }) => {
     const defaultImg = 'https://placehold.co/200x260/f3f4f6/9ca3af?text=No+Preview';
+    const [isHovered, setIsHovered] = useState(false);
 
     // Sử dụng state để quản lý việc fallback ảnh (thử thumbnail trước, nếu lỗi thì quay về mediaUrl)
     const [imgSource, setImgSource] = useState(post.thumbnailUrl || getThumbnailUrl(post.mediaUrl) || post.mediaUrl || defaultImg);
@@ -123,6 +176,8 @@ const TrendingCard = memo(({ post, index, isLiked, onClick }) => {
         <div
             className="min-w-[320px] bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 rounded-2xl p-4 flex gap-4 items-center shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
             onClick={() => onClick(post)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
             {/* Media Container */}
             <div className="relative w-24 h-32 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-800 border border-gray-50 dark:border-gray-700">
@@ -133,12 +188,7 @@ const TrendingCard = memo(({ post, index, isLiked, onClick }) => {
                         </p>
                     </div>
                 ) : post.type === 'video' ? (
-                    <div className="w-full h-full relative">
-                        <VideoCard src={post.mediaUrl} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/20 pointer-events-none flex items-center justify-center">
-                            <Icons.Play className="text-white opacity-90" size={32} />
-                        </div>
-                    </div>
+                    <VideoCard src={post.mediaUrl} className="w-full h-full object-cover" isHovered={isHovered} />
                 ) : (
                     <img
                         src={imgSource}
@@ -423,13 +473,13 @@ const Inspiration = ({ onTabChange }) => {
 `}</style>
 
             {/* ── Header ── */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-6 md:mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Icons.Lightbulb size={24} className="text-yellow-500" />
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Icons.Lightbulb size={20} className="text-yellow-500 md:w-6 md:h-6" />
                         {t.dashboard.inspiration.title || 'Cảm Hứng'}
                     </h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                         Khám phá xu hướng, mẫu sáng tạo và prompt từ cộng đồng
                     </p>
                 </div>
@@ -490,45 +540,27 @@ const Inspiration = ({ onTabChange }) => {
             </div>
 
             {/* ── Filters ── */}
-            <div className="flex gap-3 mb-8 flex-wrap items-center">
-                <div className="relative">
-                    <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="appearance-none px-4 py-2 pr-8 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 cursor-pointer focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 outline-none transition-all hover:border-gray-400 dark:hover:border-gray-500"
-                    >
-                        {categoryOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-                    <Icons.ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
+            <div className="flex gap-2 md:gap-3 mb-6 md:mb-8 flex-wrap items-center">
+                <FilterDropdown
+                    value={selectedCategory}
+                    options={categoryOptions}
+                    onChange={setSelectedCategory}
+                    ariaLabel="Lọc theo ngành"
+                />
 
-                <div className="relative">
-                    <select
-                        value={selectedTimeRange}
-                        onChange={(e) => setSelectedTimeRange(e.target.value)}
-                        className="appearance-none px-4 py-2 pr-8 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 cursor-pointer focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 outline-none transition-all hover:border-gray-400 dark:hover:border-gray-500"
-                    >
-                        {timeRangeOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-                    <Icons.ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
+                <FilterDropdown
+                    value={selectedTimeRange}
+                    options={timeRangeOptions}
+                    onChange={setSelectedTimeRange}
+                    ariaLabel="Lọc theo thời gian"
+                />
 
-                <div className="relative">
-                    <select
-                        value={selectedSortBy}
-                        onChange={(e) => setSelectedSortBy(e.target.value)}
-                        className="appearance-none px-4 py-2 pr-8 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 cursor-pointer focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 outline-none transition-all hover:border-gray-400 dark:hover:border-gray-500"
-                    >
-                        {sortByOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-                    <Icons.ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
+                <FilterDropdown
+                    value={selectedSortBy}
+                    options={sortByOptions}
+                    onChange={setSelectedSortBy}
+                    ariaLabel="Sắp xếp"
+                />
 
                 {
                     !isLoading && (
@@ -538,14 +570,14 @@ const Inspiration = ({ onTabChange }) => {
                     )
                 }
 
-                <div className="relative ml-auto">
+                <div className="relative w-full md:w-auto md:ml-auto">
                     <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input
                         type="text"
                         placeholder={t.dashboard.inspiration.searchPlaceholder}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 pr-4 py-2 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-white w-64 focus:ring-2 focus:ring-purple-500 outline-none transition-all hover:border-purple-300 dark:hover:border-purple-600"
+                        className="pl-9 pr-4 py-2 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-white w-full md:w-64 focus:ring-2 focus:ring-purple-500 outline-none transition-all hover:border-purple-300 dark:hover:border-purple-600"
                     />
                     {searchQuery && (
                         <button
@@ -561,20 +593,20 @@ const Inspiration = ({ onTabChange }) => {
             {/* ── Posts Grid ── */}
             {
                 isLoading ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
                         {Array.from({ length: 10 }).map((_, i) => (
                             <SkeletonCard key={i} index={i} />
                         ))}
                     </div>
                 ) : filteredPosts.length === 0 ? (
-                    <div className="py-20 text-center">
-                        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <Icons.Image size={32} className="text-gray-300 dark:text-gray-600" />
+                    <div className="py-12 md:py-20 text-center">
+                        <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 md:mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                            <Icons.Image size={28} className="text-gray-300 dark:text-gray-600 md:w-8 md:h-8" />
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2">
                             {searchQuery ? `Không tìm thấy kết quả` : 'Chưa có bài đăng nào'}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-4 md:mb-6 max-w-md mx-auto px-4">
                             {searchQuery
                                 ? `Không có bài viết nào phù hợp với "${searchQuery}". Thử từ khóa khác nhé.`
                                 : 'Hãy là người đầu tiên chia sẻ tác phẩm sáng tạo của bạn!'
@@ -583,15 +615,15 @@ const Inspiration = ({ onTabChange }) => {
                         {!searchQuery && (
                             <button
                                 onClick={navigateToDashboard}
-                                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-sm font-bold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg shadow-purple-500/20"
+                                className="px-4 md:px-6 py-2.5 md:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-xs md:text-sm font-bold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg shadow-purple-500/20"
                             >
-                                <Icons.Wand2 size={16} className="inline mr-2" />
+                                <Icons.Wand2 size={14} className="inline mr-2 md:w-4 md:h-4" />
                                 Tạo và chia sẻ ngay
                             </button>
                         )}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
                         {filteredPosts.map((post, index) => (
                             <PostCard
                                 key={post.id}
