@@ -211,8 +211,6 @@ export const Icons = {
     Search: (props) => <LucideIcon icon="Search" {...props} />,
     Upload: (props) => <LucideIcon icon="Upload" {...props} />,
     CreditCard: (props) => <LucideIcon icon="CreditCard" {...props} />,
-    Settings: (props) => <LucideIcon icon="Settings" {...props} />,
-    X: (props) => <LucideIcon icon="X" {...props} />,
     Menu: (props) => <LucideIcon icon="Menu" {...props} />,
     Folder: (props) => <LucideIcon icon="Folder" {...props} />,
     List: (props) => <LucideIcon icon="List" {...props} />,
