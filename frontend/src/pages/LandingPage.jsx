@@ -5,18 +5,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 import AuthModal from '../components/Auth/AuthModal';
 import Logo from '../assets/images/Logo.png';
 
-// Carousel images
-const carouselImages = [
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCeN3OKrHcxoZo5KHAmGhzRSzblwIke8qfxlsYNw5BhIw3QXBtFE5NHDvUJVrUeGP8TebHWFubq0UxjmxwwO9mU20Js6HmxG5jijIU2opIfnFoBh5ku23gUyukEqkg7xoiVaBilzfjahbFfiXMv1C1KnQaVlycm0sM-b-bSoAdbnHJhL7r4sRp__Yrogf3Wkd4KBGuu_oawB6MLod4DIQAq0KgdqsGSU1CorDvkb6jPoPdZoQ2cyAIy7O5e1MX8GxxxcVMyylPQHRw",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuD1TCH2T7cgv7ZrGNKA6wsCrQU1o0YE7TgymSqs_7fPjZH-GWhm1ci1NYf0JrtNWhKXqgD0VjiOgrzwqPChkzt1HQjtpy1Rb-PRyzzEXXl5uL9DxFkPmNCXItSwiJX_nxR5F9HUzfLSPNnEvqCBBSGZkskSYhegd-Go9St8loSPvYq2P8GvqrIQdVzBAkw2EakdaroTAYnZKlK44uNnYR1gBV_iovNIC0pdn3Jcx5F_EBAoaBhkhuxQvYt6iMXvxffkAmvQjNCxnDA",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAgQFMkefxQSBUsvMqzVwi_rLPBb_NTIKlVeFI7u0rNjASGi-IYLLucVkABLnjcpZ-2WuDW-JKFBTcVfnO_-vl7dTrXIQxlCpbazVgEm62PrPjTRjOBcIpfGHxRuZ25wvUEBL-m2wFRmXvRZMK_tFq2ijzGF6L_dMDyvc60zmkzRBBtf9FLACNDNd3e4MNJb6HJyMCTzd6YBEQh5sZDpIKNC6Z29rjEp7L068-dVKMmOom6C88yEvk_1kZd3DXUXqzgzRSAtSw9Sww",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuA5buRCf4FKhfAECA7NUDuPt_3OBGAPsya3KjEEgwAnridvwwcC4S-8MAptJuM_eu3ou6ive9Nigw8T-nF0vRqQNx8P7qNUBd4RaWOkb7EVAhAWZ9Jv2VMt3rIEkrKx2Ew23GzrPSvsCgdienJmbbgR-_9_5Ra9OSrG3lEJwnQTSWYrLWxVn51TH7TSt2zBit35mc0usFWR6bAqU-RaFQh5aFRuU8CBbXTBtiUxp6-q99i7azsHLWJHXjwcDELFE_B1Kj4Dhm8eIEw",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCGb6NnMdWUd34y-I-SImtaSNhUA1F-2CfBvOX_E1Dwuqy-xq6V8AssMT7W_sPIBHj-I7gGGhNp2U0oScsFLYV1falJ_2jvsS9YvUeznkb9_vzfD8rNIkH6v0_gMhuverxY6SB5zkGyEgSErHJa9sT6ThVwvkI8ZngoNe7llZt4QAmatrx_K5k2gDbJfLpwEj5TQhFULNmWBytSFb08lV87Tz83ulQAk7SkKGRtaIexMCzq06ii1J0Vm-eCxPoBq8BFplkzY0Sy6WA",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuACYHwl2wHD9VPnvb-CTGpWm_rQLZk3oxUjLu-emI6U_qufTjtfkKdIjC44GTK3ElCdR5T4EqXBBjQSu8PRFraM2UHG05SmOOS8BfJ_VfOhxkSNQRn_SqiHVqqtFEnrRfh5gZW8yn498Dan1sajCocYjZ1zsmi3V7grkMxlQO-6RGq-si5K5DEgZN19aNYr8OQSd43Pj6RFXDHbcStlfqiIN_HOdIN_ZF2zdrufTMSbrXrlmqwbMRXqxGQDHTV6J3_BlQHOCBMpipY",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBtAQszxAUlJ4M0rGDMgjkf_9yEFsWzkAI5MWb6NtYQQBVvY-nv6mHyX8_iIZqN5hPydmoDLYMFNY4x-dJk9ICToKN8kghL-25znfd51M6Vuuu-zulS8WLsPy03v0wxh2tlOpPxPKcBUiSvIlgoweg0qrqwKU5NGCdScyFweAMohyyqzp-a216JlNHy4R3YbjDehzfIeJme63FdyqY_odZM_nHd_7gQ2r6xK14YRFdY0vBhX91MfvZrsfh0zjzL6RA5HhWEPJDHo9Q",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDKeqHSTCUsfhHu0Bx18JpsgmSLSYmilt55lNaMJt_6U5IWJcjcsEbTToQExQ8pzeM7rfh0yjtxB2B_TAQWnqntd086YX3gYr4bQcCKrP0vj8uXCsglrJMjR43J9ynF6-eosN0S21FUFvWxyaYyJz6vZiZFEDIkMT-dja3dK0qzHQIE63XKZBS5zp8wDTHwY_JSwIGi-vkz06YAORq7-UNlHjqCyE4OzNzlkRkFzMwjUU44d0dr2L39piI3MLK_OA2LM-yi0jLthO4",
-];
-
 const LandingPage = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -24,6 +12,8 @@ const LandingPage = () => {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
+    const [mobileResourcesOpen, setMobileResourcesOpen] = useState(false);
 
     const handleAuth = (e) => {
         e?.preventDefault();
@@ -38,6 +28,31 @@ const LandingPage = () => {
         setShowAuthModal(false);
         navigate('/dashboard');
     };
+
+    // Redirect logged-in users away from landing page (except when logging out)
+    useEffect(() => {
+        // Check if user is logging out - don't redirect during logout
+        const isLoggingOut = localStorage.getItem('logging_out') === 'true';
+
+        if (user && !isLoggingOut) {
+            // User is logged in and not logging out - redirect to dashboard
+            navigate('/dashboard', { replace: true });
+        }
+    }, [user, navigate]);
+
+    // Handle browser back/forward navigation - redirect authenticated users away from landing
+    useEffect(() => {
+        const handlePopState = (event) => {
+            const isLoggingOut = localStorage.getItem('logging_out') === 'true';
+            if (user && !isLoggingOut) {
+                // User pressed back/forward while logged in - stay on dashboard
+                navigate('/dashboard', { replace: true });
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [user, navigate]);
 
     // Handle scroll for navbar blur effect
     useEffect(() => {
@@ -67,6 +82,8 @@ const LandingPage = () => {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
+            setMobileSolutionsOpen(false);
+            setMobileResourcesOpen(false);
         }
         return () => {
             document.body.style.overflow = 'unset';
@@ -95,9 +112,6 @@ const LandingPage = () => {
             revealElements.forEach(el => observer.unobserve(el));
         };
     }, []);
-
-    // Duplicate images for infinite scroll (3 sets to ensure full coverage)
-    const allCarouselImages = [...carouselImages, ...carouselImages, ...carouselImages];
 
     return (
         <div className="bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 font-sans antialiased transition-colors duration-200">
@@ -135,7 +149,7 @@ const LandingPage = () => {
                                 <div className="dropdown-inner-content flex justify-center">
                                     <div className="grid grid-cols-4 gap-6">
                                         <div className="solution-card group/card" onClick={handleAuth}>
-                                            <div className="w-full h-32 rounded-lg bg-blue-900/40 mb-3 overflow-hidden relative border border-white/5">
+                                            <div className="w-full h-32 rounded-lg bg-gray-800/40 mb-3 overflow-hidden relative border border-white/5">
                                                 <img alt="One Click Video Solution UI" className="w-full h-full object-cover opacity-80 group-hover/card:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACYHwl2wHD9VPnvb-CTGpWm_rQLZk3oxUjLu-emI6U_qufTjtfkKdIjC44GTK3ElCdR5T4EqXBBjQSu8PRFraM2UHG05SmOOS8BfJ_VfOhxkSNQRn_SqiHVqqtFEnrRfh5gZW8yn498Dan1sajCocYjZ1zsmi3V7grkMxlQO-6RGq-si5K5DEgZN19aNYr8OQSd43Pj6RFXDHbcStlfqiIN_HOdIN_ZF2zdrufTMSbrXrlmqwbMRXqxGQDHTV6J3_BlQHOCBMpipY" />
                                             </div>
                                             <h4 className="font-bold text-white mb-1.5 text-sm">{t.footer.videoSolution}</h4>
@@ -153,7 +167,7 @@ const LandingPage = () => {
                                             </p>
                                         </div>
                                         <div className="solution-card group/card" onClick={handleAuth}>
-                                            <div className="w-full h-32 rounded-lg bg-teal-900/40 mb-3 overflow-hidden relative border border-white/5">
+                                            <div className="w-full h-32 rounded-lg bg-gray-800/40 mb-3 overflow-hidden relative border border-white/5">
                                                 <img alt="AI Avatars UI" className="w-full h-full object-cover opacity-80 group-hover/card:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCe8isDH2ee9b1FqEOD0RMPfPuAMTAxL-bTkLgJdWNAd68xp2LxMUoRdsDUnuiY5qA9Bew27y2VeqYge9XCbr9tGe90WPaLP76Oy23B3hRkczyEZn6wzvB8L1hXOh1eUBSqcJGIATS_9iHypCETr0rLiE_9WxVrtRLEGIG_ULedQiMmO3-vkvuAhRJ32r6SMQB64FN9udBa0R5xKZk4ijzZqVzvSZn0KXjyn5eVDT2Lo-Cb7YISdqtq_27DmXe9Lmq1Q86BtK4ykqg" />
                                             </div>
                                             <h4 className="font-bold text-white mb-1.5 text-sm">{t.footer.avatarsAndVoices}</h4>
@@ -162,7 +176,7 @@ const LandingPage = () => {
                                             </p>
                                         </div>
                                         <div className="solution-card group/card" onClick={handleAuth}>
-                                            <div className="w-full h-32 rounded-lg bg-teal-900/40 mb-3 overflow-hidden relative border border-white/5">
+                                            <div className="w-full h-32 rounded-lg bg-gray-800/40 mb-3 overflow-hidden relative border border-white/5">
                                                 <img alt="Auto Publishing UI" className="w-full h-full object-cover opacity-80 group-hover/card:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKeqHSTCUsfhHu0Bx18JpsgmSLSYmilt55lNaMJt_6U5IWJcjcsEbTToQExQ8pzeM7rfh0yjtxB2B_TAQWnqntd086YX3gYr4bQcCKrP0vj8uXCsglrJMjR43J9ynF6-eosN0S21FUFvWxyaYyJz6vZiZFEDIkMT-dja3dK0qzHQIE63XKZBS5zp8wDTHwY_JSwIGi-vkz06YAORq7-UNlHjqCyE4OzNzlkRkFzMwjUU44d0dr2L39piI3MLK_OA2LM-yi0jLthO4" />
                                             </div>
                                             <h4 className="font-bold text-white mb-1.5 text-sm">{t.footer.publishingAndAnalytics}</h4>
@@ -273,20 +287,76 @@ const LandingPage = () => {
                                 </button>
 
                                 {/* Mobile Solutions Link */}
-                                <button
-                                    className="block w-full text-left px-4 py-3 text-base font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                                    onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
-                                >
-                                    {t.nav.solutions}
-                                </button>
+                                <div className="border-b border-white/10">
+                                    <button
+                                        className="flex items-center justify-between w-full px-4 py-3 text-base font-medium text-white/90 hover:text-white rounded-lg transition-colors"
+                                        onClick={() => setMobileSolutionsOpen(!mobileSolutionsOpen)}
+                                    >
+                                        <span>{t.nav.solutions}</span>
+                                        <span className={`material-symbols-outlined text-[20px] transition-transform duration-300 ${mobileSolutionsOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                                    </button>
+                                    {mobileSolutionsOpen && (
+                                        <div className="pb-4 pl-4 space-y-2 animate-slide-down">
+                                            <button
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                            >
+                                                {t.footer.videoSolution}
+                                            </button>
+                                            <button
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                            >
+                                                {t.footer.productImages}
+                                            </button>
+                                            <button
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                            >
+                                                {t.footer.avatarsAndVoices}
+                                            </button>
+                                            <button
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                            >
+                                                {t.footer.publishingAndAnalytics}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* Mobile Resources Link */}
-                                <button
-                                    className="block w-full text-left px-4 py-3 text-base font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                                    onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
-                                >
-                                    {t.nav.res}
-                                </button>
+                                <div className="border-b border-white/10">
+                                    <button
+                                        className="flex items-center justify-between w-full px-4 py-3 text-base font-medium text-white/90 hover:text-white rounded-lg transition-colors"
+                                        onClick={() => setMobileResourcesOpen(!mobileResourcesOpen)}
+                                    >
+                                        <span>{t.nav.res}</span>
+                                        <span className={`material-symbols-outlined text-[20px] transition-transform duration-300 ${mobileResourcesOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                                    </button>
+                                    {mobileResourcesOpen && (
+                                        <div className="pb-4 pl-4 space-y-2 animate-slide-down">
+                                            <button
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                            >
+                                                {t.nav.affiliate}
+                                            </button>
+                                            <button
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                            >
+                                                {t.nav.powerLab}
+                                            </button>
+                                            <button
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                            >
+                                                {t.nav.helpCenter}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* Mobile Pricing Link */}
                                 <button
@@ -315,7 +385,7 @@ const LandingPage = () => {
                         <div className="flex flex-col items-center justify-center mb-4 reveal">
                             <img src={Logo} alt="Creator AI Logo" className="w-24 h-24 md:w-32 md:h-32 object-contain mb-8 drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]" />
                             <h1 className="text-7xl md:text-9xl font-brand font-medium tracking-tighter text-white hero-glow mb-4 drop-shadow-xl">
-                                {t.landing.hero.title} <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-teal-400">{t.landing.hero.titleHighlight}</span>
+                                {t.landing.hero.title} <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-300 to-gray-500">{t.landing.hero.titleHighlight}</span>
                             </h1>
                         </div>
                         <h2 className="text-2xl md:text-3xl font-light text-gray-200 mb-8 tracking-wide font-serif italic drop-shadow-lg opacity-90 reveal reveal-delay-2">
@@ -326,30 +396,11 @@ const LandingPage = () => {
                 <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent z-10 pointer-events-none"></div>
             </div>
 
-            {/* AI Masterpieces Carousel Section */}
-            <section className="py-16 relative z-20 overflow-hidden bg-[#f0fdfa] dark:bg-[#0f172a]">
-                <div className="max-w-[1600px] mx-auto px-6 mb-12 reveal">
-                    <div className="flex flex-col items-center text-center">
-                        <h2 className="text-4xl md:text-5xl font-serif text-gray-900 dark:text-white mb-2">{t.landing.masterpieces.title}</h2>
-                        <p className="text-gray-500 dark:text-gray-400 font-light tracking-wide text-lg">{t.landing.masterpieces.subtitle}</p>
-                    </div>
-                </div>
-                <div className="scroller-wrapper">
-                    <div className="infinite-track">
-                        {allCarouselImages.map((src, index) => (
-                            <div key={index} className="carousel-card">
-                                <img alt={`Carousel item ${index}`} src={src} />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
             {/* Feature Section 1 - Link to Video */}
             <section className="py-24 px-6 max-w-7xl mx-auto">
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="rounded-3xl overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 relative group reveal-left">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-teal-100 to-white dark:from-slate-800 dark:to-slate-900 opacity-50"></div>
+                        <div className="absolute inset-0 bg-gradient-to-tr from-gray-100 to-white dark:from-gray-800 dark:to-gray-900 opacity-50"></div>
                         <img alt="Marketing video dashboard interface" className="relative z-10 w-full h-auto object-cover transform group-hover:scale-105 transition duration-700 ease-out" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACYHwl2wHD9VPnvb-CTGpWm_rQLZk3oxUjLu-emI6U_qufTjtfkKdIjC44GTK3ElCdR5T4EqXBBjQSu8PRFraM2UHG05SmOOS8BfJ_VfOhxkSNQRn_SqiHVqqtFEnrRfh5gZW8yn498Dan1sajCocYjZ1zsmi3V7grkMxlQO-6RGq-si5K5DEgZN19aNYr8OQSd43Pj6RFXDHbcStlfqiIN_HOdIN_ZF2zdrufTMSbrXrlmqwbMRXqxGQDHTV6J3_BlQHOCBMpipY" />
                         <div className="absolute bottom-8 left-8 right-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-20">
                             <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Generated Output</div>
@@ -360,7 +411,7 @@ const LandingPage = () => {
                         </div>
                     </div>
                     <div className="space-y-6 reveal-right">
-                        <div className="inline-flex items-center space-x-2 text-primary font-medium text-sm bg-teal-50 dark:bg-teal-900/20 px-3 py-1 rounded-full">
+                        <div className="inline-flex items-center space-x-2 text-primary font-medium text-sm bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
                             <span className="material-symbols-outlined text-base">link</span>
                             <span>{t.landing.videoSolution.tag}</span>
                         </div>
@@ -381,7 +432,7 @@ const LandingPage = () => {
             <section className="py-24 px-6 max-w-7xl mx-auto bg-slate-50 dark:bg-slate-800/30 rounded-3xl">
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="space-y-6 order-2 md:order-1 reveal-left">
-                        <div className="inline-flex items-center space-x-2 text-primary font-medium text-sm bg-teal-50 dark:bg-teal-900/20 px-3 py-1 rounded-full">
+                        <div className="inline-flex items-center space-x-2 text-primary font-medium text-sm bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
                             <span className="material-symbols-outlined text-base">face</span>
                             <span>{t.landing.avatarVideo.tag}</span>
                         </div>
@@ -410,7 +461,7 @@ const LandingPage = () => {
             <section className="py-24 px-6 max-w-7xl mx-auto">
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="rounded-3xl overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 relative reveal-left">
-                        <div className="absolute inset-0 bg-gradient-to-r from-teal-500/10 to-blue-500/10 z-0"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-gray-500/10 to-gray-500/10 z-0"></div>
                         <div className="relative z-10 flex items-center justify-center h-80 md:h-96 bg-gray-50 dark:bg-gray-800">
                             <div className="text-center p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-lg max-w-xs mx-auto">
                                 <span className="material-symbols-outlined text-4xl text-primary mb-4">add_photo_alternate</span>
@@ -420,7 +471,7 @@ const LandingPage = () => {
                         </div>
                     </div>
                     <div className="space-y-6 reveal-right">
-                        <div className="inline-flex items-center space-x-2 text-primary font-medium text-sm bg-teal-50 dark:bg-teal-900/20 px-3 py-1 rounded-full">
+                        <div className="inline-flex items-center space-x-2 text-primary font-medium text-sm bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
                             <span className="material-symbols-outlined text-base">image</span>
                             <span>{t.landing.imageStudio.tag}</span>
                         </div>
@@ -445,7 +496,7 @@ const LandingPage = () => {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 hover:shadow-lg transition cursor-pointer group reveal reveal-delay-1" onClick={handleAuth}>
-                            <div className="h-40 rounded-xl bg-teal-100 dark:bg-teal-900/30 mb-4 overflow-hidden relative">
+                            <div className="h-40 rounded-xl bg-gray-100 dark:bg-gray-800/30 mb-4 overflow-hidden relative">
                                 <img alt="Avatar tool" className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCe8isDH2ee9b1FqEOD0RMPfPuAMTAxL-bTkLgJdWNAd68xp2LxMUoRdsDUnuiY5qA9Bew27y2VeqYge9XCbr9tGe90WPaLP76Oy23B3hRkczyEZn6wzvB8L1hXOh1eUBSqcJGIATS_9iHypCETr0rLiE_9WxVrtRLEGIG_ULedQiMmO3-vkvuAhRJ32r6SMQB64FN9udBa0R5xKZk4ijzZqVzvSZn0KXjyn5eVDT2Lo-Cb7YISdqtq_27DmXe9Lmq1Q86BtK4ykqg" />
                             </div>
                             <h4 className="font-bold text-lg mb-1 dark:text-white">{t.landing.smartTools.customAvatar.title}</h4>
@@ -465,7 +516,7 @@ const LandingPage = () => {
                             </div>
                         </div>
                         <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 hover:shadow-lg transition cursor-pointer group reveal reveal-delay-3" onClick={handleAuth}>
-                            <div className="h-40 rounded-xl bg-blue-100 dark:bg-blue-900/30 mb-4 overflow-hidden relative">
+                            <div className="h-40 rounded-xl bg-gray-100 dark:bg-gray-800 mb-4 overflow-hidden relative">
                                 <img alt="Video editing" className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfq6sElxQDRJdhsbh-rFKAy-i_iKk7pBitJwj_Zb6gZ2m783VzQreBkkviJPi8phH66Qu0GKs1V3IJWDkQwB2zXFrsbKqeOCcc2BGyX--VSR6vcpuZex-NbpumXOWK5cHcmTkijUaBd-dt_pCv0cbKDqO397oLLrcnHVXev-v3NOpnPT8EB3iOUNKORlTQe-Tj4lijWwmFVBdOA2U8dB-ula5wHhmj_ecPNwQkjj_GzGWrglXgPJarfF4JObyZRlUcivOplRruQy0" />
                             </div>
                             <h4 className="font-bold text-lg mb-1 dark:text-white">{t.landing.smartTools.quickCut.title}</h4>
@@ -536,7 +587,7 @@ const LandingPage = () => {
                         </button>
                         <div className="text-center mt-3 text-xs text-gray-400 underline cursor-pointer" onClick={() => navigate('/pricing')}>{t.landing.freeTrial.viewPlans}</div>
                     </div>
-                    <div className="md:w-1/2 relative bg-teal-50 dark:bg-gray-700 reveal-right">
+                    <div className="md:w-1/2 relative bg-gray-50 dark:bg-gray-800 reveal-right">
                         <img alt="Creative user" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0EozFXGjKu4GFmSxKvmNIdx27bzHb_4log_JolTedfVya2Z5T3j6fs0WQqZrnfzUGk6kVcwjZqas5nvjkHKlZbKGp-7PKqdjjDSIJJp52yIjzfqPwj_zzPnRkOO402iD4cZPQhwjWzfvrSO1dcl7MVpd8DQaebev4Hmm7fHu40ZIQl4v-SQnBKR11RtP7wSOEOnleRV6HmrVlIgYyDCOLaQFh7cwMeGBtkO6SybSvka4de1vX3_cRTgpZ0Fi6l2ylXyIFuMks_-w" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                         <div className="absolute bottom-8 left-8 right-8">
@@ -555,7 +606,7 @@ const LandingPage = () => {
             </section>
 
             {/* CTA Banner */}
-            <div className="bg-gradient-to-b from-teal-100 to-teal-200 dark:from-teal-900/30 dark:to-teal-900/50 py-24 text-center reveal">
+            <div className="bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-800 py-24 text-center reveal">
                 <h2 className="text-3xl md:text-5xl font-serif mb-4 text-gray-900 dark:text-white">{t.landing.ctaBanner.titlePart1}<br /><span className="italic">{t.landing.ctaBanner.titlePart2}</span></h2>
                 <button className="bg-black dark:bg-white text-white dark:text-black px-8 py-3 rounded-full font-bold mt-8 hover:scale-105 transition shadow-xl" onClick={handleAuth}>
                     {t.landing.ctaBanner.cta}
@@ -588,7 +639,7 @@ const LandingPage = () => {
                         <div>
                             <h4 className="font-bold mb-4 text-sm">{t.footer.resources}</h4>
                             <ul className="space-y-2 text-sm text-gray-400">
-                                <li><a className="hover:text-white" href="#">{t.footer.helpCenter}</a></li>
+                                <li><a className="hover:text-white" href="mailto:tuangb2004@gmail.com?subject=Hỗ trợ Creator AI">{t.footer.helpCenter}</a></li>
                                 <li><a className="hover:text-white" href="#">{t.footer.customerStories}</a></li>
                             </ul>
                         </div>

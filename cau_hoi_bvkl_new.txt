@@ -1,0 +1,832 @@
+# 100 CÂU HỎI VÀ TRẢ LỜI BẢO VỆ KHÓA LUẬN
+## Dự án: CONTENT CREATOR AI
+
+---
+
+# PHẦN 1: TỔNG QUAN VÀ GIỚI THIỆU
+
+## Câu 1: Hãy trình bày tổng quan về đề tài khóa luận của bạn?
+
+**Trả lời:**
+
+Đề tài khóa luận của em là "Xây dựng nền tảng hỗ trợ sáng tạo nội dung sử dụng công nghệ AI", viết tắt là Content Creator AI. Đây là ứng dụng web cho phép người dùng tạo văn bản, hình ảnh và video thông qua việc tích hợp nhiều mô hình trí tuệ nhân tạo khác nhau.
+
+Mục tiêu chính là xây dựng nền tảng tích hợp, nơi người dùng sử dụng nhiều công cụ AI trong giao diện thống nhất, thay vì dùng nhiều công cụ riêng lẻ.
+
+Tính năng chính: tạo văn bản với Gemini và Groq, tạo hình ảnh với SDXL và Pollination, tạo video với Veo 3.1, hệ thống quản lý dự án, trang Inspiration cộng đồng, thanh toán qua PayOS, xác thực đa phương thức, đa ngôn ngữ Việt-Anh, dark mode.
+
+---
+
+## Câu 2: Đối tượng người dùng mục tiêu? Tại sao chọn nhóm này?
+
+**Trả lời:**
+
+Bốn nhóm đối tượng: content creators cá nhân như TikToker, YouTuber; doanh nghiệp vừa và nhỏ cần content marketing; freelancers thiết kế đồ họa, copywriting, video editing; sinh viên và người mới bắt đầu.
+
+Lý do chọn: thị trường content creation tăng trưởng mạnh, ước tính 104.2 tỷ USD năm 2026. Các giải pháp hiện tại có hạn chế: chi phí cao, giao diện phức tạp, chưa hỗ trợ tốt tiếng Việt, phân mảnh công cụ.
+
+---
+
+## Câu 3: Phân tích giải pháp tương tự? Ưu điểm gì?
+
+**Trả lời:**
+
+So với ChatGPT: đa năng hơn (text, image, video), có quản lý dự án, có Inspiration, chi phí linh hoạt theo credit.
+
+So với Canva AI: nhiều AI models hơn, có tạo video với Veo 3.1, hỗ trợ tiếng Việt tốt hơn, có cộng đồng.
+
+Điểm khác biệt: mô hình thanh toán linh hoạt theo credit, không bắt buộc subscription dài hạn.
+
+---
+
+## Câu 4: Phạm vi nghiên cứu và giới hạn?
+
+**Trả lời:**
+
+Phạm vi: tích hợp AI models, xác thực đa phương thức, quản lý dự án, credit và thanh toán, Inspiration, đa ngôn ngữ. Công nghệ: ReactJS 19 + Vite + Tailwind, Firebase, AI APIs.
+
+Giới hạn: không có mobile native (chỉ PWA), không social publishing trực tiếp, không collaboration, TikTok OAuth chờ phê duyệt.
+
+---
+
+## Câu 5: Môi trường phát triển và công cụ?
+
+**Trả lời:**
+
+Node.js 20.x, VS Code, Git, Firebase CLI. Cloud: Vercel, Firebase, PayOS. Frontend: React 19.2, React Router, Firebase, Tailwind CSS, Lucide React, React Markdown, Recharts. Backend: firebase-admin, firebase-functions, @google/generative-ai, groq-sdk, @sendgrid/mail.
+
+---
+
+## Câu 6: Phương pháp nghiên cứu?
+
+**Trả lời:**
+
+Thu thập yêu cầu: khảo sát ChatGPT, Midjourney, Canva; phân tích nhu cầu thị trường. Thiết kế: UML, Serverless với Firebase, NoSQL với Firestore, SOLID/DRY. Phát triển: Agile/Scrum sprint 2 tuần, Git/GitHub, CI/CD. Kiểm thử: manual testing, Lighthouse performance, Firestore security validation.
+
+---
+
+## Câu 7: Cấu trúc thư mục dự án?
+
+**Trả lời:**
+
+Frontend: components (49 components), pages (6 trang), contexts (Auth, Language, Theme), services, i18n, utils, hooks. Functions: generateContent, generateVideo, posts, projects, authTrigger, createPaymentLink, payosWebhook. Mỗi thư mục có chức năng riêng, đảm bảo separation of concerns.
+
+---
+
+## Câu 8: Sơ đồ kiến trúc tổng thể?
+
+**Trả lời:**
+
+Ba layer: Client Browser (React + Vite + Tailwind), Firebase Services (Auth, Cloud Functions, Firestore, Storage, Hosting), External APIs (Gemini, Groq, Pollination, Stability AI, Veo, PayOS). Luồng: User → React App → Firebase Functions → AI APIs → Return → Firestore/Storage → User.
+
+---
+
+## Câu 9: Yêu cầu chức năng chính?
+
+**Trả lời:**
+
+Đăng nhập/đăng ký đa phương thức, xác thực email, tạo văn bản AI, tạo hình ảnh AI, tạo video AI, quản lý dự án, quản lý tài sản, Inspiration, nạp credit, cài đặt profile, đa ngôn ngữ. User mới được tặng 20 credits.
+
+---
+
+## Câu 10: Yêu cầu phi chức năng?
+
+**Trả lời:**
+
+Hiệu suất: tải trang <3s, AI response <60s text, <30s image. Bảo mật: HTTPS, JWT tokens, API keys trong Cloud Functions, Firestore security rules. Scalability: Serverless tự động scale. Responsive: mobile/tablet/desktop. Accessibility: dark mode, WCAG, keyboard navigation. Reliability: 99.9% uptime, error handling.
+
+---
+
+# PHẦN 2: CÔNG NGHỆ
+
+## Câu 11: Tại sao chọn ReactJS 19?
+
+**Trả lời:**
+
+Ecosystem và community lớn nhất. Component-based architecture với 49 components tái sử dụng. Virtual DOM cải thiện hiệu suất. Hooks trong React 19 giúp quản lý state dễ dàng. Job market: React được săn đón nhiều. So với Vue: React linh hoạt hơn. So với Angular: React nhẹ và dễ hơn.
+
+---
+
+## Câu 12: Firebase? Tại sao chọn Firebase?
+
+**Trả lời:**
+
+Firebase là PaaS của Google cung cấp backend services sẵn có. All-in-one: Auth, Firestore, Cloud Functions, Storage, Hosting. Serverless: không cần quản lý server, auto scale. Real-time support cho Inspiration feed. Free tier đủ cho dev. Development nhanh hơn.
+
+---
+
+## Câu 13: Firestore vs Realtime Database?
+
+**Trả lời:**
+
+Realtime Database: tree structure, query limited, scale thủ công. Firestore: collections/documents, compound queries, auto-scaling, operations-focused pricing. Chọn Firestore vì data model phù hợp, query tốt hơn, scale tốt hơn.
+
+---
+
+## Câu 14: Cloud Functions hoạt động?
+
+**Trả lời:**
+
+Functions chạy trên cloud không cần server. Triggers: HTTP, Callable, Auth, Pub/Sub. 19 functions: generateContent, generateVideo, createPaymentLink, payosWebhook, posts, projects, authTrigger... Ưu điểm: pay-per-use, auto-scaling, no server management, built-in auth context.
+
+---
+
+## Câu 15: AI APIs tích hợp?
+
+**Trả lời:**
+
+5 providers: Gemini (text/image, đa năng nhưng đắt), Groq (text, nhanh và miễn phí), Pollination (image, miễn phí), SDXL (image, chất lượng cao), Veo (video, Fast 300 credits, Standard 500 credits). Fallback mechanism khi provider fail.
+
+---
+
+## Câu 16: Rate limiting và quota?
+
+**Trả lời:**
+
+Cloud Functions kiểm tra credits trước khi generation, kiểm tra rate limit. Credit quota: user mới 20 credits miễn phí, text 1-2 credits, SDXL 4 credits, Gemini 8 credits, Veo Fast 300, Veo Standard 500. Veo giới hạn 10 videos/ngày.
+
+---
+
+## Câu 17: Ưu/nhược Serverless?
+
+**Trả lời:**
+
+Ưu: không cần server, auto scale, pay-per-use, nhanh, high availability. Nhược: cold start ~2s (giải quyết bằng loading states), vendor lock-in (abstract qua service layer), debugging khó (detailed logging).
+
+---
+
+## Câu 18: Tailwind CSS ưu điểm?
+
+**Trả lời:**
+
+Rapid development: classes như p-4, text-center. Small bundle size: PurgeCSS loại bỏ unused. Consistency: design system thống nhất. Responsive: prefixes md:, lg:. Dark mode: dark: prefix. Customization: extend trong config.
+
+---
+
+## Câu 19: State management trong React?
+
+**Trả lời:**
+
+React Context cho global: AuthContext, LanguageContext, ThemeContext. useState cho local: form inputs, modal. Firebase real-time listeners cho data thay đổi thường xuyên: projects, posts.
+
+---
+
+## Câu 20: Vite vs Create React App?
+
+**Trả lời:**
+
+Vite: Native ES Modules, dev server instant, HMR cực nhanh. Build: Rollup với code splitting, tree shaking. CRA: bundle toàn bộ khi khởi động, chậm với app lớn. Vite nhanh hơn nhiều.
+
+---
+
+# PHẦN 3: CƠ SỞ DỮ LIỆU
+
+## Câu 21: Thiết kế Firestore?
+
+**Trả lời:**
+
+4 collections: users (uid, email, credits, plan...), projects (userId, title, type, messages, content...), posts (authorId, title, prompt, mediaUrl, likes...), transactions (userId, amount, credits, status...). Relationships: users→projects/posts/transactions là one-to-many.
+
+---
+
+## Câu 22: NoSQL vs SQL?
+
+**Trả lời:**
+
+SQL: fixed schemas, JOINs, ACID. NoSQL: flexible JSON, denormalized, horizontal scaling. Chọn NoSQL vì flexible schema cho text/image/video projects, real-time cho Inspiration, serverless integration, queries đơn giản.
+
+---
+
+## Câu 23: Denormalization?
+
+**Trả lời:**
+
+Trong NoSQL, denormalize thay vì JOIN. Ví dụ: posts lưu authorName, authorPhotoURL thay vì JOIN users. Khi user update profile, Cloud Function cập nhật tất cả posts của user đó.
+
+---
+
+## Câu 24: Indexing và querying?
+
+**Trả lời:**
+
+Firestore tự động indexes cho single field và equality. Composite indexes cần tạo thủ công cho range queries. Query patterns: get user's projects, get posts by category với pagination, cursor-based với startAfter().
+
+---
+
+## Câu 25: Migrations?
+
+**Trả lời:**
+
+Client-side: kiểm tra version trong app, migrate dần. Cloud Function: chạy một lần migrate toàn bộ. Best practices: backup trước, test trên subset, thêm version field.
+
+---
+
+## Câu 26: Transactions?
+
+**Trả lời:**
+
+Dùng khi cần read/write nhiều documents atomic. Ví dụ: tạo content dùng transaction đồng thời trừ credits và lưu project. Dùng atomic increment cho likes count tránh race conditions.
+
+---
+
+## Câu 27: Firebase Storage?
+
+**Trả lời:**
+
+Lưu trữ: AI-generated images/videos, user uploaded files. Cấu trúc: avatars, uploads, generated, inspiration. Security: chỉ owner đọc/ghi generated, inspiration public read.
+
+---
+
+## Câu 28: Caching?
+
+**Trả lời:**
+
+Firestore: enable persistence. React state: cache AI responses. Browser: Vercel CDN cache static files. Image: browser tự cache. Tương lai: React Query, Service Workers.
+
+---
+
+## Câu 29: Backup và disaster recovery?
+
+**Trả lời:**
+
+Firebase scheduled backups cho paid plans. Export data sang JSON lưu GCS. Dùng firebase firestore:export và :import. Backup định kỳ, test restore.
+
+---
+
+## Câu 30: Data retention?
+
+**Trả lời:**
+
+User data: giữ vô thời hạn khi active, xóa khi yêu cầu. Generated content: giữ đến khi user xóa. Transactions: giữ 7 năm. Cleanup: Cloud Function weekly xóa projects cũ >30 ngày.
+
+---
+
+# PHẦN 4: KIỂM THỬ
+
+## Câu 31: Chiến lược kiểm thử?
+
+**Trả lời:**
+
+Manual testing: user flows, multi-browser, responsive, edge cases. Unit testing: nên test Cloud Functions, components nhưng chưa đầy đủ. Integration: API, Firebase, Payment. Performance: Lighthouse, API response times. Security: Firestore rules, auth flows. Hạn chế: automated tests chưa đầy đủ.
+
+---
+
+## Câu 32: Các loại kiểm thử?
+
+**Trả lời:**
+
+Unit Test: test từng function riêng lẻ, cách ly dependencies bằng mock, nhanh, tập trung logic nhỏ nhất. Integration Test: test nhiều components cùng nhau, dependencies thật, chậm hơn, tập trung interaction. E2E Test: test toàn bộ flow, browser thật, chậm nhất, tập trung user journeys.
+
+---
+
+## Câu 33: TDD?
+
+**Trả lời:**
+
+Em dùng Test Last: viết code trước, test sau. TDD workflow: Red - viết test thấy fail; Green - viết code pass; Refactor - cải thiện. Ưu: code testable, regression prevention, documentation. Nhược: chậm ban đầu, learning curve, không phù hợp exploratory.
+
+---
+
+## Câu 34: Jest?
+
+**Trả lời:**
+
+Jest là testing framework phổ biến cho JS/TS. Cài jest, ts-jest, firebase-functions-test. Viết test cases với mock Firebase. Ví dụ: test reject khi prompt empty, test reject khi insufficient credits.
+
+---
+
+## Câu 35: Test Cloud Functions?
+
+**Trả lời:**
+
+firebase-functions-test cho phép test locally. Setup: import, mock config, cleanup. Testing HTTP: wrap function, gọi với params. Testing callable: mock auth context. Testing Firestore triggers: tạo snapshot, wrap, gọi.
+
+---
+
+## Câu 36: RTL vs Enzyme?
+
+**Trả lời:**
+
+RTL test như user, query bằng role/text/label. Enzyme test implementation, query bằng component/state. RTL được khuyến khích vì user-facing. Best practices: query by role, không test implementation details, test behavior.
+
+---
+
+## Câu 37: Cypress vs Playwright?
+
+**Trả lời:**
+
+Cypress: Chrome/Firefox/Edge, hạn chế mobile. Playwright: all browsers bao gồm Safari, nhanh hơn, API testing mạnh hơn. Chọn Playwright vì multi-browser tốt hơn, Microsoft backing.
+
+---
+
+## Câu 38: Performance Testing?
+
+**Trả lời:**
+
+Lighthouse: Performance 85 mobile/92 desktop, Accessibility 90/92, Best Practices 95, SEO 90. API Response: generate text 3.2s, image 12s, video request 0.8s, getPosts 0.5s - đều đạt target.
+
+---
+
+## Câu 39: Security Testing?
+
+**Trả lời:**
+
+Authentication: test không cho truy cập khi chưa login. Authorization: test user không truy cập data user khác. Input validation: test sanitize XSS. Firestore rules: test users đọc được own data, không đọc được other user data.
+
+---
+
+## Câu 40: Code Coverage?
+
+**Trả lời:**
+
+Coverage là tỷ lệ code được test: line, branch, function, statement. Mức: 70% good, 80% very good, 90% excellent. Đề xuất: Cloud Functions 80%, Components 70%, Utils 90%. Coverage ≠ Quality.
+
+---
+
+## Câu 41: BDD?
+
+**Trả lời:**
+
+Em chưa dùng BDD nhưng biết: viết tests bằng ngôn ngữ tự nhiên. Gherkin: Feature, Scenario, Given, When, Then. Benefits: readable bởi non-developers, living documentation, focus on behavior.
+
+---
+
+## Câu 42: Test AI outputs?
+
+**Trả lời:**
+
+Thách thức: AI outputs non-deterministic. Chiến lược: validate structure không phải content; check length hợp lý; đảm bảo không error; fuzzy matching; validate URLs.
+
+---
+
+## Câu 43: Snapshot Testing?
+
+**Trả lời:**
+
+Lưu snapshot output, so sánh với future detect changes. Dùng cho: UI components, JSON responses, error messages. Không dùng: dynamic content, AI-generated, large data. Updating: npm test --updateSnapshot.
+
+---
+
+## Câu 44: Mocking?
+
+**Trả lời:**
+
+Thay dependencies thật bằng giả. Jest: jest.fn(), mockReturnValue, mockImplementation, jest.mock(), jest.spyOn(). Ví dụ mock AI API.
+
+---
+
+## Câu 45: CI/CD?
+
+**Trả lời:**
+
+GitHub Actions: test, lint, build. Chạy khi push/PR main. Benefits: catch bugs early, enforce quality, prevent broken code, consistent environment.
+
+---
+
+## Câu 46: Test Pyramid?
+
+**Trả lời:**
+
+Pyramid: Unit 70%, Integration 20%, E2E 10%. Lý do: unit nhanh/rẻ, E2E chậm/đắt/flaky. Dự án: Unit cho Cloud Functions/utilities, Integration cho APIs, E2E cho login/generate/payment.
+
+---
+
+## Câu 47: Regression Testing?
+
+**Trả lời:**
+
+Re-run tests sau thay đổi đảm bảo features cũ không break. Strategies: automated suite cho features quan trọng, tích hợp CI/CD, visual regression. Prevent: viết tests trước fix bugs, feature branches, require passing tests.
+
+---
+
+## Câu 48: Test Environment?
+
+**Trả lời:**
+
+Development: local, firebase emulators, test API keys. Staging: mirror production. Production: live. Firebase Emulators: firebase init emulators, firebase emulators:start. Environment: .env.test.
+
+---
+
+## Câu 49: Load Testing?
+
+**Trả lời:**
+
+Kiểm tra hệ thống dưới tải nặng. Tools: k6 (recommended), Artillery, JMeter. k6: define options với stages, thresholds. Test scenarios: 100 users browsing, 50 generating content, 20 video, spike test.
+
+---
+
+## Câu 50: Debugging?
+
+**Trả lời:**
+
+Đọc error cẩn thận. Console.log tạm. Run single test. Interactive mode. VS Code debugger. Check mocks. Common: async không handle, thiếu awaits, sai assertions.
+
+---
+
+# PHẦN 5: THANH TOÁN
+
+## Câu 51: Hệ thống Credit?
+
+**Trả lời:**
+
+Mua: Starter 50K→55 credits, Basic 100K→115, Pro 200K→240, Enterprise 500K→650. Sử dụng: trừ sau generation hoàn thành, fail thì hoàn. Free: 20 credits. Plans: Free 0%, Pro 10%, Premium 20%, Agency 30%.
+
+---
+
+## Câu 52: PayOS?
+
+**Trả lời:**
+
+Cổng thanh toán Việt Nam: MoMo, ZaloPay, QR Code, ATM. Flow: User chọn gói → Frontend gọi Function → Function tạo payment link → User redirect PayOS → Webhook callback → Cộng credits.
+
+---
+
+## Câu 53: Payment Security?
+
+**Trả lời:**
+
+Signature Verification: verify webhook. Idempotency: kiểm tra order đã xử lý chưa. HTTPS. PCI-DSS: PayOS xử lý card. Webhook verification.
+
+---
+
+## Câu 54: Plans/Pricing?
+
+**Trả lời:**
+
+Packages: Starter 50K, Basic 100K, Pro 200K, Enterprise 500K. Plans: Free 0%, Pro 99K/tháng 10%, Premium 199K 20%, Agency 499K 30%.
+
+---
+
+## Câu 55: Refund?
+
+**Trả lời:**
+
+Manual: admin xử lý đặc biệt, verify admin, reverse credits, update status, email notification. Automatic: AI generation fail sau khi trừ credits → tự động hoàn lại.
+
+---
+
+# PHẦN 6: TRIỂN KHAI
+
+## Câu 56: Deployment?
+
+**Trả lời:**
+
+Frontend (Vercel): push GitHub → auto detect → build/deploy → preview PRs. Backend (Firebase): firebase deploy hoặc deploy --only functions. Env: Dev local emulators, Prod Vercel + Firebase.
+
+---
+
+## Câu 57: CI/CD?
+
+**Trả lời:**
+
+GitHub Actions: jobs test, lint, deploy. Steps: checkout, setup Node, install, test/build, deploy. Benefits: catch bugs early, quality enforcement, automated testing.
+
+---
+
+## Câu 58: Monitoring/Logging?
+
+**Trả lời:**
+
+Firebase Console: logs, performance, Crashlytics, Analytics. External: Stackdriver, Sentry. Cloud Functions: console.log, functions.logger.info với metadata.
+
+---
+
+## Câu 59: Maintenance?
+
+**Trả lời:**
+
+Regular: update dependencies, optimize functions, monitor costs, backup, review logs. Performance: caching, query optimization, CDN. Security: rotate keys, review rules, patches.
+
+---
+
+## Câu 60: Scaling?
+
+**Trả lời:**
+
+Vertical: auto với Firebase. Horizontal: auto. Optimization: cold start min instances (tốn phí), Redis cache, CDN. Limits: free tier limited, paid higher, AI API quotas.
+
+---
+
+# PHẦN 7: KẾT LUẬN
+
+## Câu 61: Ưu điểm?
+
+**Trả lời:**
+
+Tích hợp đa AI (text/image/video), UX tốt (modern, dark, responsive), chi phí linh hoạt (credit), cộng đồng (Inspiration), Serverless (auto scale), mã nguồn mở, đa ngôn ngữ.
+
+---
+
+## Câu 62: Hạn chế?
+
+**Trả lời:**
+
+TikTok OAuth chờ phê duyệt. Video rate limit 10/ngày. Mobile app chưa có (chỉ PWA). Cold start ~2s. i18n chưa hoàn chỉnh. Testing chưa đầy đủ.
+
+---
+
+## Câu 63: Hướng ngắn hạn?
+
+**Trả lời:**
+
+Hoàn thiện TikTok OAuth. Tối ưu cold start. Template library. Viết unit tests. Cải thiện i18n. Thêm AI models.
+
+---
+
+## Câu 64: Hướng trung hạn?
+
+**Trả lời:**
+
+React Native mobile app. Social publishing. Scheduling feature. Collaboration. Analytics dashboard.
+
+---
+
+## Câu 65: Hướng dài hạn?
+
+**Trả lời:**
+
+Thêm AI models (Sora, Midjourney). Audio/Voice generation. Enterprise features. API for developers. Global expansion.
+
+---
+
+## Câu 66: Học được gì?
+
+**Trả lời:**
+
+Full-stack (React, Firebase, Cloud Functions). AI Integration. System Design (Serverless, NoSQL). Project Management (Agile, Git). Testing. Problem Solving. Documentation.
+
+---
+
+## Câu 67: Thay đổi nếu làm lại?
+
+**Trả lời:**
+
+Testing từ đầu. Mobile-first. Documentation sớm. Component library. CI/CD từ đầu. Smaller MVP.
+
+---
+
+## Câu 68: Thách thức lớn nhất?
+
+**Trả lời:**
+
+Tích hợp nhiều AI providers. Video generation queue. Đa ngôn ngữ. Thời gian hạn chế. Testing trong thời gian ngắn.
+
+---
+
+## Câu 69: Tiếp tục phát triển?
+
+**Trả lời:**
+
+Có, vì: market demand tăng, learning opportunity, potential thành sản phẩm, portfolio. Tiếp tục các hướng đã nêu.
+
+---
+
+## Câu 70: Lời cảm ơn?
+
+**Trả lời:**
+
+Cảm ơn giảng viên hướng dẫn, thầy cô khoa, gia đình, bạn bè. Khóa luận hoàn thành mục tiêu. Còn hạn chế cần cải thiện. Mong nhận góp ý.
+
+---
+
+# PHẦN 8: BỔ SUNG
+
+## Câu 71: Serverless vs Server-based?
+
+**Trả lời:**
+
+Server-based: quản lý server, scale thủ công, fixed cost. Serverless: không cần server, auto scale, pay-per-use, tập code. Phù hợp: traffic không predictable, giảm thời gian dev, free tier đủ.
+
+---
+
+## Câu 72: API keys security?
+
+**Trả lời:**
+
+Environment Variables: lưu .env không commit. Đọc qua functions.config(). KHÔNG: commit, expose frontend, share.
+
+---
+
+## Câu 73: Firestore vs SQL?
+
+**Trả lời:**
+
+Firestore: flexible schema, real-time, queries đơn giản, scalable. SQL: fixed schema, complex JOINs, ACID, reporting. Dự án: Firestore phù hợp.
+
+---
+
+## Câu 74: Nhiều AI providers?
+
+**Trả lời:**
+
+Redundancy: fallback khi down. Different strengths: Groq free/fast, Gemini multimodal, SDXL quality, Veo video. Cost optimization: dùng provider phù hợp. User choice.
+
+---
+
+## Câu 75: Sensitive data?
+
+**Trả lời:**
+
+Passwords: Firebase Auth. Payment: PayOS xử lý. Keys: Cloud Functions env. User data: Firestore rules. Best practices: HTTPS, minimal collection, retention policies.
+
+---
+
+## Câu 76: Performance optimization?
+
+**Trả lời:**
+
+Frontend: code splitting, lazy loading, caching. Backend: cold start, indexing, CDN. Database: denormalization, pagination, real-time listeners khi cần.
+
+---
+
+## Câu 77: Accessibility?
+
+**Trả lời:**
+
+Semantic HTML. ARIA labels. Keyboard navigation. Color contrast WCAG. Screen reader. Dark mode.
+
+---
+
+## Câu 78: SEO trong SPA?
+
+**Trả lời:**
+
+React Helmet. Sitemap.xml. Meta tags (Open Graph). Tương lai: Next.js SSR. Semantic HTML.
+
+---
+
+## Câu 79: Offline handling?
+
+**Trả lời:**
+
+Network detection. Firebase offline persistence. Graceful degradation: cached data, queue actions.
+
+---
+
+## Câu 80: Logging/Error tracking?
+
+**Trả lời:**
+
+Console logging. Functions.logger. Firebase Crashlytics. External: Sentry.
+
+---
+
+## Câu 81: CSR vs SSR?
+
+**Trả lời:**
+
+CSR: fast navigation, interactive, authenticated routes. SSR: better SEO, faster initial load, public pages. Tương lai: Next.js.
+
+---
+
+## Câu 82: i18n?
+
+**Trả lời:**
+
+i18next + react-i18next. Translation files Vi/En. Default: Việt, fallback: Anh.
+
+---
+
+## Câu 83: File uploads?
+
+**Trả lời:**
+
+Firebase Storage. Upload: reference, uploadBytes, download URL. Validation: type, size. Security: owner only.
+
+---
+
+## Câu 84: Caching?
+
+**Trả lời:**
+
+Browser: Cache-Control. Firestore: persistence. React state. CDN. Future: React Query, Service Workers.
+
+---
+
+## Câu 85: Auth state?
+
+**Trả lời:**
+
+React Context. AuthProvider: onAuthStateChanged. Context: user, loading, login/logout. Protected Routes.
+
+---
+
+## Câu 86: Form validation?
+
+**Trả lời:**
+
+Client: required, max length, format. Server: Cloud Functions validate. Errors: display clear messages.
+
+---
+
+## Câu 87: Pagination?
+
+**Trả lời:**
+
+Cursor-based: last document làm cursor. Query: orderBy, limit, startAfter. Return: data + lastDoc. UI: load more / infinite scroll.
+
+---
+
+## Câu 88: Search?
+
+**Trả lời:**
+
+Client: filter in memory (small data). Server: Firestore where >= <= prefix. Debouncing. Future: Algolia/Typesense.
+
+---
+
+## Câu 89: Real-time?
+
+**Trả lời:**
+
+Firestore onSnapshot. Subscribe: useEffect, set state. Cleanup: unsubscribe. Cases: feed updates, likes.
+
+---
+
+## Câu 90: Tổng kết?
+
+**Trả lời:**
+
+Content Creator AI: web tích hợp AI models (text/image/video). ReactJS + Firebase + Serverless. Bài học: Planning, Testing, Documentation, Scalability, User-centric. Còn cần cải thiện.
+
+---
+
+## Câu 91: Design patterns?
+
+**Trả lời:**
+
+Context, Provider, Repository, Hook, HOC, Callback, Observer patterns.
+
+---
+
+## Câu 92: Complex form state?
+
+**Trả lời:**
+
+useState với object. Handle change: update field. Handle submit: validate. useReducer cho complex forms.
+
+---
+
+## Câu 93: Error boundaries?
+
+**Trả lời:**
+
+React Error Boundary class. getDerivedStateFromError: set hasError. componentDidCatch: log. Render: fallback UI.
+
+---
+
+## Câu 94: Bundle size?
+
+**Trả lời:**
+
+Code splitting (React.lazy). Tree shaking (Vite). Lazy loading (images). Minimal imports. Tailwind PurgeCSS.
+
+---
+
+## Câu 95: Async operations?
+
+**Trả lời:**
+
+Async/await + try-catch-finally. React Query. AbortController.
+
+---
+
+## Câu 96: Optimistic updates?
+
+**Trả lời:**
+
+Cập nhật UI ngay, sau đó API. Ví dụ like: set liked=true → API → fail thì rollback. Benefits: perceived performance, better UX.
+
+---
+
+## Câu 97: Memory leaks?
+
+**Trả lời:**
+
+useEffect + AbortController. Cleanup: unsubscribe, cancel. Firestore: unsubscribe trong return.
+
+---
+
+## Câu 98: Re-renders?
+
+**Trả lời:**
+
+React.memo. useMemo. useCallback. Context splitting.
+
+---
+
+## Câu 99: Infinite scroll?
+
+**Trả lời:**
+
+Intersection Observer. Scroll to bottom → loadMore. Fetch page tiếp theo với cursor. State: posts, lastDoc, loading.
+
+---
+
+## Câu 100: Lời kết?
+
+**Trả lời:**
+
+Cảm ơn thầy cô. Đã học: AI integration, Serverless, UI development. Còn hạn chế cần cải thiện. Mong góp ý. Xin cảm ơn!
+
+---

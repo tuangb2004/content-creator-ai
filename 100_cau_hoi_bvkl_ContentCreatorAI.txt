@@ -1,0 +1,3908 @@
+# 100 CÂU HỎI VÀ CÂU TRẢ LỜI BẢO VỆ KHÓA LUẬN
+## Dự án: CONTENT CREATOR AI - Nền tảng hỗ trợ sáng tạo nội dung sử dụng công nghệ AI
+
+---
+
+# PHẦN 1: TỔNG QUAN VÀ GIỚI THIỆU (10 câu hỏi)
+
+## Câu 1: Hãy trình bày tổng quan về đề tài khóa luận của bạn, bao gồm tên đề tài, mục tiêu chính và các tính năng nổi bật của hệ thống?
+
+**Trả lời:**
+
+Đề tài khóa luận của em là **"Xây dựng nền tảng hỗ trợ sáng tạo nội dung sử dụng công nghệ AI"** (Content Creator AI). Đây là một ứng dụng web cho phép người dùng tạo ra các loại nội dung đa phương tiện bao gồm văn bản, hình ảnh và video thông qua việc tích hợp nhiều mô hình trí tuệ nhân tạo khác nhau.
+
+**Mục tiêu chính** của đề tài là xây dựng một nền tảng tích hợp, nơi người dùng có thể truy cập và sử dụng nhiều công cụ AI khác nhau trong một giao diện thống nhất, thay vì phải sử dụng nhiều công cụ riêng lẻ như ChatGPT cho text, Midjourney cho image, và các công cụ khác cho video.
+
+**Các tính năng nổi bật của hệ thống bao gồm:**
+
+1. **Tạo văn bản với AI** - Sử dụng Google Gemini và Groq Llama để tạo các nội dung văn bản như caption, bài viết, script video
+2. **Tạo hình ảnh với AI** - Sử dụng Stability AI SDXL và Pollination Nano Banana để tạo hình ảnh chất lượng cao từ text prompt
+3. **Tạo video với AI** - Sử dụng Google Veo 3.1 để tạo video từ text hoặc hình ảnh gốc
+4. **Hệ thống quản lý dự án** - Lưu trữ, tổ chức và quản lý các nội dung đã tạo
+5. **Trang Inspiration** - Nơi cộng đồng chia sẻ và học hỏi lẫn nhau
+6. **Hệ thống credit và thanh toán** - Tích hợp PayOS để mua credit
+7. **Xác thực đa phương thức** - Email/Password, Google OAuth, Facebook OAuth, TikTok OAuth
+8. **Hỗ trợ đa ngôn ngữ** - Tiếng Việt và Tiếng Anh
+9. **Giao diện hiện đại** - Dark mode, responsive design
+
+Dự án được phát triển tại Trường Đại học Tài nguyên và Môi trường Hà Nội, Khoa Công nghệ Thông tin.
+
+---
+
+## Câu 2: Đối tượng người dùng mục tiêu của hệ thống là ai? Tại sao bạn chọn nhóm đối tượng này?
+
+**Trả lời:**
+
+Đối tượng người dùng mục tiêu của Content Creator AI bao gồm bốn nhóm chính:
+
+**Thứ nhất - Content creators cá nhân:** Đây là nhóm người dùng chính bao gồm TikToker, YouTuber, Blogger, Instagrammer. Đây là những người cần tạo nội dung đều đặn với chi phí hợp lý. Theo thống kê, tại Việt Nam có hơn 1 triệu TikToker và YouTuber hoạt động thường xuyên, và con số này đang không ngừng tăng lên.
+
+**Thứ hai - Doanh nghiệp vừa và nhỏ (SMBs):** Các doanh nghiệp cần tạo nội dung marketing nhưng không có đội ngũ sáng tạo chuyên nghiệp. Họ cần một công cụ đơn giản, hiệu quả về chi phí để tạo content cho các chiến dịch quảng cáo.
+
+**Thứ ba - Freelancers:** Những người làm việc tự do trong lĩnh vực thiết kế đồ họa, copywriting, video editing cần công cụ hỗ trợ để tăng năng suất và đa dạng hóa dịch vụ.
+
+**Thứ tư - Sinh viên và người mới bắt đầu:** Những người chưa có kinh nghiệm trong lĩnh vực sáng tạo nội dung, cần hỗ trợ từ AI để học hỏi và phát triển.
+
+**Lý do chọn nhóm đối tượng này:**
+
+Em chọn nhóm đối tượng này vì thị trường content creation đang tăng trưởng mạnh mẽ, ước tính đạt 104.2 tỷ USD vào năm 2026. Đồng thời, các giải pháp hiện tại trên thị trường có những hạn chế như:
+
+- Chi phí cao (ChatGPT Plus $20/tháng, Midjourney $10/tháng)
+- Giao diện phức tạp, khó sử dụng cho người mới
+- Chưa hỗ trợ tốt tiếng Việt
+- Phân mảnh công cụ (phải dùng nhiều app khác nhau)
+
+Content Creator AI ra đời để giải quyết những vấn đề này.
+
+---
+
+## Câu 3: Bạn đã phân tích những giải pháp tương tự nào trên thị trường và Content Creator AI có những ưu điểm gì so với chúng?
+
+**Trả lời:**
+
+Em đã phân tích hai giải pháp chính trên thị trường là **ChatGPT** và **Canva AI**:
+
+**So với ChatGPT:**
+
+- **Đa năng hơn:** Không chỉ tạo text mà còn tạo được image và video
+- **Quản lý dự án:** Có hệ thống quản lý để lưu trữ và tổ chức nội dung đã tạo
+- **Cộng đồng:** Có trang Inspiration để học hỏi và chia sẻ
+- **Chi phí linh hoạt:** Credit-based, không cần đăng ký subscription đắt đỏ
+
+**So với Canva AI:**
+
+- **Tích hợp nhiều AI models hơn:** ChatGPT, Groq, SDXL, Veo
+- **Video generation:** Có tính năng tạo video với Veo 3.1 - điểm mà Canva chưa có
+- **Hỗ trợ tiếng Việt tốt hơn:** Cả về giao diện và AI
+- **Hệ thống cộng đồng:** Trang Inspiration độc đáo
+
+**Điểm khác biệt quan trọng nhất** là mô hình thanh toán: Content Creator AI sử dụng hệ thống credit linh hoạt cho phép người dùng trả tiền theo mức sử dụng thực tế, không bắt buộc đăng ký dài hạn như các nền tảng khác.
+
+---
+
+## Câu 4: Phạm vi nghiên cứu và giới hạn của dự án là gì? Những gì không nằm trong phạm vi?
+
+**Trả lời:**
+
+**Phạm vi nghiên cứu của dự án bao gồm:**
+
+**Về mặt chức năng:**
+
+- Tích hợp các AI models cho text, image, video generation
+- Hệ thống xác thực đa phương thức (Email, Google, Facebook, TikTok)
+- Quản lý dự án và tài sản số
+- Hệ thống credit và thanh toán qua PayOS
+- Trang Inspiration cộng đồng
+- Đa ngôn ngữ Việt-Anh
+- Hệ thống profile và cài đặt người dùng
+
+**Về mặt công nghệ:**
+
+- Frontend: ReactJS 19 với Vite và Tailwind CSS
+- Backend: Firebase (Auth, Firestore, Cloud Functions, Storage)
+- AI: Gemini API, Groq API, Pollination API, Stability AI, Veo API
+
+**Những gì không nằm trong phạm vi:**
+
+- Ứng dụng mobile native (chỉ có PWA - Progressive Web App)
+- Social publishing trực tiếp lên các nền tảng mạng xã hội
+- Tính năng collaboration (làm việc nhóm)
+- TikTok OAuth đã implement nhưng đang chờ phê duyệt từ TikTok Developer Platform
+
+---
+
+## Câu 5: Môi trường phát triển và công cụ sử dụng trong dự án?
+
+**Trả lời:**
+
+Môi trường phát triển của dự án bao gồm:
+
+**Về phần cứng/phần mềm:**
+
+- Node.js version 20.x
+- npm version 10.x
+- Visual Studio Code IDE
+- Git version 2.x cho version control
+- Firebase CLI version 13.x
+
+**Công cụ và dịch vụ cloud:**
+
+- Vercel cho frontend deployment
+- Firebase cho backend services
+- PayOS cho thanh toán tại Việt Nam
+
+**Các thư viện chính ở frontend:**
+
+- React 19.2.0
+- React Router DOM 7.9.6
+- Firebase 10.13.2
+- Tailwind CSS 3.4.18
+- Lucide React 0.554.0 (icons)
+- React Markdown 10.1.0
+- Recharts 3.4.1 (biểu đồ)
+
+**Các thư viện chính ở backend (Cloud Functions):**
+
+- firebase-admin 12.7.0
+- firebase-functions 4.5.0
+- @google/generative-ai 0.24.1
+- groq-sdk 0.5.0
+- @sendgrid/mail 8.1.6
+
+---
+
+## Câu 6: Bạn đã áp dụng phương pháp nghiên cứu nào trong quá trình thực hiện khóa luận?
+
+**Trả lời:**
+
+Em đã áp dụng các phương pháp nghiên cứu sau:
+
+**Phương pháp thu thập và phân tích yêu cầu:**
+
+- Khảo sát các nền tảng AI hiện có như ChatGPT, Midjourney, Canva AI để hiểu tính năng và hạn chế
+- Phân tích nhu cầu người dùng thông qua nghiên cứu thị trường về content creation
+- Thu thập feedback từ quá trình sử dụng các công cụ hiện có
+
+**Phương pháp phân tích và thiết kế hệ thống:**
+
+- Sử dụng UML để mô hình hóa bao gồm Use Case Diagram, Activity Diagram, Class Diagram
+- Áp dụng kiến trúc Serverless với Firebase
+- Thiết kế database NoSQL với Firestore
+- Tuân thủ các nguyên tắc thiết kế phần mềm như SOLID, DRY
+
+**Phương pháp phát triển phần mềm:**
+
+- Áp dụng Agile/Scrum với sprint 2 tuần
+- Version control với Git và GitHub
+- CI/CD với Vercel và Firebase
+
+**Phương pháp kiểm thử và đánh giá:**
+
+- Manual testing cho UI/UX trên nhiều trình duyệt
+- Performance testing với Lighthouse
+- Kiểm thử bảo mật với Firestore rules validation
+
+---
+
+## Câu 7: Cấu trúc thư mục dự án như thế nào? Giải thích chức năng của các thư mục chính?
+
+**Trả lời:**
+
+Cấu trúc thư mục dự án được tổ chức như sau:
+
+```
+content-creator-ai/
+├── frontend/                    # React Frontend
+│   ├── src/
+│   │   ├── components/         # 49 React components
+│   │   │   ├── Auth/           # Components xác thực
+│   │   │   ├── Dashboard/      # Dashboard components
+│   │   │   ├── Projects/       # Quản lý dự án
+│   │   │   └── Shared/         # Components dùng chung
+│   │   ├── pages/              # 6 trang chính
+│   │   ├── contexts/           # React Context (Auth, Language, Theme)
+│   │   ├── services/           # Firebase services wrapper
+│   │   ├── i18n/               # File dịch (vi, en)
+│   │   ├── utils/              # Helper functions
+│   │   └── hooks/              # Custom React hooks
+│   ├── package.json
+│   └── vite.config.js
+│
+├── functions/                   # Firebase Cloud Functions
+│   ├── src/
+│   │   ├── generateContent.ts  # Text/Image generation
+│   │   ├── generateVideo.ts    # Video generation
+│   │   ├── posts.ts            # Inspiration CRUD
+│   │   ├── projects.ts         # Project management
+│   │   ├── authTrigger.ts      # Auth triggers
+│   │   ├── createPaymentLink.ts # Payment
+│   │   ├── payosWebhook.ts    # Payment webhook
+│   │   └── utils/              # Helper functions
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── firestore.rules             # Database security rules
+├── firebase.json               # Firebase config
+└── tailwind.config.js          # Tailwind config
+```
+
+Mỗi thư mục có chức năng riêng biệt, đảm bảo separation of concerns và dễ bảo trì.
+
+---
+
+## Câu 8: Hãy giải thích sơ đồ kiến trúc tổng thể của hệ thống?
+
+**Trả lời:**
+
+Kiến trúc tổng thể của Content Creator AI được thiết kế theo mô hình Serverless với ba layer chính:
+
+**Layer 1 - Client (Browser)**
+
+- React Frontend chạy trên trình duyệt
+- Giao diện người dùng được xây dựng với Vite và Tailwind CSS
+- Các pages: LandingPage, DashboardHome, AgentChat, Inspiration, Projects, Pricing
+
+**Layer 2 - Firebase Services**
+
+- Firebase Authentication: Xác thực người dùng (Email, Google, Facebook, TikTok)
+- Cloud Functions: Xử lý business logic (19 functions)
+- Firestore Database: Lưu trữ dữ liệu NoSQL
+- Firebase Storage: Lưu trữ hình ảnh và video
+- Firebase Hosting: Deploy frontend
+
+**Layer 3 - External APIs**
+
+- Gemini API (Google): Text generation và image analysis
+- Groq API: Text generation với Llama model (miễn phí, nhanh)
+- Pollination API: Image generation (Nano Banana - miễn phí)
+- Stability AI: Image generation (SDXL)
+- Veo API (Google): Video generation (Veo 3.1)
+- PayOS: Thanh toán tại Việt Nam
+
+**Luồng dữ liệu:** User → React App → Firebase Functions → AI APIs → Return → Firestore/Storage → User
+
+---
+
+## Câu 9: Các yêu cầu chức năng chính của hệ thống là gì?
+
+**Trả lời:**
+
+Các yêu cầu chức năng được phân mã như sau:
+
+- **F01 - Đăng ký/Đăng nhập:** Hỗ trợ Email/Password, Google OAuth, Facebook OAuth, TikTok OAuth. Người dùng mới được tặng 20 credits miễn phí.
+- **F02 - Xác thực email:** Gửi email verification khi đăng ký, hiển thị blocking screen nếu chưa verify.
+- **F03 - Tạo văn bản AI:** Chat với AI sử dụng Gemini hoặc Groq để tạo text content.
+- **F04 - Tạo hình ảnh AI:** Prompt to Image sử dụng SDXL, Nano Banana hoặc Gemini Imagen.
+- **F05 - Tạo video AI:** Text/Image to Video sử dụng Veo 3.1 với hai chế độ Fast (300 credits) và Standard (500 credits).
+- **F06 - Quản lý dự án:** Lưu, xem, xóa, chia sẻ các dự án content creation.
+- **F07 - Quản lý tài sản:** Upload, xem, xóa file (images, videos).
+- **F08 - Inspiration:** Trang cộng đồng để xem, like, save, share các bài đăng.
+- **F09 - Nạp credit:** Thanh toán qua PayOS để mua credits.
+- **F10 - Cài đặt profile:** Thay đổi avatar, tên, ngôn ngữ, theme.
+- **F11 - Đa ngôn ngữ:** Chuyển đổi giữa Tiếng Việt và Tiếng Anh.
+
+---
+
+## Câu 10: Các yêu cầu phi chức năng của hệ thống?
+
+**Trả lời:**
+
+Các yêu cầu phi chức năng bao gồm:
+
+**NF01 - Hiệu suất (Performance)**
+
+- Thời gian tải trang < 3 giây
+- AI response time < 60 giây cho text, < 30 giây cho image
+- Time to First Byte (TTFB) < 1.5 giây
+
+**NF02 - Bảo mật (Security)**
+
+- HTTPS enforced cho tất cả requests
+- JWT tokens cho authentication
+- API keys được bảo vệ trong Cloud Functions
+- Firestore security rules cho database access
+
+**NF03 - Khả năng mở rộng (Scalability)**
+
+- Serverless architecture tự động scale
+- Có thể handle hàng nghìn concurrent users
+
+**NF04 - Responsive**
+
+- Hỗ trợ mobile (< 640px), tablet (640-1024px), desktop (> 1024px)
+- Tailwind CSS với mobile-first approach
+
+**NF05 - Accessibility**
+
+- Dark mode support
+- Color contrast đạt chuẩn WCAG
+- Keyboard navigation
+
+**NF06 - Reliability**
+
+- 99.9% uptime theo Firebase SLA
+- Error handling và retry logic
+
+---
+
+# PHẦN 2: CÔNG NGHỆ VÀ KIẾN TRÚC (10 câu hỏi)
+
+## Câu 11: Tại sao bạn chọn ReactJS 19 thay vì các framework khác như Vue hay Angular?
+
+**Trả lời:**
+
+Em chọn ReactJS 19 vì những lý do sau:
+
+**Ecosystem và community:** React có community lớn nhất, nhiều libraries và tools hỗ trợ nhất. Việc tìm kiếm giải pháp cho các vấn đề kỹ thuật dễ dàng hơn. Theo khảo sát, React là framework được sử dụng nhiều nhất trong các dự án web hiện đại.
+
+**Component-based architecture:** React sử dụng kiến trúc component-based, cho phép tái sử dụng code và dễ dàng maintain. Dự án có 49 components có thể tái sử dụng, giúp giảm thời gian phát triển và bảo trì.
+
+**Virtual DOM:** React sử dụng Virtual DOM giúp cải thiện hiệu suất đáng kể bằng cách tối ưu việc re-render. Thay vì cập nhật trực tiếp DOM, React tạo bản sao ảo của DOM và chỉ cập nhật những phần thực sự thay đổi.
+
+**Hooks:** React 19 với các hooks mới như use(), useActionState, useOptimistic giúp quản lý state dễ dàng hơn, code trở nên clean và dễ hiểu hơn so với class components.
+
+**Job market:** React là kỹ năng được săn đón nhiều nhất trong ngành, phù hợp cho career development của em sau này.
+
+So với Vue, React có flexibility hơn với việc combine với nhiều libraries khác nhau. So với Angular, React nhẹ hơn và dễ học hơn, phù hợp với dự án cá nhân như khóa luận.
+
+---
+
+## Câu 12: Firebase là gì và tại sao bạn chọn Firebase thay vì tự xây dựng backend?
+
+**Trả lời:**
+
+Firebase là Platform as a Service (PaaS) của Google, cung cấp các backend services sẵn có. Em chọn Firebase vì những lý do sau:
+
+**All-in-one platform:** Firebase cung cấp đầy đủ các services cần thiết:
+
+- Authentication cho xác thực người dùng
+- Firestore cho database NoSQL
+- Cloud Functions cho serverless logic
+- Storage cho file storage
+- Hosting cho deployment
+
+**Serverless architecture:** Không cần quản lý server, tự động scale theo nhu cầu, giảm chi phí vận hành đáng kể. Em không cần lo lắng về việc cài đặt, cấu hình hay bảo trì server.
+
+**Real-time support:** Firestore hỗ trợ real-time listeners, đặc biệt quan trọng cho các features như Inspiration feed, nơi người dùng cần thấy cập nhật ngay lập tức khi có bài đăng mới hoặc tương tác mới.
+
+**Free tier:** Firebase có free tier đủ cho development và testing, giúp em tiết kiệm chi phí trong quá trình phát triển.
+
+**Integration:** React + Firebase là combination phổ biến, có nhiều tutorials và examples, giúp em dễ dàng tìm kiếm tài liệu khi gặp vấn đề.
+
+**Development speed:** Thời gian phát triển nhanh hơn nhiều so với tự xây dựng backend từ đầu. Thay vì phải viết code cho authentication, database, API endpoints, em có thể tập trung vào logic nghiệp vụ của ứng dụng.
+
+---
+
+## Câu 13: Sự khác biệt giữa Firestore và Realtime Database của Firebase là gì? Tại sao chọn Firestore?
+
+**Trả lời:**
+
+Firestore và Realtime Database đều là NoSQL databases của Firebase, nhưng có những khác biệt quan trọng:
+
+**Về Data Model:**
+
+- **Realtime Database:** Sử dụng Tree structure, dữ liệu lồng nhau sâu, khó query
+- **Firestore:** Sử dụng Collections và documents, linh hoạt hơn, giống JSON, dễ tổ chức và mở rộng
+
+**Về Querying:**
+
+- **Realtime Database:** Query limited, phải denormalize data nhiều
+- **Firestore:** Compound queries, indexing tốt hơn, range queries, hỗ trợ query phức tạp hơn
+
+**Về Scalability:**
+
+- **Realtime Database:** Scaling manually, có giới hạn
+- **Firestore:** Auto-scaling, better performance ở scale lớn
+
+**Về Pricing:**
+
+- **Realtime Database:** Bandwidth-focused
+- **Firestore:** Operations-focused, thường rẻ hơn cho read-heavy apps
+
+Em chọn Firestore vì:
+
+- Data model phù hợp với cấu trúc dữ liệu của dự án (users, projects, posts)
+- Query capabilities tốt hơn cho features như filtering posts theo category, type
+- Scaling tốt hơn cho future growth
+- Đây là lựa chọn được Google khuyến khích cho các dự án mới
+
+---
+
+## Câu 14: Cloud Functions hoạt động như thế nào trong kiến trúc serverless?
+
+**Trả lời:**
+
+Cloud Functions là functions chạy trên cloud mà không cần quản lý server. Trong dự án này:
+
+**Các Trigger types:**
+
+- **HTTP triggers (onRequest):** Gọi từ frontend qua HTTP, thường dùng cho webhooks
+- **Callable functions (onCall):** Gọi từ Firebase SDK, tự động handle authentication
+- **Auth triggers (onUserCreate, onUserDelete):** Chạy tự động khi có user được tạo hoặc xóa
+- **Pub/Sub triggers:** Chạy khi có message trong topic, dùng cho video queue processing
+
+**19 Cloud Functions trong dự án:**
+
+- generateContent: Text/Image generation với Groq, Gemini, Pollination, Stability
+- generateVideo: Video generation với queue sử dụng Veo 3.1
+- createPaymentLink, payosWebhook: Payment flow với PayOS
+- createPost, getPosts, likePost: Inspiration CRUD operations
+- saveProject, getProjects: Project management
+- authTrigger: User initialization với 20 free credits
+- Và nhiều functions khác cho notifications, comments, follows
+
+**Ưu điểm:**
+
+- Pay-per-use: Chỉ trả tiền khi function được gọi
+- Auto-scaling: Tự động scale theo số lượng requests
+- No server management: Không cần lo lắng về server
+- Built-in auth context: Dễ dàng access thông tin user
+
+---
+
+## Câu 15: Các AI APIs được tích hợp trong dự án? So sánh chúng?
+
+**Trả lời:**
+
+Dự án tích hợp 5 AI providers:
+
+**1. Gemini API (Google)**
+
+- Models: gemini-2.0-flash, 2.5-flash, 2.5-pro
+- Use cases: Text generation, image analysis
+- Pricing: Pay-per-token
+- Pros: Multimodal, high quality, Google ecosystem
+- Cons: Expensive, rate limits
+
+**2. Groq API**
+
+- Models: llama-3.3-70b
+- Use cases: Text generation
+- Pricing: Free tier available, very fast
+- Pros: Fast inference (Groq chips), miễn phí
+- Cons: Limited models
+
+**3. Pollination API (Pollinations.ai)**
+
+- Models: Nano Banana, Nano Pro (Flux models)
+- Use cases: Image generation
+- Pricing: Free tier
+- Pros: Free, fast
+- Cons: Quality not as high as SDXL
+
+**4. Stability AI (SDXL)**
+
+- Models: SDXL 1.0
+- Use cases: High-quality image generation
+- Pricing: 4 credits per image
+- Pros: High quality
+- Cons: Chậm hơn Pollination
+
+**5. Veo API (Google)**
+
+- Models: veo-3.1-fast, veo-3.1-standard
+- Use cases: Video generation
+- Pricing: 300 credits (fast), 500 credits (standard)
+- Pros: High quality video
+- Cons: Expensive, rate limit 10/day
+
+**Fallback mechanism:** Khi một provider fail, system tự động thử provider khác để đảm bảo trải nghiệm người dùng không bị gián đoạn.
+
+---
+
+## Câu 16: Bạn xử lý rate limiting và quota management như thế nào?
+
+**Trả lời:**
+
+Rate limiting và quota management được implement ở nhiều tầng:
+
+**Tầng Cloud Functions:**
+
+```typescript
+// Trong generateContent.ts
+const RATE_LIMIT = 10; // requests per minute
+const userCredits = await getUserCredits(userId);
+if (userCredits < requiredCredits) {
+  throw new HttpsError('resource-exhausted', 'Insufficient credits');
+}
+// Check rate limit
+const recentRequests = await getRecentRequests(userId, '1m');
+if (recentRequests >= RATE_LIMIT) {
+  throw new HttpsError('resource-exhausted', 'Rate limit exceeded');
+}
+```
+
+**Credit-based quota:**
+
+- User mới được tặng 20 credits miễn phí
+- Text generation: 1-2 credits tùy model
+- Image SDXL: 4 credits
+- Image Gemini: 8 credits
+- Video Veo Fast: 300 credits
+- Video Veo Standard: 500 credits
+
+**Veo API specific limit:** 10 videos/day do quota giới hạn của Google Veo API
+
+**Giám sát:** Cloud Functions logs và Firebase console để theo dõi usage, cảnh báo khi approaching limits
+
+---
+
+## Câu 17: Kiến trúc Serverless có những ưu điểm và nhược điểm gì? Bạn đã xử lý nhược điểm như thế nào?
+
+**Trả lời:**
+
+**Ưu điểm của Serverless:**
+
+- **Không cần quản lý server:** Em không phải lo lắng về server maintenance, updates, security patches
+- **Auto-scaling:** Hệ thống tự động scale theo nhu cầu, handle được cả khi có traffic spike
+- **Pay-per-use:** Chỉ trả tiền cho những gì sử dụng, không tốn chi phí khi không có traffic
+- **Development nhanh hơn:** Tập trung vào code thay vì infrastructure
+- **High availability:** Firebase đảm bảo uptime theo SLA
+
+**Nhược điểm và cách xử lý:**
+
+*Cold start:* Function chậm lần đầu sau idle time (khoảng 2 giây)
+
+- **Giải pháp:** Warm-up requests periodics, set min instances (tốn phí)
+- **Trong UI:** Show loading states, progress indicators để user biết đang xử lý
+- **Tối ưu:** Giữ functions "warm" bằng cách gọi periodic health checks
+
+*Vendor lock-in:* Phụ thuộc vào Firebase
+
+- **Giải pháp:** Abstract services qua service layer, code có thể adapt sang provider khác nếu cần
+
+*Debugging khó hơn:* Distributed systems
+
+- **Giải pháp:** Detailed logging, Firebase Stackdriver integration, error tracking
+
+---
+
+## Câu 18: Tailwind CSS có những ưu điểm gì so với CSS truyền thống?
+
+**Trả lời:**
+
+Tailwind CSS là utility-first CSS framework với những ưu điểm:
+
+**Rapid development:** Sử dụng trực tiếp classes như `p-4`, `text-center`, `bg-blue-500` thay vì phải viết custom CSS. Điều này giúp em phát triển UI nhanh chóng hơn nhiều.
+
+**Small bundle size:** Tailwind sử dụng PurgeCSS để loại bỏ unused classes trong production build. Kết quả là file CSS rất nhỏ, chỉ chứa những classes thực sự được sử dụng.
+
+**Consistency:** Design system thống nhất với pre-defined spacing, colors, typography. Tất cả components đều sử dụng cùng một scale, đảm bảo giao diện nhất quán.
+
+**Responsive design:** Dễ dàng với prefixes như `md:`, `lg:`:
+
+```html
+<div class="w-full md:w-1/2 lg:w-1/3">
+  <!-- Responsive -->
+</div>
+```
+
+**Dark mode:** Built-in support với `dark:` prefix, cho phép implement dark mode dễ dàng:
+
+```html
+<div class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+  Content
+</div>
+```
+
+**Customization:** Có thể extend trong tailwind.config.js để thêm custom colors, fonts, spacing.
+
+---
+
+## Câu 19: Bạn quản lý state trong React như thế nào?
+
+**Trả lời:**
+
+Em sử dụng combination của các approaches:
+
+**React Context cho global state:**
+
+- AuthContext: User authentication state, thông tin người dùng đang login
+- LanguageContext: i18n state (vi/en), ngôn ngữ hiện tại
+- ThemeContext: Dark/light mode, giao diện
+
+```javascript
+const AuthContext = createContext(null);
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Auth logic: login, logout, register...
+  
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+```
+
+**Local state với useState:** Cho component-level state như form inputs, modal visibility, toggle states
+
+**Firebase real-time listeners:** Cho data that changes frequently như project list, posts feed:
+
+```javascript
+useEffect(() => {
+  const unsubscribe = onSnapshot(
+    query(collection(db, 'projects'), where('userId', '==', user.uid)),
+    (snapshot) => setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+  );
+  return () => unsubscribe();
+}, [user]);
+```
+
+---
+
+## Câu 20: Vite là gì và tại sao sử dụng Vite thay vì Create React App?
+
+**Trả lời:**
+
+Vite là build tool thế hệ mới cho frontend development, được tạo bởi Evan You (creator of Vue). Em chọn Vite vì:
+
+**Speed:** Vite sử dụng Native ES Modules, cho phép:
+
+- Dev server khởi động gần như instant (không cần bundle toàn bộ app như CRA)
+- Hot Module Replacement (HMR) cực nhanh, chỉ reload phần thay đổi thay vì reload cả trang
+
+**Build optimization:** Sử dụng Rollup cho production builds:
+
+- Code splitting tự động
+- Tree shaking để loại bỏ dead code
+- Asset optimization cho images, fonts
+
+**Configuration:** Đơn giản hơn CRA, chỉ cần vite.config.js thay vì nhiều config files phức tạp
+
+**Comparison:**
+
+- **CRA:** Bundle toàn bộ app khi khởi động → chậm với app lớn, đặc biệt khi development
+- **Vite:** Serve ES modules trực tiếp → cực nhanh, đặc biệt với large apps
+
+Với dự án này, Vite giúp em tiết kiệm đáng kể thời gian trong quá trình development.
+
+---
+
+# PHẦN 3: CƠ SỞ DỮ LIỆU (10 câu hỏi)
+
+## Câu 21: Thiết kế database Firestore của bạn? Các collections và relationships?
+
+**Trả lời:**
+
+Firestore database design với các collections chính:
+
+**1. users** (1 document per user)
+
+```javascript
+{
+  uid: string,              // Primary key từ Firebase Auth
+  email: string,
+  displayName: string,
+  photoURL: string,
+  credits: number,          // Số dư credit hiện tại
+  plan: string,            // 'free', 'pro', 'premium', 'agency'
+  role: string,            // 'user', 'admin'
+  language: string,        // 'vi', 'en'
+  provider: string,        // 'google', 'facebook', 'email'
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+```
+
+**2. projects** (1 document per project)
+
+```javascript
+{
+  id: string,
+  userId: string,          // Foreign key to users
+  title: string,
+  type: string,            // 'text', 'image', 'video'
+  messages: array,         // Chat history [{role, content, timestamp}]
+  content: object,         // {text, imageUrl, videoUrl}
+  metadata: object,        // {model, prompt, parameters}
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+```
+
+**3. posts** (Inspiration posts)
+
+```javascript
+{
+  id: string,
+  authorId: string,
+  authorName: string,
+  type: string,            // 'image', 'video', 'text'
+  title: string,
+  prompt: string,
+  mediaUrl: string,
+  category: string,
+  tags: array,
+  likes: number,
+  views: number,
+  saves: number,
+  isPublic: boolean,
+  createdAt: timestamp
+}
+```
+
+**4. transactions** (Payment history)
+
+```javascript
+{
+  id: string,
+  userId: string,
+  amount: number,          // VND
+  credits: number,         // Credits purchased
+  status: string,          // 'pending', 'success', 'failed'
+  paymentMethod: string,
+  orderCode: string,
+  createdAt: timestamp
+}
+```
+
+**Relationships:**
+
+- users → projects: One-to-Many (một user có nhiều projects)
+- users → posts: One-to-Many (một user có nhiều posts)
+- users → transactions: One-to-Many (một user có nhiều giao dịch)
+
+---
+
+## Câu 22: NoSQL vs SQL? Tại sao chọn NoSQL (Firestore)?
+
+**Trả lời:**
+
+**SQL (Relational):**
+
+- Tables với fixed schemas
+- Relationships via JOINs
+- ACID transactions
+- Good cho structured data và complex queries
+
+**NoSQL (Document):**
+
+- Flexible schemas (JSON-like documents)
+- Denormalized data
+- Horizontal scaling
+
+Em chọn NoSQL/Firestore vì:
+
+1. **Flexible schema:** Projects có thể có different structures (text vs image vs video). NoSQL cho phép store tất cả trong same collection với optional fields - text project thì có field content.text, image project thì có field content.imageUrl.
+
+2. **Real-time:** Firestore có built-in real-time listeners, perfect cho Inspiration feed nơi user cần thấy cập nhật ngay lập tức.
+
+3. **Serverless:** Firestore + Firebase = perfect match, auto-scale together không cần configuration.
+
+4. **JSON-like:** JavaScript/React sử dụng JSON natively, no ORM needed, giảm complexity.
+
+5. **Query patterns:** App queries are simple (get by userId, get by category), don't need complex JOINs.
+
+6. **Speed:** Read/write performance rất nhanh cho simple queries.
+
+7. **Cost:** Pay-per-read/write, suitable cho projects with varying load như dự án này.
+
+---
+
+## Câu 23: Bạn xử lý data denormalization trong Firestore như thế nào?
+
+**Trả lời:**
+
+Trong SQL, bạn JOIN tables. Trong NoSQL, bạn denormalize - store duplicate data để avoid joins và improve read performance.
+
+**Ví dụ: posts collection**
+
+Thay vì JOIN với users collection để lấy authorName mỗi khi hiển thị post, em store trực tiếp trong post document:
+
+```javascript
+// Store authorName directly trong post document
+{
+  authorId: 'user123',              // Reference
+  authorName: 'Nguyễn Văn A',       // Denormalized
+  authorPhotoURL: 'https://...',    // Denormalized
+  // ... other fields
+}
+```
+
+**Khi cần cập nhật denormalized data:**
+
+```javascript
+// Cloud Function khi user update profile
+exports.onUserUpdate = functions.firestore
+  .document('users/{userId}')
+  .onUpdate(async (change, context) => {
+    const newData = change.after.data();
+    const userId = context.params.userId;
+    
+    // Update all posts by this user
+    const posts = await db.collection('posts')
+      .where('authorId', '==', userId)
+      .get();
+    
+    const batch = db.batch();
+    posts.forEach(doc => {
+      batch.update(doc.ref, {
+        authorName: newData.displayName,
+        authorPhotoURL: newData.photoURL
+      });
+    });
+    
+    await batch.commit();
+  });
+```
+
+**Subcollections vs root collections:**
+
+- **Subcollections** (posts/{postId}/comments): Use when you always need data with parent - comments luôn cần postId
+- **Root collections**: Use when you need to query independently - posts có thể query riêng biệt
+
+---
+
+## Câu 24: Firestore indexing và querying?
+
+**Trả lời:**
+
+**Indexing in Firestore:**
+
+**Automatic indexes:** Firestore automatically creates indexes cho:
+
+- Single field queries
+- Equality (==) queries
+
+**Composite indexes:** Cần tạo thủ công cho:
+
+- Range queries (> < >= <=) combined with equality
+- Order by with where
+- Multiple where clauses
+
+**Query patterns trong dự án:**
+
+```javascript
+// 1. Get user's projects
+const projects = await db.collection('projects')
+  .where('userId', '==', userId)
+  .orderBy('updatedAt', 'desc')
+  .get();
+
+// 2. Get posts by category with pagination
+const posts = await db.collection('posts')
+  .where('type', '==', 'image')
+  .where('isPublic', '==', true)
+  .orderBy('createdAt', 'desc')
+  .startAfter(lastDoc)
+  .limit(20)
+  .get();
+
+// 3. Complex query (cần composite index)
+const results = await db.collection('posts')
+  .where('category', '==', 'marketing')
+  .where('likes', '>=', 10)
+  .orderBy('likes', 'desc')
+  .get();
+```
+
+**Pagination:** Em sử dụng cursor-based pagination với startAfter() để load dữ liệu theo từng trang, tránh load quá nhiều data cùng lúc.
+
+---
+
+## Câu 25: Bạn xử lý migrations trong Firestore như thế nào?
+
+**Trả lời:**
+
+Firestore migrations strategies:
+
+**1. Client-side migration** (for gradual changes):
+
+```javascript
+// Trong app, check version và migrate
+async function migrateUserData(user) {
+  const userDoc = await db.collection('users').doc(user.uid).get();
+  const data = userDoc.data();
+  
+  if (!data.version || data.version < 2) {
+    // Add new fields
+    await userDoc.ref.update({
+      version: 2,
+      preferences: { theme: 'light', language: 'vi' }
+    });
+  }
+}
+```
+
+**2. Cloud Function migration** (for data-wide changes):
+
+```javascript
+// Chạy một lần qua Cloud Function
+exports.migrateProjectsToNewFormat = functions.https.onRequest(async (req, res) => {
+  const snapshot = await db.collection('projects').get();
+  
+  const batch = db.batch();
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    if (!data.metadata) {
+      batch.update(doc.ref, {
+        metadata: {
+          model: 'default',
+          prompt: ''
+        }
+      });
+    }
+  });
+  
+  await batch.commit();
+  res.send('Migration complete');
+});
+```
+
+**Best practices:**
+
+- Always backup trước khi migrate
+- Test on small subset trước
+- Add version field để track migrations
+- Run migrations incrementally cho large datasets
+
+---
+
+## Câu 26: Firestore transactions được sử dụng khi nào? Ví dụ?
+
+**Trả lời:**
+
+Firestore Transactions được sử dụng khi cần read và write multiple documents atomically - tất cả hoặc không có gì.
+
+**Ví dụ: Deduct credits when generating content**
+
+```javascript
+const db = admin.firestore();
+async function generateContentWithCredits(userId, cost) {
+  return await db.runTransaction(async (transaction) => {
+    // 1. Get user document
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await transaction.get(userRef);
+    
+    if (!userDoc.exists) {
+      throw new Error('User not found');
+    }
+    
+    const userData = userDoc.data();
+    const currentCredits = userData.credits || 0;
+    
+    // 2. Check balance
+    if (currentCredits < cost) {
+      throw new Error('Insufficient credits');
+    }
+    
+    // 3. Deduct credits
+    transaction.update(userRef, {
+      credits: currentCredits - cost
+    });
+    
+    // 4. Return new balance
+    return currentCredits - cost;
+  });
+}
+```
+
+**Another example: Like a post (atomic increment)**
+
+```javascript
+// Atomic increment likes count
+const postRef = db.collection('posts').doc(postId);
+await postRef.update({
+  likes: admin.firestore.FieldValue.increment(1)
+});
+```
+
+---
+
+## Câu 27: Firebase Storage được sử dụng cho mục đích gì?
+
+**Trả lời:**
+
+Firebase Storage được sử dụng cho:
+
+**Use cases:**
+
+- Store AI-generated images
+- Store AI-generated videos
+- Store user uploaded files (avatars, attachments)
+
+**Folder structure:**
+
+```
+content-creator-ai.appspot.com/
+├── avatars/
+│   └── {userId}/
+│       └── avatar.jpg
+│
+├── uploads/
+│   └── {userId}/
+│       └── {timestamp}_{filename}
+│
+├── generated/
+│   └── {userId}/
+│       └── {projectId}/
+│           └── {timestamp}.{extension}
+│
+└── inspiration/
+    └── {postId}/
+        └── media.{extension}
+```
+
+**Security rules:**
+
+```javascript
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // User avatars: chỉ user đó upload
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                   request.auth.uid == userId;
+    }
+    
+    // Generated content: chỉ owner access
+    match /generated/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+                   request.auth.uid == userId;
+    }
+    
+    // Inspiration: public read, authenticated write
+    match /inspiration/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
+```
+
+---
+
+## Câu 28: Bạn xử lý caching trong ứng dụng như thế nào?
+
+**Trả lời:**
+
+Em sử dụng nhiều caching strategies:
+
+**1. Firestore caching:**
+
+```javascript
+const db = initializeFirestore(firebaseApp, {
+  cacheSizeBytes: CACHE_SIZE_UNLIMITED
+});
+```
+
+**2. React state caching:**
+
+```javascript
+const [promptCache, setPromptCache] = useState({});
+const generateWithCache = async (prompt) => {
+  if (promptCache[prompt]) {
+    return promptCache[prompt];
+  }
+  const result = await callAI(prompt);
+  setPromptCache(prev => ({ ...prev, [prompt]: result }));
+  return result;
+};
+```
+
+**3. Image caching:**
+Browser tự động cache images, CDN caching via Vercel/Firebase Hosting
+
+**4. CDN for static assets:**
+Vercel Edge Network cache static files với Cache-Control headers:
+
+```javascript
+// Trong vite.config.js
+export default defineConfig({
+  headers: {
+    'Cache-Control': 'public, max-age=31536000, immutable'
+  }
+});
+```
+
+**Future improvements:**
+
+- React Query/TanStack Query cho server state management
+- Service workers cho offline support
+- Redis cache cho frequently accessed data
+
+---
+
+## Câu 29: Database backup và disaster recovery?
+
+**Trả lời:**
+
+**Backup strategies:**
+
+**Firebase automatic backups:**
+
+- Firebase có scheduled backups (for paid plans)
+- Export data to JSON/Google Cloud Storage for custom backups
+
+**Manual backup script:**
+
+```javascript
+const { Firestore } = require('@google-cloud/firestore');
+const firestore = new Firestore();
+async function backupDatabase() {
+  const collections = ['users', 'projects', 'posts', 'transactions'];
+  
+  for (const collection of collections) {
+    const snapshot = await firestore.collection(collection).get();
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    // Save to Google Cloud Storage
+    await saveToGCS(`backups/${collection}_${Date.now()}.json`, data);
+  }
+}
+```
+
+**Export/Import commands:**
+
+```bash
+# Firestore export
+firebase firestore:export gs://your-bucket/backups
+
+# Import back
+firebase firestore:import gs://your-bucket/backups
+```
+
+**Disaster recovery plan:**
+
+1. Regular backups (daily/weekly)
+2. Document recovery procedures
+3. Test restore process periodically
+4. Multiple backup locations
+
+---
+
+## Câu 30: Data retention và cleanup strategy?
+
+**Trả lời:**
+
+**Data retention policies:**
+
+**User data:** Keep indefinitely while account is active, delete on user request or account deletion
+
+**Generated content:** Keep until user deletes, optional auto-cleanup for old unused content
+
+**Transactions:** Keep for 7 years (accounting requirements in Vietnam)
+
+**Cleanup old projects:**
+
+```javascript
+// Cloud Function để cleanup old projects
+exports.cleanupOldProjects = functions.pubsub
+  .schedule('every Sunday')
+  .onRun(async (context) => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const oldProjects = await db.collection('projects')
+      .where('updatedAt', '<', thirtyDaysAgo)
+      .where('autoCleanup', '==', true)
+      .get();
+    
+    const batch = db.batch();
+    oldProjects.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+  });
+```
+
+**Logs:** Firebase auto-cleanup after 30-90 days
+
+**Storage cleanup:** Delete files when associated content is deleted:
+
+```javascript
+async function deleteProjectFiles(projectId, userId) {
+  const files = await storage.bucket().getFiles({
+    prefix: `generated/${userId}/${projectId}`
+  });
+  
+  await Promise.all(files.map(f => f.delete()));
+}
+```
+
+---
+
+# PHẦN 4: KIỂM THỬ PHẦN MỀM (20 câu hỏi)
+
+## Câu 31: Chiến lược kiểm thử tổng thể của dự án? Bạn đã test những gì?
+
+**Trả lời:**
+
+Chiến lược kiểm thử của dự án bao gồm nhiều tầng:
+
+**1. Manual Testing (đã thực hiện):**
+
+- Kiểm thử tất cả user flows từ đăng nhập đến tạo content
+- Test trên nhiều browsers (Chrome, Firefox, Safari, Edge)
+- Test responsive trên mobile, tablet, desktop
+- Test các edge cases và error scenarios
+- Test với nhiều tài khoản user khác nhau
+
+**2. Unit Testing (chưa implement đầy đủ - đây là hạn chế cần cải thiện):**
+
+- Nên test các Cloud Functions
+- Test utility functions
+- Test React components với React Testing Library
+
+**3. Integration Testing:**
+
+- Test API integrations với AI providers
+- Test Firebase connections
+- Test Payment flow với PayOS sandbox
+
+**4. Performance Testing:**
+
+- Lighthouse tests cho frontend
+- API response time measurements
+
+**5. Security Testing:**
+
+- Review Firestore security rules
+- Test authentication flows
+- Validate input data
+
+**Current status:** Dự án hiện tại thiên về manual testing và smoke tests. Unit tests cho Cloud Functions và React components chưa được viết đầy đủ do thời gian hạn chế của khóa luận. Đây là điểm cần cải thiện trong tương lai.
+
+---
+
+## Câu 32: Bạn có biết các loại kiểm thử phần mềm không? Phân biệt Unit Test, Integration Test, E2E Test?
+
+**Trả lời:**
+
+Có, em biết ba loại kiểm thử chính:
+
+**1. Unit Test (Kiểm thử đơn vị):**
+
+- Test từng function/method riêng lẻ
+- Isolate khỏi dependencies (mock)
+- Fast, cheap, reliable
+- Focus vào logic nhỏ nhất
+
+```javascript
+test('calculateDiscount returns correct value', () => {
+  expect(calculateDiscount(100, 20)).toBe(80);
+  expect(calculateDiscount(50, 10)).toBe(45);
+});
+```
+
+**2. Integration Test (Kiểm thử tích hợp):**
+
+- Test how multiple components work together
+- Real dependencies (database, API)
+- More expensive, slower
+- Focus vào interaction giữa các modules
+
+```javascript
+test('generateContent saves to Firestore', async () => {
+  const result = await generateContent({ prompt: 'test', type: 'text' });
+  const savedDoc = await db.collection('projects').doc(result.id).get();
+  expect(savedDoc.exists).toBe(true);
+});
+```
+
+**3. End-to-End Test (E2E):**
+
+- Test entire application flow
+- Real browser, real interactions
+- Slowest, most expensive
+- Focus vào user journeys
+
+```javascript
+test('user can generate content and see result', async () => {
+  await page.goto('/login');
+  await page.fill('#email', 'test@example.com');
+  await page.fill('#password', 'password');
+  await page.click('button[type="submit"]');
+  await page.waitForURL('/dashboard');
+  // ... tiếp tục test
+});
+```
+
+---
+
+## Câu 33: Bạn có sử dụng Test-Driven Development (TDD) không? Ưu nhược điểm của TDD?
+
+**Trả lời:**
+
+Em không áp dụng TDD một cách nghiêm ngặt trong dự án này. Thay vào đó, em sử dụng approach "Test Last" - viết code trước, sau đó test để verify.
+
+**Tuy nhiên, nếu áp dụng TDD, workflow sẽ là:**
+
+1. **Red:** Viết test trước, thấy fail
+2. **Green:** Viết code tối thiểu để pass test
+3. **Refactor:** Cải thiện code
+
+**Ví dụ TDD cho credit deduction:**
+
+```javascript
+// Step 1: Red - Viết test trước
+describe('deductCredits', () => {
+  test('should deduct credits when user has enough', async () => {
+    const user = { id: 'user1', credits: 100 };
+    const result = await deductCredits(user.id, 10);
+    expect(result).toBe(90);
+  });
+  
+  test('should throw when insufficient credits', async () => {
+    const user = { id: 'user1', credits: 5 };
+    await expect(deductCredits(user.id, 10))
+      .rejects.toThrow('Insufficient credits');
+  });
+});
+```
+
+**Ưu điểm của TDD:**
+
+- Code được thiết kế tốt hơn (testable)
+- Regression prevention
+- Better documentation
+- Confidence to refactor
+- Giảm bug từ đầu
+
+**Nhược điểm:**
+
+- Chậm hơn ban đầu
+- Learning curve
+- Không phù hợp với exploratory work
+- Over-engineering nếu áp dụng quá mức
+- Không luôn feasible trong deadline constraints
+
+---
+
+## Câu 34: Jest là gì? Bạn sẽ viết Unit Test cho Cloud Functions như thế nào?
+
+**Trả lời:**
+
+Jest là testing framework phổ biến nhất cho JavaScript/TypeScript, được Facebook phát triển và sử dụng rộng rãi trong cộng đồng React.
+
+**Installation cho Cloud Functions:**
+
+```bash
+cd functions
+npm install --save-dev jest @types/jest ts-jest firebase-functions-test
+```
+
+**Jest config (jest.config.js):**
+
+```javascript
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  testMatch: ['**/*.test.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
+};
+```
+
+**Ví dụ Unit Test cho generateContent function:**
+
+```typescript
+// functions/src/__tests__/generateContent.test.ts
+import { generateContent } from '../generateContent';
+import * as admin from 'firebase-admin';
+
+// Mock Firebase
+jest.mock('firebase-admin', () => ({
+  firestore: jest.fn(() => ({
+    collection: jest.fn(() => ({
+      doc: jest.fn(() => ({
+        get: jest.fn(() => Promise.resolve({
+          exists: true,
+          data: () => ({ credits: 100, userId: 'user1' })
+        })),
+        update: jest.fn()
+      })),
+      add: jest.fn()
+    }))
+  }))
+}));
+
+describe('generateContent', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+  
+  test('should reject when prompt is empty', async () => {
+    const context = { auth: { uid: 'user1' } };
+    
+    await expect(
+      generateContent({ prompt: '', type: 'text' }, context)
+    ).rejects.toThrow('Prompt không được để trống');
+  });
+  
+  test('should reject when user has insufficient credits', async () => {
+    const context = { auth: { uid: 'user1' } };
+    
+    await expect(
+      generateContent({ prompt: 'test', type: 'image' }, context)
+    ).rejects.toThrow('Insufficient credits');
+  });
+  
+  test('should generate content when valid', async () => {
+    const context = { auth: { uid: 'user1' } };
+    
+    const result = await generateContent({ 
+      prompt: 'test', 
+      type: 'text',
+      model: 'groq' 
+    }, context);
+    
+    expect(result.content).toBeDefined();
+  });
+});
+```
+
+**Running tests:**
+
+```bash
+npm test
+# or
+npm test -- --coverage
+```
+
+---
+
+## Câu 35: Bạn sẽ test Cloud Functions như thế với firebase-functions-test?
+
+**Trả lời:**
+
+firebase-functions-test cho phép test Cloud Functions locally mà không cần deploy.
+
+**Setup:**
+
+```javascript
+// functions/jest.setup.js
+const test = require('firebase-functions-test')();
+test.mockConfig({
+  gemini_api_key: 'test-key',
+  groq_api_key: 'test-key'
+});
+afterAll(() => {
+  test.cleanup();
+});
+```
+
+**Testing HTTP functions:**
+
+```javascript
+// functions/src/__tests__/myHttpFunction.test.ts
+const myFunctions = require('../index');
+const test = require('firebase-functions-test')();
+
+describe('myHttpFunction', () => {
+  test('should respond with hello', async () => {
+    // Wrap function
+    const wrapped = test.wrap(myFunctions.myHttpFunction);
+    
+    // Call với request params
+    const req = { query: { name: 'World' } };
+    const result = await wrapped(req);
+    
+    expect(result).toEqual({ greeting: 'Hello World!' });
+  });
+});
+```
+
+**Testing callable functions:**
+
+```javascript
+// Mock authenticated context
+const mockContext = {
+  auth: {
+    uid: 'user123',
+    token: { email: 'test@example.com' }
+  }
+};
+const wrapped = test.wrap(myFunctions.generateContent);
+const result = await wrapped({ prompt: 'test' }, mockContext);
+```
+
+**Testing Firestore triggers:**
+
+```javascript
+const db = test.firestore.makeDocumentSnapshot(
+  { title: 'New Project', userId: 'user1' },
+  'projects/project1'
+);
+const wrapped = test.wrap(myFunctions.onProjectCreate);
+await wrapped(db, { params: { projectId: 'project1' } });
+```
+
+---
+
+## Câu 36: React Testing Library vs Enzyme? Bạn sẽ test React components như thế nào?
+
+**Trả lời:**
+
+So sánh React Testing Library (RTL) và Enzyme:
+
+| Feature | RTL | Enzyme |
+|---------|-----|--------|
+| Philosophy | Test like user | Test implementation |
+| Query by | Role, text, label | Component, state |
+| Setup | Simple | Moderate |
+| Popularity | Growing fast | Stable |
+
+**Recommendation:** React Testing Library - better philosophy cho testing user-facing behavior, giúp test gần với cách user thực sự sử dụng app.
+
+**Installation:**
+
+```bash
+npm install --save-dev @testing-library/react @testing-library/jest-dom
+```
+
+**Ví dụ test Dashboard form:**
+
+```javascript
+// frontend/src/components/__tests__/GenerateForm.test.jsx
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import GenerateForm from '../GenerateForm';
+
+describe('GenerateForm', () => {
+  beforeEach(() => {
+    // Mock Firebase
+    jest.mock('../../services/firebase', () => ({
+      auth: { currentUser: { uid: 'user1' } }
+    }));
+  });
+  
+  test('should render form elements', () => {
+    render(<GenerateForm />);
+    
+    expect(screen.getByLabelText(/prompt/i)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /model/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /generate/i })).toBeInTheDocument();
+  });
+  
+  test('should show validation error when prompt is empty', async () => {
+    render(<GenerateForm />);
+    
+    fireEvent.click(screen.getByRole('button', { name: /generate/i }));
+    
+    await waitFor(() => {
+      expect(screen.getByText(/prompt không được để trống/i)).toBeInTheDocument();
+    });
+  });
+  
+  test('should call generateContent when form is submitted', async () => {
+    const mockGenerate = jest.fn().mockResolvedValue({ content: 'Test result' });
+    
+    render(<GenerateForm onGenerate={mockGenerate} />);
+    
+    fireEvent.change(screen(/prompt/i),.getByLabelText {
+      target: { value: 'Create a story' }
+    });
+    
+    fireEvent.click(screen.getByRole('button', { name: /generate/i }));
+    
+    await waitFor(() => {
+      expect(mockGenerate).toHaveBeenCalledWith({
+        prompt: 'Create a story',
+        type: 'text',
+        model: 'groq'
+      });
+    });
+  });
+});
+```
+
+**Testing best practices:**
+
+- Query by role, label, text (user-centric)
+- Avoid testing implementation details
+- Test behavior, not rendering
+- Use jest.fn() for mocks
+
+---
+
+## Câu 37: Cypress vs Playwright? Bạn sẽ chọn công cụ nào cho E2E testing?
+
+**Trả lời:**
+
+So sánh Cypress và Playwright:
+
+| Feature | Cypress | Playwright |
+|---------|---------|------------|
+| Browser support | Chrome, Firefox, Edge | All major browsers |
+| Speed | Good | Excellent |
+| Setup | Easy | Moderate |
+| Mobile testing | Limited | Good |
+| API testing | Good | Excellent |
+| Community | Large | Growing fast |
+
+**Recommendation:** Playwright cho dự án này vì:
+
+- Better multi-browser support (bao gồm Safari)
+- Stronger API testing capabilities
+- Microsoft backing (reliable)
+- Modern architecture với better handling của modern web features
+
+**Installation:**
+
+```bash
+npm init playwright@latest
+# or
+npm install --save-dev @playwright/test
+```
+
+**E2E Test Example:**
+
+```javascript
+// tests/e2e/generate-content.spec.ts
+import { test, expect } from '@playwright/test';
+
+test.describe('Content Generation', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login trước mỗi test
+    await page.goto('/login');
+    await page.fill('[data-testid="email"]', 'test@example.com');
+    await page.fill('[data-testid="password"]', 'password');
+    await page.click('[data-testid="login-button"]');
+    await expect(page).toHaveURL('/dashboard');
+  });
+  
+  test('should generate text content', async ({ page }) => {
+    // Navigate to dashboard
+    await page.click('[data-testid="new-text-button"]');
+    
+    // Enter prompt
+    await page.fill('[data-testid="prompt-input"]', 'Write a short story');
+    
+    // Select model
+    await page.selectOption('[data-testid="model-select"]', 'groq');
+    
+    // Generate
+    await page.click('[data-testid="generate-button"]');
+    
+    // Wait for result
+    await expect(page.locator('[data-testid="result"]')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('[data-testid="result"]')).toContainText(/story/i);
+  });
+  
+  test('should show error when insufficient credits', async ({ page }) => {
+    await page.fill('[data-testid="prompt-input"]', 'Test');
+    await page.click('[data-testid="generate-button"]');
+    
+    await expect(page.locator('[data-testid="error-message"]'))
+      .toContainText(/insufficient credits/i);
+  });
+});
+```
+
+**Running tests:**
+
+```bash
+npx playwright test
+npx playwright test --reporter=html
+npx playwright test --ui
+```
+
+---
+
+## Câu 38: Bạn đã thực hiện Performance Testing như thế? Sử dụng công cụ nào?
+
+**Trả lời:**
+
+Em đã thực hiện Performance Testing với các công cụ:
+
+**1. Lighthouse Testing:**
+
+```bash
+# Install Lighthouse
+npm install -g lighthouse
+# Run Lighthouse
+lighthouse https://content-creator-ai-wheat.vercel.app \
+  --output=json \
+  --output-path=./lighthouse-report.json \
+  --chrome-flags="--headless"
+```
+
+**Kết quả đạt được** (từ tài liệu khóa luận):
+
+| Metric | Mobile | Desktop | Target |
+|--------|--------|---------|--------|
+| Performance | 85 | 92 | >80 |
+| Accessibility | 90 | 92 | >85 |
+| Best Practices | 95 | 95 | >90 |
+| SEO | 90 | 90 | >85 |
+
+**2. API Response Time Testing:**
+
+```javascript
+// Test script
+const axios = require('axios');
+async function measureApiResponseTime() {
+  const endpoints = [
+    { name: 'generateContent (text)', url: '.../generateContent' },
+    { name: 'generateContent (image)', url: '.../generateContent' },
+    { name: 'getPosts', url: '.../getPosts' }
+  ];
+  
+  for (const endpoint of endpoints) {
+    const start = Date.now();
+    try {
+      const response = await axios.post(endpoint.url, { /* test data */ });
+      const end = Date.now();
+      console.log(`${endpoint.name}: ${end - start}ms`);
+    } catch (error) {
+      console.error(`${endpoint.name}: Error - ${error.message}`);
+    }
+  }
+}
+```
+
+**3. Results từ tài liệu:**
+
+| API | Avg Response | Max | Target |
+|-----|--------------|-----|--------|
+| generateContent (text) | 3.2s | 8s | <10s |
+| generateContent (image) | 12s | 25s | <30s |
+| requestVideoGeneration | 0.8s | 2s | <3s |
+| getPosts | 0.5s | 1.2s | <2s |
+
+**Tools khác:**
+
+- WebPageTest.org
+- Chrome DevTools Performance tab
+- Firebase Performance Monitoring
+
+---
+
+## Câu 39: Security Testing trong dự án? Bạn test security như thế nào?
+
+**Trả lời:**
+
+Em đã thực hiện Security Testing với nhiều tầng:
+
+**1. Authentication Testing:**
+
+```javascript
+test('should not allow access without auth', async () => {
+  // Call function without auth context
+  await expect(generateContent({ prompt: 'test' }, null))
+    .rejects.toThrow('unauthenticated');
+});
+```
+
+**2. Authorization Testing:**
+
+```javascript
+test('should not allow access other user data', async () => {
+  // Login as user1
+  const context1 = { auth: { uid: 'user1' } };
+  
+  // Try to access user2's project
+  await expect(getProject('project2', context1))
+    .rejects.toThrow('permission-denied');
+});
+```
+
+**3. Input Validation Testing:**
+
+```javascript
+test('should sanitize malicious prompt', async () => {
+  const maliciousPrompt = '<script>alert("xss")</script>';
+  
+  const result = await generateContent({ prompt: maliciousPrompt }, context);
+  
+  // Output should be escaped
+  expect(result.content).not.toContain('<script>');
+});
+```
+
+**4. Firestore Rules Testing:**
+
+```javascript
+const { assertFails, assertSucceeds } = require('@firebase/rules-unit-testing');
+
+describe('Firestore Security Rules', () => {
+  test('users can read own data', async () => {
+    const db = createFirestoreEmulator({ auth: { uid: 'user1' } });
+    const doc = db.collection('users').doc('user1');
+    await expect(assertSucceeds(doc.get()));
+  });
+  
+  test('users cannot read other user data', async () => {
+    const db = createFirestoreEmulator({ auth: { uid: 'user1' } });
+    const doc = db.collection('users').doc('user2');
+    await expect(assertFails(doc.get()));
+  });
+});
+```
+
+**5. Additional security measures:**
+
+- Review Firestore security rules
+- OWASP ZAP cho vulnerability scanning
+- Burp Suite cho penetration testing
+- Rate limiting ở tầng application
+
+---
+
+## Câu 40: Code Coverage là gì? Mức coverage bao nhiêu là đủ?
+
+**Trả lời:**
+
+**Code Coverage** là tỷ lệ code được test, được đo lường bởi nhiều tiêu chí khác nhau.
+
+**Types of coverage:**
+
+- **Line coverage:** Lines of code được executed
+- **Branch coverage:** Branches (if/else) được executed
+- **Function coverage:** Functions được called
+- **Statement coverage:** Statements được executed
+
+**Coverage thresholds:**
+
+- **0%:** No tests
+- **50%:** Poor
+- **70%:** Good (industry standard minimum)
+- **80%:** Very good
+- **90%:** Excellent
+- **100%:** Ideal but often impractical
+
+**For this project, recommended targets:**
+
+- **Cloud Functions:** 80% (critical business logic)
+- **React Components:** 70% (UI logic)
+- **Utils/Helpers:** 90% (pure functions)
+
+**Running coverage:**
+
+```bash
+# Jest coverage
+npm test -- --coverage
+
+# Output
+Name                   | Stmts | Branches | Functions | Lines
+----------------------------------------------------------------------
+generateContent.ts     | 100   | 100      | 100       | 100
+projects.ts           | 85    | 80       | 90        | 88
+----------------------------------------------------------------------
+TOTAL                  | 90    | 85       | 85        | 87
+```
+
+**Important:** Coverage ≠ Quality. Focus on testing critical paths and edge cases, không chỉ đơn thuần là đạt percentage cao. Một test tốt worth more than 10 shallow tests.
+
+---
+
+## Câu 41: Bạn có sử dụng Behavior-Driven Development (BDD) không? Giải thích Gherkin syntax?
+
+**Trả lời:**
+
+Em chưa sử dụng BDD trong dự án này, nhưng biết về nó:
+
+**Behavior-Driven Development (BDD)** là approach viết tests bằng ngôn ngữ tự nhiên, dễ hiểu cho cả developers và stakeholders (kể cả người không biết code).
+
+**Gherkin Syntax** (ngôn ngữ của Cucumber):
+
+```gherkin
+Feature: User generates content
+  As a content creator
+  I want to generate AI content
+  So that I can create social media posts
+  
+  Scenario: Generate text content successfully
+    Given I am logged in
+    And I have 50 credits
+    When I enter "Write a caption for beach photo"
+    And I select "Groq" model
+    And I click Generate button
+    Then I should see the generated text
+    And my credits should be 49
+    
+  Scenario: Generate content with insufficient credits
+    Given I am logged in
+    And I have 0 credits
+    When I enter "Write a caption"
+    And I click Generate button
+    Then I should see error message "Insufficient credits"
+    And my credits should remain 0
+    
+  Scenario: Validate empty prompt
+    Given I am logged in
+    When I click Generate button without entering prompt
+    Then I should see validation error "Prompt is required"
+```
+
+**Tools cho BDD:**
+
+- Cucumber (JavaScript)
+- Jest BDD generator
+
+**Benefits của BDD:**
+
+- Readable bởi non-developers (PM, BA có thể đọc hiểu)
+- Living documentation - như là requirement documents
+- Focus on behavior, not implementation
+- Better communication trong team
+
+---
+
+## Câu 42: Test các AI-generated outputs như thế nào? Đây có phải thách thức đặc biệt không?
+
+**Trả lời:**
+
+Đây là thách thức đặc biệt vì AI outputs are non-deterministic - cùng một prompt có thể cho ra kết quả khác nhau.
+
+**Challenges:**
+
+- AI outputs are non-deterministic
+- "Correctness" is subjective
+- Hard to define expected output
+- Không thể assert exact content
+
+**Testing strategies:**
+
+**1. Response Structure Validation:**
+
+```javascript
+test('should return valid response structure', async () => {
+  const result = await generateContent({ 
+    prompt: 'Write a story', 
+    type: 'text' 
+  });
+  
+  // Check structure, not content
+  expect(result).toHaveProperty('content');
+  expect(result).toHaveProperty('model');
+  expect(result).toHaveProperty('timestamp');
+  expect(typeof result.content).toBe('string');
+  expect(result.content.length).toBeGreaterThan(0);
+});
+```
+
+**2. Response Length/Format:**
+
+```javascript
+test('should return reasonable length response', async () => {
+  const result = await generateContent({ 
+    prompt: 'Hello', 
+    type: 'text' 
+  });
+  
+  // Check reasonable length
+  expect(result.content.length).toBeGreaterThan(10);
+  expect(result.content.length).toBeLessThan(10000);
+});
+```
+
+**3. No Error in Response:**
+
+```javascript
+test('should not contain error messages in output', async () => {
+  const result = await generateContent({ 
+    prompt: 'Test', 
+    type: 'text' 
+  });
+  
+  // Should not contain error indicators
+  expect(result.content.toLowerCase()).not.toContain('error');
+  expect(result.content.toLowerCase()).not.toContain('failed');
+});
+```
+
+**4. Prompt Matching (Fuzzy):**
+
+```javascript
+test('should respond to prompt', async () => {
+  const result = await generateContent({ 
+    prompt: 'Say hello in Vietnamese', 
+    type: 'text' 
+  });
+  
+  // Check if response contains Vietnamese greeting
+  const vietnameseGreetings = ['xin chào', 'chào bạn', 'hello'];
+  const hasGreeting = vietnameseGreetings.some(g => 
+    result.content.toLowerCase().includes(g.toLowerCase())
+  );
+  expect(hasGreeting).toBe(true);
+});
+```
+
+**5. Image Generation Tests:**
+
+```javascript
+test('should return valid image URL', async () => {
+  const result = await generateContent({ 
+    prompt: 'A cat', 
+    type: 'image' 
+  });
+  
+  expect(result.imageUrl).toMatch(/^https?:\/\/.+\.(jpg|png|webp)$/);
+  
+  // Verify URL is accessible
+  const response = await fetch(result.imageUrl);
+  expect(response.ok).toBe(true);
+});
+```
+
+---
+
+## Câu 43: Snapshot Testing là gì? Khi nào sử dụng?
+
+**Trả lời:**
+
+**Snapshot Testing** là phương pháp lưu snapshot của output, sau đó so sánh với các outputs trong tương lai để detect changes.
+
+**Jest Snapshot:**
+
+```javascript
+// Component snapshot
+import { render } from '@testing-library/react';
+import DashboardHeader from '../DashboardHeader';
+
+test('DashboardHeader matches snapshot', () => {
+  const { container } = render(<DashboardHeader user={{ name: 'John' }} />);
+  expect(container).toMatchSnapshot();
+});
+```
+
+**Generated snapshot file:**
+
+```javascript
+// __snapshots__/DashboardHeader.test.js.snap
+exports[`DashboardHeader matches snapshot 1`] = `
+<div>
+  <header>
+    <h1>Welcome, John!</h1>
+    <nav>...</nav>
+  </header>
+</div>
+`;
+```
+
+**When to use:**
+
+- UI components (React components)
+- JSON responses from APIs
+- Error messages
+- Configuration files
+
+**When NOT to use:**
+
+- Dynamic content (timestamps, random data)
+- AI-generated content (non-deterministic)
+- Large data structures
+
+**Updating snapshots:**
+
+```bash
+npm test -- --updateSnapshot
+# or
+npm test -- -u
+```
+
+**Best practices:**
+
+- Commit snapshots
+- Review snapshot changes carefully
+- Keep snapshots small and focused
+
+---
+
+## Câu 44: Mocking trong testing? Sử dụng như thế?
+
+**Trả lời:**
+
+Mocking trong testing là thay thế các dependencies thực bằng implementations giả để kiểm soát test environment.
+
+**Jest mocking:**
+
+```javascript
+// Mock a function
+const myFunction = jest.fn();
+myFunction.mockReturnValue('mocked value');
+expect(myFunction()).toBe('mocked value');
+
+// Mock with implementation
+const myFunction = jest.fn((x) => x * 2);
+expect(myFunction(5)).toBe(10);
+
+// Mock modules
+jest.mock('firebase/firestore', () => ({
+  getFirestore: jest.fn(),
+  collection: jest.fn(),
+  doc: jest.fn()
+}));
+
+// Mock API calls
+jest.mock('axios');
+axios.post.mockResolvedValue({ data: { result: 'mocked' } });
+
+// Spy on methods
+const obj = { method: jest.fn() };
+obj.method.mockReturnValue('value');
+obj.method('arg');
+expect(obj.method).toHaveBeenCalledWith('arg');
+```
+
+**Example: Mock AI API:**
+
+```javascript
+jest.mock('../utils/groq', () => ({
+  generateText: jest.fn().mockResolvedValue({
+    content: 'Mocked AI response',
+    model: 'llama-3.3-70b'
+  })
+}));
+
+jest.mock('../utils/gemini', () => ({
+  generateText: jest.fn().mockResolvedValue({
+    content: 'Mocked Gemini response',
+    model: 'gemini-2.0-flash'
+  })
+}));
+
+describe('generateContent', () => {
+  test('should use Groq for free tier', async () => {
+    const result = await generateContent({ 
+      prompt: 'test', 
+      model: 'groq',
+      userPlan: 'free'
+    });
+    
+    expect(result.content).toBe('Mocked AI response');
+    expect(result.model).toBe('llama-3.3-70b');
+  });
+});
+```
+
+---
+
+## Câu 45: Continuous Integration (CI) cho testing? GitHub Actions?
+
+**Trả lời:**
+
+CI/CD cho phép automate testing mỗi khi có code changes.
+
+**GitHub Actions workflow:**
+
+```yaml
+# .github/workflows/test.yml
+name: Test Suite
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          cd frontend && npm ci
+          cd ../functions && npm ci
+      
+      - name: Lint
+        run: |
+          cd frontend && npm run lint
+      
+      - name: Unit Tests
+        run: |
+          cd functions && npm test -- --coverage
+      
+      - name: Build
+        run: |
+          cd frontend && npm run build
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./functions/coverage/lcov.info
+```
+
+**CI Benefits:**
+
+- Catch bugs early - trước khi merge vào main
+- Enforce code quality - không merge nếu tests fail
+- Prevent broken code from merging
+- Automated testing on every PR
+- Consistent testing environment
+
+---
+
+## Câu 46: Test Pyramids? Tỷ lệ các loại tests nên như thế nào?
+
+**Trả lời:**
+
+**Testing Pyramid** là mô hình kim tự tháp hướng dẫn tỷ lệ các loại tests:
+
+```
+           /\
+          /E2E\           Few, expensive
+         /─────\
+        /Integration\    Some
+       /───────────\
+      /────UnitTests\   Many, cheap
+     /──────────────\
+```
+
+**Recommended ratios:**
+
+- **Unit Tests:** 70%
+- **Integration Tests:** 20%
+- **E2E Tests:** 10%
+
+**For this project:**
+
+**Unit Tests (70%)** - Cloud Functions, utilities:
+
+- Credit calculation functions
+- Input validation
+- Data transformation
+- Prompt building
+
+**Integration Tests (20%)** - API integrations:
+
+- Firestore operations
+- AI API calls
+- Payment flow
+
+**E2E Tests (10%)** - Critical user paths:
+
+- Login flow
+- Content generation flow
+- Payment flow
+
+**Why this ratio?**
+
+- **Unit tests:** Fast, cheap, reliable, dễ viết và maintain
+- **E2E tests:** Slow, flaky, expensive, khó maintain
+- **Balance:** Good coverage với reasonable speed
+
+---
+
+## Câu 47: Regression Testing? Làm sao để tránh regressions?
+
+**Trả lời:**
+
+**Regression Testing** là re-run tests sau khi thay đổi code để đảm bảo existing features không bị break.
+
+**Strategies:**
+
+**1. Automated Regression Suite:**
+
+```javascript
+// regression-suite.test.js
+describe('Regression Tests', () => {
+  test('login still works', () => { /* ... */ });
+  test('generate text still works', () => { /* ... */ });
+  test('generate image still works', () => { /* ... */ });
+  test('payment flow still works', () => { /* ... */ });
+  test('inspiration feed loads', () => { /* ... */ });
+});
+```
+
+**2. CI/CD Pipeline:**
+
+```yaml
+# Run regression on every PR
+regression:
+  runs-on: ubuntu-latest
+  steps:
+    - run: npm test -- --regression
+```
+
+**3. Visual Regression Testing:**
+
+```javascript
+// Percy or Chromatic
+import { percySnapshot } from '@percy/react';
+
+test('Dashboard looks correct', async () => {
+  render(<Dashboard />);
+  await percySnapshot('Dashboard');
+});
+```
+
+**4. Prevent regressions:**
+
+- Write tests BEFORE fixing bugs
+- Use feature branches
+- Require passing tests before merge
+- Monitor test flakiness
+- Review code changes carefully
+
+---
+
+## Câu 48: Test Environment khác Production như thế nào?
+
+**Trả lời:**
+
+**Test vs Production Environment:**
+
+**Environments:**
+
+- **Development:** Local machine
+- **Staging:** Mirror of production
+- **Production:** Live environment
+
+**Test environment setup:**
+
+```javascript
+// firebase config for test
+const testConfig = {
+  apiKey: "test-api-key",
+  authDomain: "test-project.firebaseapp.com",
+  projectId: "test-project",
+  storageBucket: "test-project.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abc123"
+};
+```
+
+**Firebase Emulators:**
+
+```bash
+# Install emulator
+firebase init emulators
+# Start emulators
+firebase emulators:start
+```
+
+```javascript
+// Connect to emulators in tests
+import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
+
+beforeAll(async () => {
+  await initializeTestEnvironment({
+    projectId: 'test-project',
+    firestore: { rules: 'firestore.test.rules' }
+  });
+});
+```
+
+**Environment variables:**
+
+```bash
+# .env.test
+VITE_API_URL=http://localhost:5001
+VITE_USE_EMULATORS=true
+```
+
+**Key differences:**
+
+- **Test:** Fake data, emulators, test API keys
+- **Production:** Real data, real services, production API keys
+
+---
+
+## Câu 49: Load Testing? Bạn sẽ test system với nhiều concurrent users như thế nào?
+
+**Trả lời:**
+
+Load Testing kiểm tra hệ thống dưới tải nặng.
+
+**Tools:** k6 (recommended), Artillery, JMeter, Locust
+
+**k6 Example:**
+
+```javascript
+// load-test.js
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+  stages: [
+    { duration: '2m', target: 100 },  // Ramp up
+    { duration: '5m', target: 100 },  // Stay at 100 users
+    { duration: '2m', target: 0 },    // Ramp down
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<500'],  // 95% requests < 500ms
+    http_req_failed: ['rate<0.01'],    // < 1% failures
+  },
+};
+
+export default function () {
+  // Test landing page
+  const landingRes = http.get('https://content-creator-ai-wheat.vercel.app');
+  check(landingRes, {
+    'landing page status 200': (r) => r.status === 200,
+  });
+  
+  sleep(1);
+}
+
+export function handleSummary(data) {
+  return {
+    'stdout': textSummary(data, { indent: ' ', enableColors: true }),
+    './load-report.json': JSON.stringify(data),
+  };
+}
+```
+
+**Running:**
+
+```bash
+# Install k6
+brew install k6  # macOS
+
+# Run load test
+k6 run load-test.js
+
+# Run with cloud
+k6 cloud load-test.js
+```
+
+**Test scenarios:**
+
+- 100 concurrent users browsing
+- 50 users generating content
+- 20 users on video generation
+- Spike test (sudden increase)
+
+---
+
+## Câu 50: Debugging tests? Khi tests fail, bạn debug như thế nào?
+
+**Trả lời:**
+
+Khi tests fail, em sử dụng các phương pháp debugging sau:
+
+**1. Read error message carefully:**
+
+```javascript
+// ❌ Wrong: Panic immediately
+// ✅ Right: Read the actual error
+// Expected: "Insufficient credits"
+// Received: "Yêu cầu đăng nhập"
+```
+
+**2. Use console.log (temporarily):**
+
+```javascript
+test('debug example', () => {
+  console.log('User:', user);
+  console.log('Credits:', credits);
+  console.log('Prompt:', prompt);
+  // ...
+});
+```
+
+**3. Run single test:**
+
+```bash
+npm test -- --testNamePattern="specific test"
+npm test -- -t "specific test"
+```
+
+**4. Interactive mode:**
+
+```bash
+npm test -- --watch
+# Then press 'p' to filter by filename
+# Press 't' to filter by test name
+```
+
+**5. VS Code debugger:**
+
+```javascript
+// Add breakpoint
+test('debug with breakpoint', () => {
+  debugger;  // Will pause in VS Code
+  // ...
+});
+```
+
+**6. Check mocks:**
+
+```javascript
+// Are mocks configured correctly?
+console.log(mockFn.mock.calls);
+console.log(mockFn.mock.results);
+```
+
+**Common issues:**
+
+- Async not handled properly (forgot await)
+- Missing awaits
+- Wrong assertions
+- Mocks not reset between tests
+- Wrong test isolation
+
+---
+
+# PHẦN 5: THANH TOÁN VÀ CREDIT (5 câu hỏi)
+
+## Câu 51: Hệ thống Credit hoạt động như thế nào?
+
+**Trả lời:**
+
+Hệ thống Credit trong dự án hoạt động như sau:
+
+**1. Credit purchase:**
+
+- User mua credits qua PayOS
+- Nhiều gói: 50K, 100K, 200K, 500K VND
+- Bonus credits cho larger packages:
+  - 50K VND → 50 credits + 5 bonus = 55 credits
+  - 100K VND → 100 credits + 15 bonus = 115 credits
+  - 200K VND → 200 credits + 40 bonus = 240 credits
+  - 500K VND → 500 credits + 150 bonus = 650 credits
+
+**2. Credit deduction:**
+
+- Trừ credits sau khi generation hoàn thành
+- Nếu fail, hoàn lại credits tự động
+
+**3. Free credits:**
+
+- User mới được tặng 20 credits khi đăng ký
+
+**4. Plans:**
+
+| Plan | Discount | Features |
+|------|----------|----------|
+| Free | 0% | Base credits pricing |
+| Pro | 10% | Priority support |
+| Premium | 20% | Priority + Early features |
+| Agency | 30% | Team features |
+
+**5. Credit-based pricing:**
+
+| Content Type | Model | Credits |
+|--------------|-------|---------|
+| Text | Groq (free) | 0 |
+| Text | Gemini | 1-2 |
+| Image | Pollination | 0-1 |
+| Image | SDXL | 4 |
+| Image | Gemini | 8 |
+| Video | Veo Fast | 300 |
+| Video | Veo Standard | 500 |
+
+---
+
+## Câu 52: PayOS là gì? Payment flow hoạt động như thế nào?
+
+**Trả lời:**
+
+**PayOS** là cổng thanh toán Việt Nam, hỗ trợ MoMo, ZaloPay, QR Code, ATM/Internet Banking.
+
+**Payment Flow:**
+
+1. **User chọn gói credit** → Click "Mua ngay"
+2. **Frontend gọi Cloud Function:**
+
+```javascript
+const createPaymentLink = httpsCallable(functions, 'createPaymentLink');
+const result = await createPaymentLink({
+  packageId: 'premium_100',
+  amount: 100000  // VND
+});
+```
+
+3. **Cloud Function tạo payment link:**
+
+```javascript
+exports.createPaymentLink = functions.https.onCall(async (data, context) => {
+  const orderCode = Date.now();
+  const paymentLink = await payos.createPaymentLink({
+    amount: data.amount,
+    orderCode: orderCode,
+    description: 'Mua credits Content Creator AI'
+  });
+  
+  // Lưu pending transaction
+  await db.collection('transactions').add({
+    userId: context.auth.uid,
+    amount: data.amount,
+    credits: calculateCredits(data.amount),
+    status: 'pending',
+    orderCode: orderCode,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+  
+  return { checkoutUrl: paymentLink.checkoutUrl };
+});
+```
+
+4. **User thanh toán** → Redirect to PayOS
+5. **PayOS webhook callback:**
+
+```javascript
+exports.payosWebhook = functions.https.onRequest(async (req, res) => {
+  const signature = req.headers['x-payos-signature'];
+  const isValid = payos.verifySignature(req.body, signature);
+  
+  if (isValid) {
+    const { orderCode, status } = req.body;
+    const transaction = await db.collection('transactions')
+      .where('orderCode', '==', orderCode)
+      .get();
+    
+    if (status === 'PAID') {
+      // Cộng credits
+      await addCredits(transaction.docs[0].data().userId, 
+                       transaction.docs[0].data().credits);
+      await transaction.docs[0].ref.update({ status: 'success' });
+    }
+  }
+  
+  res.status(200).send('OK');
+});
+```
+
+---
+
+## Câu 53: Security cho payment? Làm sao đảm bảo thanh toán an toàn?
+
+**Trả lời:**
+
+Payment Security được đảm bảo qua nhiều lớp:
+
+**1. Signature Verification:**
+
+```javascript
+const crypto = require('crypto');
+function verifyWebhookSignature(body, signature, secretKey) {
+  const hmac = crypto.createHmac('sha256', secretKey);
+  const digest = hmac.update(JSON.stringify(body)).digest('hex');
+  return digest === signature;
+}
+```
+
+**2. Idempotency:** Prevent duplicate payments:
+
+```javascript
+exports.payosWebhook = functions.https.onRequest(async (req, res) => {
+  const { orderCode } = req.body;
+  
+  // Check if already processed
+  const existing = await db.collection('transactions')
+    .where('orderCode', '==', orderCode)
+    .where('status', '==', 'success')
+    .get();
+  
+  if (existing.size > 0) {
+    return res.status(200).send('Already processed');
+  }
+  
+  // Process payment...
+});
+```
+
+**3. HTTPS:** All payment communications over HTTPS
+
+**4. PCI-DSS:** PayOS handles card data, we don't store sensitive info
+
+**5. Webhook verification:** Verify callback comes from PayOS, not fake requests
+
+**6. Amount validation:** Verify amount matches expected
+
+---
+
+## Câu 54: Plans và Pricing? Các loại subscription?
+
+**Trả lời:**
+
+**Credit Packages:**
+
+| Package | Price (VND) | Credits | Bonus | Total |
+|---------|-------------|---------|-------|-------|
+| Starter | 50,000 | 50 | 5 | 55 |
+| Basic | 100,000 | 100 | 15 | 115 |
+| Pro | 200,000 | 200 | 40 | 240 |
+| Enterprise | 500,000 | 500 | 150 | 650 |
+
+**Subscription Plans:**
+
+| Plan | Discount | Monthly Fee | Features |
+|------|----------|-------------|----------|
+| Free | 0% | 0 VND | Base credits pricing |
+| Pro | 10% | 99,000 VND | Priority support |
+| Premium | 20% | 199,000 VND | Priority + Early features |
+| Agency | 30% | 499,000 VND | Team features |
+
+---
+
+## Câu 55: Bạn xử lý refund như thế nào?
+
+**Trả lời:**
+
+Refund được xử lý theo hai cách:
+
+**1. Manual Refund** (for failed payments or special cases):
+
+```javascript
+exports.adminRefund = functions.https.onCall(async (data, context) => {
+  // Verify admin role
+  const user = await db.collection('users').doc(context.auth.uid).get();
+  if (user.data().role !== 'admin') {
+    throw new functions.https.HttpsError('permission-denied', 'Not admin');
+  }
+  
+  // Process refund
+  const transaction = await db.collection('transactions').doc(data.transactionId).get();
+  
+  // Reverse credit addition
+  await db.collection('users').doc(transaction.data().userId).update({
+    credits: admin.firestore.FieldValue.increment(-transaction.data().credits)
+  });
+  
+  // Update transaction status
+  await transaction.ref.update({
+    status: 'refunded',
+    refundedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+  
+  // Notify user
+  await sendRefundEmail(transaction.data().userId, transaction.data());
+  
+  return { success: true };
+});
+```
+
+**2. Automatic Refund** (for generation failures):
+
+- If AI generation fails after credits deducted, credits are automatically refunded
+- Transaction status marked as 'failed' with 'refunded' flag
+
+---
+
+# PHẦN 6: TRIỂN KHAI VÀ VẬN HÀNH (5 câu hỏi)
+
+## Câu 56: Deployment process?
+
+**Trả lời:**
+
+Deployment process cho dự án:
+
+**Frontend (Vercel):**
+
+1. Push code to GitHub
+2. Vercel auto-detects framework (React/Vite)
+3. Build and deploy automatically
+4. Preview deployments for PRs
+
+```bash
+# Manual deploy (alternative)
+vercel --prod
+```
+
+**Backend (Firebase):**
+
+```bash
+# Deploy all Firebase services
+firebase deploy
+
+# Deploy specific services
+firebase deploy --only functions
+firebase deploy --only firestore
+firebase deploy --only storage
+```
+
+**Environment:**
+
+- **Development:** Local (firebase emulators)
+- **Production:** Vercel + Firebase
+
+---
+
+## Câu 57: CI/CD pipeline?
+
+**Trả lời:**
+
+CI/CD Pipeline với GitHub Actions:
+
+```yaml
+name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm test
+      
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm run lint
+      
+  deploy:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: firebase deploy --prod
+```
+
+---
+
+## Câu 58: Monitoring và logging?
+
+**Trả lời:**
+
+Monitoring và Logging:
+
+**Firebase Console:**
+
+- Function logs
+- Performance monitoring
+- Crashlytics
+- Analytics
+
+**External Tools:**
+
+- Google Stackdriver for advanced logging
+- Sentry for error tracking
+
+**Logging in Cloud Functions:**
+
+```javascript
+exports.generateContent = functions.https.onCall(async (data, context) => {
+  console.log('Generate content request:', {
+    userId: context.auth.uid,
+    type: data.type,
+    model: data.model,
+    timestamp: new Date().toISOString()
+  });
+  
+  try {
+    const result = await generateContent(data);
+    console.log('Generate content success:', { resultId: result.id });
+    return result;
+  } catch (error) {
+    console.error('Generate content error:', error);
+    throw error;
+  }
+});
+```
+
+---
+
+## Câu 59: Maintenance?
+
+**Trả lời:**
+
+Maintenance tasks định kỳ:
+
+**Regular Tasks:**
+
+- Update dependencies (npm audit fix)
+- Review and optimize Cloud Functions
+- Monitor costs
+- Backup database
+- Review security logs
+
+**Performance Optimization:**
+
+- Enable caching
+- Optimize Firestore queries
+- Use CDN for static assets
+
+**Security:**
+
+- Rotate API keys periodically
+- Review Firestore rules
+- Update security patches
+
+---
+
+## Câu 60: Scaling?
+
+**Trả lời:**
+
+Scaling Strategy:
+
+**Vertical Scaling** (in serverless):
+
+- Automatic với Firebase
+
+**Horizontal Scaling:**
+
+- Firebase auto-scales
+
+**Optimization:**
+
+- Cold start: Set min instances (costs more)
+- Caching: Redis for frequently accessed data
+- CDN: Vercel Edge Network
+
+**Limits:**
+
+- Firebase free tier: Limited
+- Paid: Higher limits
+- AI API quotas: Per-provider limits
+
+---
+
+# PHẦN 7: KẾT LUẬN (10 câu hỏi)
+
+## Câu 61: Ưu điểm của dự án?
+
+**Trả lời:**
+
+Ưu điểm của dự án:
+
+1. **Tích hợp đa AI:** Text + Image + Video trong một nền tảng duy nhất
+2. **UX tốt:** Giao diện hiện đại, dark mode, responsive
+3. **Chi phí linh hoạt:** Credit-based, không subscription bắt buộc
+4. **Cộng đồng:** Inspiration page tạo giá trị chia sẻ
+5. **Serverless:** Tự động scale, không lo quá tải
+6. **Mã nguồn mở:** Có thể tùy chỉnh và self-host
+7. **Đa ngôn ngữ:** Hỗ trợ Tiếng Việt và Tiếng Anh
+
+---
+
+## Câu 62: Hạn chế của dự án?
+
+**Trả lời:**
+
+Hạn chế của dự án:
+
+1. **TikTok OAuth:** Đã triển khai nhưng chờ TikTok Developer Platform phê duyệt
+2. **Video rate limit:** 10 video/ngày do quota của Veo API
+3. **Mobile App:** Chưa có ứng dụng mobile native, chỉ hỗ trợ PWA
+4. **Cold start:** Firebase Cloud Functions có delay ~2s khi cold start
+5. **i18n:** Còn một số keys chưa được dịch hoàn chỉnh
+6. **Testing:** Unit tests và automated tests chưa đầy đủ
+
+---
+
+## Câu 63: Hướng phát triển ngắn hạn?
+
+**Trả lời:**
+
+Ngắn hạn (3-6 tháng):
+
+1. **Hoàn thiện TikTok OAuth** sau khi được approve
+2. **Tối ưu cold start** với Firebase min instances
+3. **Bổ sung template library** - Thư viện templates sẵn có cho các loại content
+4. **Viết unit tests** cho Cloud Functions
+5. **Cải thiện i18n** - Hoàn thiện các keys còn thiếu
+6. **Thêm AI models** mới khi có cập nhật
+
+---
+
+## Câu 64: Hướng phát triển trung hạn?
+
+**Trả lời:**
+
+Trung hạn (6-12 tháng):
+
+1. **Phát triển React Native mobile app** - Ứng dụng native cho iOS/Android
+2. **Tích hợp social publishing** - Đăng bài trực tiếp lên TikTok, Instagram, YouTube
+3. **Scheduling feature** - Hẹn giờ đăng bài
+4. **Collaboration features** - Cho phép nhiều users cùng làm việc trên một project
+5. **Analytics dashboard** - Thống kê chi tiết về content đã tạo
+
+---
+
+## Câu 65: Hướng phát triển dài hạn?
+
+**Trả lời:**
+
+Dài hạn (12+ tháng):
+
+1. **Tích hợp thêm AI models** - Sora, Midjourney API
+2. **Audio/Voice generation** - Tích hợp AI voice generation cho podcast, voice-over
+3. **Enterprise features** - Team management, billing nâng cao, admin dashboard
+4. **API for developers** - Cung cấp API để developers khác có thể tích hợp
+5. **Global expansion** - Hỗ trợ thêm ngôn ngữ, thanh toán quốc tế
+
+---
+
+## Câu 66: Bạn đã học được gì từ dự án này?
+
+**Trả lời:**
+
+Kỹ năng đã học được:
+
+1. **Full-stack development:** ReactJS, Firebase, Cloud Functions
+2. **AI Integration:** Tích hợp nhiều AI APIs (Gemini, Groq, SDXL, Veo)
+3. **System Design:** Thiết kế kiến trúc serverless, database NoSQL
+4. **Project Management:** Agile/Scrum, version control
+5. **Testing:** Understanding về các loại tests và strategies
+6. **Problem Solving:** Debugging, optimization
+7. **Documentation:** Viết tài liệu kỹ thuật
+
+---
+
+## Câu 67: Nếu làm lại, bạn sẽ thay đổi gì?
+
+**Trả lời:**
+
+Những thay đổi nếu làm lại:
+
+1. **Start với testing từ đầu:** Viết unit tests song song với code
+2. **Mobile-first approach:** Thiết kế mobile trước thay vì desktop
+3. **Better documentation:** Viết docs ngay khi code, không đợi cuối
+4. **Component library:** Xây dựng design system từ đầu
+5. **CI/CD setup:** Setup CI/CD từ sprint đầu tiên
+6. **Smaller MVP:** Launch với features cơ bản trước, sau đó iterate
+
+---
+
+## Câu 68: Điều gì là thách thức lớn nhất?
+
+**Trả lời:**
+
+Thách thức lớn nhất:
+
+1. **Tích hợp nhiều AI providers:** Mỗi provider có API khác nhau, cần handle errors và fallbacks riêng
+2. **Video generation queue:** Xử lý video takes time, cần implement queue system
+3. **Đa ngôn ngữ:** i18n requires careful planning và maintain consistency
+4. **Thời gian:** Limited time của khóa luận so với scope của dự án
+5. **Testing:** Learning và implementing tests trong thời gian ngắn
+
+---
+
+## Câu 69: Bạn có plans tiếp tục phát triển dự án không?
+
+**Trả lời:**
+
+Có, em có ý định tiếp tục phát triển dự án này sau khi bảo vệ khóa luận với các lý do:
+
+1. **Market demand:** Nhu cầu về AI content creation tools đang tăng mạnh
+2. **Learning opportunity:** Dự án giúp em học và apply nhiều technologies mới
+3. **Potential:** Có thể phát triển thành sản phẩm thực tế
+4. **Portfolio:** Dự án tốt để showcase kỹ năng cho potential employers
+
+Em sẽ tiếp tục với các hướng đã nêu trong phần hướng phát triển.
+
+---
+
+## Câu 70: Lời cảm ơn và kết luận?
+
+**Trả lời:**
+
+**Lời cảm ơn:**
+
+Em xin cảm ơn:
+
+- **Giảng viên hướng dẫn:** Đã tận tình hướng dẫn, chỉ dạy trong suốt quá trình thực hiện khóa luận
+- **Các thầy cô trong khoa:** Đã truyền đạt kiến thức trong suốt 4 năm học
+- **Gia đình:** Đã hỗ trợ về mọi mặt
+- **Bạn bè:** Đã động viên và giúp đỡ
+
+**Kết luận:**
+
+Khóa luận đã hoàn thành mục tiêu đề ra: Xây dựng nền tảng Content Creator AI với đầy đủ tính năng cơ bản bao gồm tạo text, image, video với AI, hệ thống quản lý dự án, thanh toán, và cộng đồng. Dù còn một số hạn chế như testing chưa đầy đủ và một số features chưa hoàn thiện, đây là nền tảng vững chắc để phát triển tiếp trong tương lai.
+
+Em xin chân thành cảm ơn!
+
+---
+
+# PHẦN 8: CÂU HỎI BỔ SUNG (30 câu hỏi)
+
+## Câu 71: Tại sao chọn kiến trúc Serverless thay vì Server-based?
+
+**Trả lời:**
+
+**Server-based (truyền thống):**
+
+- Cần quản lý server (EC2, VPS)
+- Manual scaling
+- Fixed cost (dù ít hay nhiều traffic)
+- More operational overhead
+
+**Serverless (Firebase):**
+
+- Không cần quản lý server
+- Auto-scaling theo demand
+- Pay-per-use (tiết kiệm khi traffic thấp)
+- Focus vào code, không phải infrastructure
+
+**Why Serverless for this project:**
+
+- Phù hợp với project có traffic không predictable
+- Giảm thời gian dev (không cần backend setup)
+- Free tier đủ cho development và testing
+- Integration tốt với React frontend
+
+---
+
+## Câu 72: Bạn xử lý API keys như thế để không bị leak?
+
+**Trả lời:**
+
+**API Keys Security:**
+
+**1. Environment Variables:**
+
+```bash
+# functions/.env
+GEMINI_API_KEY=xxx
+GROQ_API_KEY=xxx
+STABILITY_API_KEY=xxx
+```
+
+**2. Firebase Config:**
+
+```javascript
+// functions/index.js
+functions.config = () => ({
+  gemini: { api_key: process.env.GEMINI_API_KEY },
+  groq: { api_key: process.env.GROQ_API_KEY }
+});
+```
+
+**3. Sử dụng trong functions:**
+
+```javascript
+const apiKey = functions.config().gemini.api_key;
+```
+
+**4. KHÔNG BAO GIỜ:**
+
+- Không commit keys vào Git
+- Không expose keys trong frontend code
+- Không share keys trong chat/emails
+
+---
+
+## Câu 73: Firestore vs SQL Database - Khi nào chọn cái nào?
+
+**Trả lời:**
+
+**Chọn Firestore khi:**
+
+- Data schema linh hoạt, có thể thay đổi
+- Read-heavy workload
+- Need real-time updates
+- Simple queries (filter, sort)
+- Scalability quan trọng
+
+**Chọn SQL khi:**
+
+- Data có cấu trúc cố định
+- Complex queries với JOINs
+- Transactions (ACID) quan trọng
+- Reporting/Analytics (aggregations phức tạp)
+- Data integrity quan trọng
+
+**Trong dự án này:** Firestore phù hợp vì data models linh hoạt (project có thể là text/image/video), real-time cần cho Inspiration feed, queries đơn giản.
+
+---
+
+## Câu 74: Tại sao cần nhiều AI providers thay vì chỉ một?
+
+**Trả lời:**
+
+**Multiple AI Providers:**
+
+1. **Redundancy:** Nếu một provider down, có thể fallback sang provider khác
+2. **Different strengths:**
+   - Groq: Nhanh, miễn phí cho text
+   - Gemini: Multimodal, high quality
+   - SDXL: High quality images
+   - Veo: Video generation
+3. **Cost optimization:**
+   - Use Groq cho simple tasks (free)
+   - Use SDXL cho images (4 credits)
+4. **User choice:** Different users có different preferences
+
+---
+
+## Câu 75: Bạn xử lý sensitive data như thế trong ứng dụng?
+
+**Trả lời:**
+
+**Sensitive Data Handling:**
+
+1. **User passwords:** Firebase Auth handles securely
+2. **Payment data:** PayOS handles, we never see card details
+3. **API keys:** Stored in Cloud Functions environment, never in frontend
+4. **User data:** Firestore security rules - Users can only access their own data
+5. **Best practices:** HTTPS always, minimal data collection, data retention policies
+
+---
+
+## Câu 76: Bạn đã tối ưu performance như thế?
+
+**Trả lời:**
+
+**Performance Optimization:**
+
+1. **Frontend:**
+   - Code splitting (React.lazy)
+   - Image optimization
+   - Lazy loading
+   - Caching với Service Workers
+
+2. **Backend:**
+   - Cloud Functions cold start: Use warm-up
+   - Firestore queries: Proper indexing
+   - CDN for static assets
+
+3. **Database:**
+   - Denormalization for read performance
+   - Pagination for large datasets
+   - Real-time listeners chỉ khi cần
+
+---
+
+## Câu 77: Accessibility (a11y) trong dự án?
+
+**Trả lời:**
+
+**Accessibility:**
+
+1. **Semantic HTML:** Use proper tags (header, nav, main, footer)
+2. **ARIA labels:**
+```javascript
+<button aria-label="Close modal" onClick={close}>
+  <XIcon />
+</button>
+```
+3. **Keyboard navigation:** All interactive elements accessible via keyboard
+4. **Color contrast:** Meet WCAG AA standards
+5. **Screen reader support:** Proper heading hierarchy
+6. **Dark mode:** Reduces eye strain
+
+---
+
+## Câu 78: SEO trong Single Page Application?
+
+**Trả lời:**
+
+**SEO for SPA:**
+
+1. **React Helmet:**
+```javascript
+import { Helmet } from 'react-helmet';
+<Helmet>
+  <title>Content Creator AI - Tạo nội dung với AI</title>
+  <meta name="description" content="Nền tảng tạo content với AI" />
+</Helmet>
+```
+2. **Sitemap:** Generate sitemap.xml
+3. **Meta tags:** For social sharing (Open Graph, Twitter Cards)
+4. **SSR/SSG:** Consider Next.js for better SEO (future improvement)
+
+---
+
+## Câu 79: Bạn xử lý offline scenarios như thế?
+
+**Trả lời:**
+
+**Offline Handling:**
+
+1. **Network status detection:**
+```javascript
+window.addEventListener('online', () => {
+  showToast('Kết nối đã khôi phục');
+});
+window.addEventListener('offline', () => {
+  showToast('Không có kết nối mạng');
+});
+```
+2. **Firebase offline persistence:**
+```javascript
+const db = initializeFirestore(firebaseApp, {
+  cacheSizeBytes: CACHE_SIZE_UNLIMITED
+});
+```
+3. **Graceful degradation:** Show cached data when offline, queue actions to sync when back online
+
+---
+
+## Câu 80: Bạn đã implement logging và error tracking như thế?
+
+**Trả lời:**
+
+**Logging & Error Tracking:**
+
+1. **Console logging:**
+```javascript
+console.log('Action:', action);
+console.error('Error:', error);
+```
+2. **Structured logging in Cloud Functions:**
+```javascript
+functions.logger.info('Generate content', {
+  userId: userId,
+  type: type,
+  model: model
+});
+```
+3. **Firebase Crashlytics:** For crash reporting
+
+---
+
+## Câu 81: Khi nào sử dụng Client-side rendering vs Server-side rendering?
+
+**Trả lời:**
+
+**Client-side (React SPA):**
+
+- Faster subsequent navigation
+- Rich interactivity
+- Better for authenticated routes
+- Current approach (Vite)
+
+**Server-side (SSR - Next.js):**
+
+- Better SEO
+- Faster initial load
+- Better performance on slow devices
+- Better for public pages
+
+**Future improvement:** Consider Next.js for better SEO và performance
+
+---
+
+## Câu 82: Bạn đã implement internationalization (i18n) như thế?
+
+**Trả lời:**
+
+**i18n Approach:**
+
+**Translation files:**
+```javascript
+// i18n/translations.js
+export const translations = {
+  vi: {
+    welcome: 'Chào mừng',
+    generate: 'Tạo nội dung',
+    credits: 'Số dư'
+  },
+  en: {
+    welcome: 'Welcome',
+    generate: 'Generate Content',
+    credits: 'Credit Balance'
+  }
+};
+```
+
+**i18next integration:**
+```javascript
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+i18n.use(initReactI18next).init({
+  resources: translations,
+  lng: 'vi',
+  fallbackLng: 'en'
+});
+```
+
+---
+
+## Câu 83: Bạn xử lý file uploads như thế?
+
+**Trả lời:**
+
+**File Upload:**
+
+```javascript
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+const handleUpload = async (file) => {
+  const storageRef = ref(storage, `uploads/${userId}/${Date.now()}_${file.name}`);
+  const snapshot = await uploadBytes(storageRef, file);
+  const url = await getDownloadURL(snapshot.ref);
+  return url;
+};
+```
+
+**Validation:**
+
+- File type validation (images/videos only)
+- File size limit (max 10MB)
+
+---
+
+## Câu 84: Bạn đã implement caching như thế?
+
+**Trả lời:**
+
+**Caching Strategy:**
+
+1. **Browser caching:**
+```javascript
+// vite.config.js
+export default defineConfig({
+  headers: {
+    'Cache-Control': 'public, max-age=31536000, immutable'
+  }
+});
+```
+
+2. **Firebase Firestore caching:**
+```javascript
+const db = initializeFirestore(firebaseApp, {
+  cacheSizeBytes: CACHE_SIZE_UNLIMITED
+});
+```
+
+3. **React Query:**
+```javascript
+const { data } = useQuery({
+  queryKey: ['posts'],
+  queryFn: fetchPosts,
+  staleTime: 5 * 60 * 1000
+});
+```
+
+---
+
+## Câu 85: Bạn đã implement authentication state management như thế?
+
+**Trả lời:**
+
+**Auth State Management:**
+
+```javascript
+const AuthContext = createContext();
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+  
+  return (
+    <AuthContext.Provider value={{ user, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+```
+
+**Protected Routes:**
+```javascript
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" />;
+  
+  return children;
+}
+```
+
+---
+
+## Câu 86: Bạn đã implement form validation như thế?
+
+**Trả lời:**
+
+**Form Validation:**
+
+**Client-side:**
+```javascript
+const validateForm = (data) => {
+  const errors = {};
+  
+  if (!data.prompt.trim()) {
+    errors.prompt = 'Prompt không được để trống';
+  }
+  
+  if (data.prompt.length > 1000) {
+    errors.prompt = 'Prompt không được quá 1000 ký tự';
+  }
+  
+  return errors;
+};
+```
+
+**Server-side (Cloud Functions):**
+```javascript
+exports.generateContent = functions.https.onCall((data, context) => {
+  if (!data.prompt || data.prompt.trim() === '') {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Prompt không được để trống'
+    );
+  }
+});
+```
+
+---
+
+## Câu 87: Bạn đã implement pagination như thế?
+
+**Trả lời:**
+
+**Pagination:**
+
+**Cursor-based:**
+```javascript
+const fetchPosts = async (lastDoc = null) => {
+  let query = collection(db, 'posts')
+    .orderBy('createdAt', 'desc')
+    .limit(20);
+  
+  if (lastDoc) {
+    query = query.startAfter(lastDoc);
+  }
+  
+  const snapshot = await getDocs(query);
+  const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+  
+  return {
+    posts: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+    lastDoc: lastVisible
+  };
+};
+```
+
+---
+
+## Câu 88: Bạn đã implement search functionality như thế?
+
+**Trả lời:**
+
+**Search Implementation:**
+
+**Client-side (small datasets):**
+```javascript
+const searchPosts = (query) => {
+  const results = posts.filter(post => 
+    post.title.toLowerCase().includes(query.toLowerCase()) ||
+    post.prompt.toLowerCase().includes(query.toLowerCase())
+  );
+  return results;
+};
+```
+
+**Server-side (Firestore):**
+```javascript
+const q = query(
+  collection(db, 'posts'),
+  where('title', '>=', searchTerm),
+  where('title', '<=', searchTerm + '\uf8ff')
+);
+```
+
+---
+
+## Câu 89: Bạn đã implement real-time features như thế?
+
+**Trả lời:**
+
+**Real-time Features:**
+
+```javascript
+useEffect(() => {
+  // Subscribe to posts collection
+  const unsubscribe = onSnapshot(
+    query(
+      collection(db, 'posts'),
+      orderBy('createdAt', 'desc'),
+      limit(20)
+    ),
+    (snapshot) => {
+      const posts = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setPosts(posts);
+    }
+  );
+  
+  return () => unsubscribe();
+}, []);
+```
+
+**Use cases:** Live feed updates, real-time likes, typing indicators
+
+---
+
+## Câu 90: Tổng kết và bài học kinh nghiệm?
+
+**Trả lời:**
+
+**Tổng kết và Bài học:**
+
+**Tổng kết dự án:**
+
+Content Creator AI là nền tảng web tích hợp nhiều AI models cho phép người dùng tạo text, image, video content. Dự án sử dụng ReactJS 19 + Firebase + Cloud Functions với kiến trúc serverless.
+
+**Bài học kinh nghiệm:**
+
+1. **Planning quan trọng:** Cần lên kế hoạch rõ ràng trước khi code
+2. **Testing từ đầu:** Không nên để testing cuối cùng
+3. **Documentation:** Viết docs sớm và thường xuyên
+4. **Scalability:** Thiết kế có thể mở rộng từ đầu
+5. **User-centric:** Luôn nghĩ đến trải nghiệm người dùng
+
+**Kết luận:** Dù còn nhiều điều cần cải thiện, dự án đã hoàn thành mục tiêu và là nền tảng vững chắc cho tương lai.
+
+---
+
+## Câu 91: Bạn đã sử dụng những design patterns nào trong dự án?
+
+**Trả lời:**
+
+**Design Patterns đã sử dụng:**
+
+1. **Context Pattern:** Cho Auth, Language, Theme
+2. **Provider Pattern:** React Context như provider
+3. **Repository Pattern:** Service layer cho database operations
+4. **Hook Pattern:** Custom hooks cho reusable logic
+5. **HOC (Higher-Order Components):** Cho authentication protection
+6. **Callback Pattern:** Cho async operations
+7. **Observer Pattern:** Firestore real-time listeners
+
+---
+
+## Câu 92: Bạn xử lý state management cho complex forms như thế?
+
+**Trả lời:**
+
+**Complex Form State:**
+
+```javascript
+const [formData, setFormData] = useState({
+  prompt: '',
+  type: 'text',
+  model: 'groq',
+  parameters: {}
+});
+
+const handleChange = (field, value) => {
+  setFormData(prev => ({
+    ...prev,
+    [field]: value
+  }));
+};
+
+const handleSubmit = async () => {
+  const errors = validate(formData);
+  if (Object.keys(errors).length > 0) {
+    setValidationErrors(errors);
+    return;
+  }
+  // Submit...
+};
+```
+
+---
+
+## Câu 93: Bạn đã implement error boundaries trong React như thế?
+
+**Trả lời:**
+
+**Error Boundaries:**
+
+```javascript
+class ErrorBoundary extends React.Component {
+  state = { hasError: false, error: null };
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught:', error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="error-container">
+          <h1>Đã xảy ra lỗi</h1>
+          <button onClick={() => window.location.reload()}>
+            Tải lại trang
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+```
+
+---
+
+## Câu 94: Bạn đã optimize bundle size như thế?
+
+**Trả lời:**
+
+**Bundle Size Optimization:**
+
+1. **Code splitting:**
+```javascript
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+```
+
+2. **Tree shaking:** Vite tự động loại bỏ unused code
+
+3. **Lazy loading:**
+```javascript
+<img loading="lazy" src={imageUrl} />
+```
+
+4. **Dependencies:** Chỉ import những gì cần
+
+5. **Tailwind PurgeCSS:** Loại bỏ unused CSS classes
+
+---
+
+## Câu 95: Bạn đã handle async operations như thế?
+
+**Trả lời:**
+
+**Async Operations:**
+
+```javascript
+// With async/await
+const handleGenerate = async () => {
+  try {
+    setLoading(true);
+    const result = await generateContent(data);
+    setResult(result);
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// With React Query
+const { data, isLoading, error } = useQuery({
+  queryKey: ['posts'],
+  queryFn: fetchPosts
+});
+```
+
+---
+
+## Câu 96: Bạn đã implement optimistic updates như thế?
+
+**Trả lời:**
+
+**Optimistic Updates:**
+
+```javascript
+const handleLike = async (postId) => {
+  // 1. Optimistic update
+  const previousLiked = liked;
+  setLiked(true);
+  setLikeCount(prev => prev + 1);
+  
+  try {
+    // 2. Call API
+    await likePost(postId);
+  } catch (error) {
+    // 3. Rollback on error
+    setLiked(previousLiked);
+    setLikeCount(prev => prev - 1);
+  }
+};
+```
+
+---
+
+## Câu 97: Bạn đã handle memory leaks trong React như thế?
+
+**Trả lời:**
+
+**Memory Leak Prevention:**
+
+```javascript
+useEffect(() => {
+  const controller = new AbortController();
+  
+  const fetchData = async () => {
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      const data = await response.json();
+      setData(data);
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        setError(error);
+      }
+    }
+  };
+  
+  fetchData();
+  
+  // Cleanup
+  return () => controller.abort();
+}, [url]);
+```
+
+---
+
+## Câu 98: Bạn đã optimize re-renders trong React như thế?
+
+**Trả lời:**
+
+**Optimization Re-renders:**
+
+1. **React.memo:**
+```javascript
+const MyComponent = React.memo(({ data }) => {
+  return <div>{data.name}</div>;
+});
+```
+
+2. **useMemo/useCallback:**
+```javascript
+const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
+const memoizedCallback = useCallback(() => doSomething(a, b), [a, b]);
+```
+
+3. **Context splitting:** Tách context thành nhiều phần nhỏ
+
+---
+
+## Câu 99: Bạn đã implement infinite scroll như thế?
+
+**Trả lời:**
+
+**Infinite Scroll:**
+
+```javascript
+const [posts, setPosts] = useState([]);
+const [lastDoc, setLastDoc] = useState(null);
+const [loading, setLoading] = useState(false);
+
+const loadMore = async () => {
+  if (loading) return;
+  setLoading(true);
+  
+  const result = await fetchPosts(lastDoc);
+  setPosts([...posts, ...result.posts]);
+  setLastDoc(result.lastDoc);
+  setLoading(false);
+};
+
+// With Intersection Observer
+useEffect(() => {
+  const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      loadMore();
+    }
+  });
+  
+  if (loadMoreRef.current) {
+    observer.observe(loadMoreRef.current);
+  }
+  
+  return () => observer.disconnect();
+}, [lastDoc]);
+```
+
+---
+
+## Câu 100: Lời kết cho buổi bảo vệ?
+
+**Trả lời:**
+
+**Lời kết:**
+
+Em xin cảm ơn quý thầy cô đã lắng nghe và đánh giá khóa luận của em.
+
+Trong quá trình thực hiện, em đã học được nhiều kiến thức và kỹ năng mới, từ việc tích hợp nhiều AI APIs, thiết kế hệ thống serverless, đến việc xây dựng giao diện người dùng hiện đại.
+
+Dù còn nhiều hạn chế và cần cải thiện, đặc biệt là phần kiểm thử tự động, em tin rằng đây là nền tảng vững chắc để phát triển trong tương lai.
+
+Em rất mong nhận được góp ý từ quý thầy cô để khóa luận được hoàn thiện hơn.
+
+Xin cảm ơn!
+
+---

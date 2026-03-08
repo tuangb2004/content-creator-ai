@@ -131,23 +131,34 @@ body {
   color: #94a3b8;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - overlay style, only visible when scrolling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 9999;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: rgba(136, 136, 136, 0.5);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: rgba(136, 136, 136, 0.8);
+}
+
+/* Firefox scrollbar - overlay style */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(136, 136, 136, 0.5) transparent;
 }
 
 /* Animations */
@@ -660,11 +671,11 @@ body.restoring-scroll [class*="animate"] {
 
 /* Landing Page Specific Styles */
 .gradient-bg {
-  background: linear-gradient(180deg, #ccfbf1 0%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #f3f4f6 0%, #FFFFFF 100%);
 }
 
 .dark .gradient-bg {
-  background: linear-gradient(180deg, #134e4a 0%, #0F172A 100%);
+  background: linear-gradient(180deg, #1f2937 0%, #0F172A 100%);
 }
 
 .hero-glow {
@@ -829,7 +840,7 @@ body.restoring-scroll [class*="animate"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f0fdfa;
+  background: #f9fafb;
 }
 
 .dark .scroller-wrapper {
@@ -1022,19 +1033,19 @@ body.restoring-scroll [class*="animate"] {
 
 /* Pricing Page Styles */
 .hero-bg {
-  background: linear-gradient(180deg, #ccfbf1 0%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #f3f4f6 0%, #FFFFFF 100%);
 }
 
 .dark .hero-bg {
-  background: linear-gradient(180deg, #134e4a 0%, #111827 100%);
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
 }
 
 .footer-cta-bg {
-  background: linear-gradient(180deg, #FFFFFF 0%, #ccfbf1 100%);
+  background: linear-gradient(180deg, #FFFFFF 0%, #f3f4f6 100%);
 }
 
 .dark .footer-cta-bg {
-  background: linear-gradient(180deg, #111827 0%, #134e4a 100%);
+  background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
 }
 
 /* ========== SCROLL REVEAL ANIMATIONS ========== */

@@ -39,7 +39,7 @@ export const translations = {
 
     // Pricing Page
     pricing: {
-      banner: 'Sign up for your FREE trial today and unlock instant savings of 30%...',
+      banner: 'Sign up today and get 10 FREE credits to try our features!',
       claimNow: 'Claim Now',
       hero: {
         title: 'Work Smarter, Not Harder',
@@ -140,8 +140,8 @@ export const translations = {
       faqs: {
         title: 'FAQs',
         q1: {
-          q: 'Are free trials available?',
-          a: 'Yes, we offer a 7-day free trial on all paid plans so you can explore the features before committing.'
+          q: 'Can I try for free?',
+          a: 'We offer 10 free credits when you sign up. This gives you the opportunity to try our features before purchasing any paid plan.'
         },
         q2: {
           q: "What's the difference between subscription and credits?",
@@ -159,7 +159,7 @@ export const translations = {
       cta: {
         title: 'Create With Wings',
         subtitle: 'Supercharged Content Creation',
-        button: 'Start your free trial'
+        button: 'Get 5 Free Credits'
       }
     },
 
@@ -529,7 +529,7 @@ export const translations = {
       ctaBanner: {
         titlePart1: 'Create With Wings',
         titlePart2: 'Supercharged Content Creation',
-        cta: 'Start your free trial →',
+        cta: 'Get 5 Free Credits →',
       },
       freeTrial: {
         titlePart1: 'Experience the Freedom to',
@@ -537,11 +537,11 @@ export const translations = {
         titlePart3: 'and',
         titlePart4: 'Publish Content',
         price: '$0',
-        item1: 'Unlimited access to Creator AI during free trial.',
-        item2: 'Unlock 600 credits to create up to 600 seconds of video or 200 images.',
-        item3: 'Explore our AI features and the full catalog of pre-cleared commercial templates.',
-        item4: 'No financial obligation or credit card is required.',
-        cta: 'Start your free trial →',
+        item1: 'Get 10 free credits on sign up.',
+        item2: 'Create up to 10 videos or 10 images to test our features.',
+        item3: 'Explore our AI features before purchasing.',
+        item4: 'No credit card required to sign up.',
+        cta: 'Get Free Credits →',
         viewPlans: 'View All Plans',
         generating: 'GENERATING...',
       },
@@ -1837,7 +1837,7 @@ export const translations = {
 
     // Pricing Page
     pricing: {
-      banner: 'Đăng ký dùng thử MIỄN PHÍ ngay hôm nay và nhận ưu đãi tiết kiệm 30%...',
+      banner: 'Đăng ký ngay hôm nay và nhận 5 TÍN DỤNG MIỄN PHÍ để trải nghiệm!',
       claimNow: 'Nhận Ngay',
       hero: {
         title: 'Làm Việc Thông Minh, Không Phải Vất Vả',
@@ -1863,7 +1863,7 @@ export const translations = {
           price: '0',
           sub: 'Không cần thẻ tín dụng.',
           cta: 'Bắt đầu miễn phí',
-          credits: '5 Tín dụng Miễn phí',
+          credits: '10 Tín dụng Miễn phí',
           features: [
             'Truy cập Gemini 3 Flash',
             'Công cụ SEO Cơ bản',
@@ -1872,8 +1872,8 @@ export const translations = {
         },
         pro: {
           name: 'Pro Studio',
-          priceMonthly: '725.000',
-          priceYearly: '600.000',
+          priceMonthly: '199.000',
+          priceYearly: '1.920.000',
           sub: 'Tốt nhất cho những người sáng tạo chuyên nghiệp.',
           billedYearly: 'Thanh toán hàng năm. ',
           cta: 'Nâng cấp lên Pro',
@@ -1886,8 +1886,8 @@ export const translations = {
         },
         agency: {
           name: 'Agency Elite',
-          priceMonthly: '2.475.000',
-          priceYearly: '1.975.000',
+          priceMonthly: '599.000',
+          priceYearly: '5.760.000',
           sub: 'Dành cho các hoạt động nội dung quy mô lớn.',
           billedYearly: 'Thanh toán hàng năm. ',
           cta: 'Sử dụng Không giới hạn',
@@ -1900,8 +1900,8 @@ export const translations = {
         },
         business: {
           name: 'Doanh nghiệp',
-          priceMonthly: '5.150.000',
-          priceYearly: '4.300.000',
+          priceMonthly: '1.199.000',
+          priceYearly: '11.520.000',
           sub: 'Cấp độ doanh nghiệp cho các đội nhóm lớn.',
           billedYearly: 'Thanh toán hàng năm. ',
           cta: 'Liên hệ kinh doanh',
@@ -1938,8 +1938,8 @@ export const translations = {
       faqs: {
         title: 'Câu hỏi thường gặp',
         q1: {
-          q: 'Có bản dùng thử miễn phí không?',
-          a: 'Có, chúng tôi cung cấp bản dùng thử miễn phí 7 ngày cho tất cả các gói trả phí để bạn có thể khám phá các tính năng trước khi cam kết.'
+          q: 'Tôi có thể dùng thử miễn phí không?',
+          a: 'Chúng tôi cung cấp 10 tín dụng miễn phí khi bạn đăng ký. Điều này giúp bạn có cơ hội trải nghiệm các tính năng của chúng tôi trước khi mua bất kỳ gói trả phí nào.'
         },
         q2: {
           q: 'Sự khác biệt giữa đăng ký gói và mua tín dụng là gì?',
@@ -1957,7 +1957,7 @@ export const translations = {
       cta: {
         title: 'Sáng Tạo Có Cánh',
         subtitle: 'Tăng Tốc Sáng Tạo Nội Dung',
-        button: 'Bắt đầu dùng thử miễn phí'
+        button: 'Nhận 10 Tín Dụng Miễn Phí'
       }
     },
 
@@ -2324,7 +2324,7 @@ export const translations = {
       ctaBanner: {
         titlePart1: 'Sáng tạo với Đôi Cánh',
         titlePart2: 'Siêu Nạp Sáng Tạo Nội Dung',
-        cta: 'Bắt đầu dùng thử miễn phí →',
+        cta: 'Nhận 10 Tín Dụng Miễn Phí →',
       },
       freeTrial: {
         titlePart1: 'Trải nghiệm sự tự do để',
@@ -2332,11 +2332,11 @@ export const translations = {
         titlePart3: 'và',
         titlePart4: 'Xuất bản Nội dung',
         price: '0đ',
-        item1: 'Truy cập không giới hạn vào Creator AI trong thời gian dùng thử.',
-        item2: 'Mở khóa 600 credits để tạo tới 600 giây video hoặc 200 hình ảnh.',
-        item3: 'Khám phá các tính năng AI và danh mục đầy đủ các mẫu thương mại.',
-        item4: 'Không yêu cầu nghĩa vụ tài chính hoặc thẻ tín dụng.',
-        cta: 'Bắt đầu dùng thử miễn phí →',
+        item1: 'Nhận 10 tín dụng miễn phí khi đăng ký.',
+        item2: 'Tạo tới 5 video hoặc 5 hình ảnh để trải nghiệm tính năng.',
+        item3: 'Khám phá các tính năng AI trước khi mua.',
+        item4: 'Không cần thẻ tín dụng để đăng ký.',
+        cta: 'Nhận Tín Dụng Miễn Phí →',
         viewPlans: 'Xem Tất Cả Các Gói',
         generating: 'ĐANG TẠO...',
       },

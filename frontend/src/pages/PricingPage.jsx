@@ -12,6 +12,9 @@ const PricingPage = () => {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [billingCycle, setBillingCycle] = useState('monthly');
     const [isScrolled, setIsScrolled] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
+    const [mobileResourcesOpen, setMobileResourcesOpen] = useState(false);
 
     const handleAuth = (e) => {
         e?.preventDefault();
@@ -27,6 +30,27 @@ const PricingPage = () => {
         navigate('/dashboard');
     };
 
+    // Redirect logged-in users away from pricing page (except when logging out)
+    useEffect(() => {
+        const isLoggingOut = localStorage.getItem('logging_out') === 'true';
+        if (user && !isLoggingOut) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [user, navigate]);
+
+    // Handle browser back/forward navigation - redirect authenticated users away from pricing
+    useEffect(() => {
+        const handlePopState = (event) => {
+            const isLoggingOut = localStorage.getItem('logging_out') === 'true';
+            if (user && !isLoggingOut) {
+                navigate('/dashboard', { replace: true });
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [user, navigate]);
+
     // Handle scroll for navbar effect
     useEffect(() => {
         const handleScroll = () => {
@@ -37,10 +61,36 @@ const PricingPage = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Close mobile menu on resize to desktop
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth >= 1280) {
+                setMobileMenuOpen(false);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Prevent body scroll when mobile menu is open
+    useEffect(() => {
+        if (mobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+            setMobileSolutionsOpen(false);
+            setMobileResourcesOpen(false);
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [mobileMenuOpen]);
+
     return (
         <div className="bg-pricing-background-light dark:bg-pricing-background-dark text-pricing-text-light dark:text-pricing-text-dark transition-colors duration-200 font-sans">
             {/* Navigation */}
-            <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 w-full h-[72px] transition-all duration-300 ${isScrolled
+            <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-6 py-4 w-full h-[72px] transition-all duration-300 ${isScrolled
                 ? 'bg-black/40 backdrop-blur-md border-b border-white/10'
                 : 'bg-pricing-surface-light/80 dark:bg-pricing-surface-dark/80 backdrop-blur-sm border-b border-gray-100/50 dark:border-gray-800/50'
                 }`}>
@@ -62,7 +112,7 @@ const PricingPage = () => {
                             <div className="dropdown-inner-content flex justify-center">
                                 <div className="grid grid-cols-4 gap-6">
                                     <div className="solution-card group/card" onClick={handleAuth}>
-                                        <div className="w-full h-32 rounded-lg bg-blue-900/40 mb-3 overflow-hidden relative border border-white/5">
+                                        <div className="w-full h-32 rounded-lg bg-gray-800/40 mb-3 overflow-hidden relative border border-white/5">
                                             <img alt="One Click Video Solution UI" className="w-full h-full object-cover opacity-80 group-hover/card:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACYHwl2wHD9VPnvb-CTGpWm_rQLZk3oxUjLu-emI6U_qufTjtfkKdIjC44GTK3ElCdR5T4EqXBBjQSu8PRFraM2UHG05SmOOS8BfJ_VfOhxkSNQRn_SqiHVqqtFEnrRfh5gZW8yn498Dan1sajCocYjZ1zsmi3V7grkMxlQO-6RGq-si5K5DEgZN19aNYr8OQSd43Pj6RFXDHbcStlfqiIN_HOdIN_ZF2zdrufTMSbrXrlmqwbMRXqxGQDHTV6J3_BlQHOCBMpipY" />
                                         </div>
                                         <h4 className="font-bold text-white mb-1.5 text-sm">{t.footer.videoSolution}</h4>
@@ -80,7 +130,7 @@ const PricingPage = () => {
                                         </p>
                                     </div>
                                     <div className="solution-card group/card" onClick={handleAuth}>
-                                        <div className="w-full h-32 rounded-lg bg-teal-900/40 mb-3 overflow-hidden relative border border-white/5">
+                                        <div className="w-full h-32 rounded-lg bg-gray-800/40 mb-3 overflow-hidden relative border border-white/5">
                                             <img alt="AI Avatars UI" className="w-full h-full object-cover opacity-80 group-hover/card:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCe8isDH2ee9b1FqEOD0RMPfPuAMTAxL-bTkLgJdWNAd68xp2LxMUoRdsDUnuiY5qA9Bew27y2VeqYge9XCbr9tGe90WPaLP76Oy23B3hRkczyEZn6wzvB8L1hXOh1eUBSqcJGIATS_9iHypCETr0rLiE_9WxVrtRLEGIG_ULedQiMmO3-vkvuAhRJ32r6SMQB64FN9udBa0R5xKZk4ijzZqVzvSZn0KXjyn5eVDT2Lo-Cb7YISdqtq_27DmXe9Lmq1Q86BtK4ykqg" />
                                         </div>
                                         <h4 className="font-bold text-white mb-1.5 text-sm">{t.footer.avatarsAndVoices}</h4>
@@ -89,7 +139,7 @@ const PricingPage = () => {
                                         </p>
                                     </div>
                                     <div className="solution-card group/card" onClick={handleAuth}>
-                                        <div className="w-full h-32 rounded-lg bg-teal-900/40 mb-3 overflow-hidden relative border border-white/5">
+                                        <div className="w-full h-32 rounded-lg bg-gray-800/40 mb-3 overflow-hidden relative border border-white/5">
                                             <img alt="Auto Publishing UI" className="w-full h-full object-cover opacity-80 group-hover/card:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKeqHSTCUsfhHu0Bx18JpsgmSLSYmilt55lNaMJt_6U5IWJcjcsEbTToQExQ8pzeM7rfh0yjtxB2B_TAQWnqntd086YX3gYr4bQcCKrP0vj8uXCsglrJMjR43J9ynF6-eosN0S21FUFvWxyaYyJz6vZiZFEDIkMT-dja3dK0qzHQIE63XKZBS5zp8wDTHwY_JSwIGi-vkz06YAORq7-UNlHjqCyE4OzNzlkRkFzMwjUU44d0dr2L39piI3MLK_OA2LM-yi0jLthO4" />
                                         </div>
                                         <h4 className="font-bold text-white mb-1.5 text-sm">{t.footer.publishingAndAnalytics}</h4>
@@ -152,7 +202,7 @@ const PricingPage = () => {
 
                 <div className="flex items-center space-x-3">
                     <button
-                        className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium border ${isScrolled ? 'text-white/90 hover:text-white border-white/20' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border-gray-300 dark:border-gray-600'}`}
+                        className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium border ${isScrolled ? 'text-white/90 hover:text-white border-white/20' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border-gray-300 dark:border-gray-600'}`}
                         onClick={() => changeLanguage(language === 'en' ? 'vi' : 'en')}
                     >
                         <span className="material-symbols-outlined text-[18px]">language</span>
@@ -164,8 +214,135 @@ const PricingPage = () => {
                     <button className={`hidden md:block px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 text-sm font-medium whitespace-nowrap cursor-pointer border hover:shadow-lg transform ${isScrolled ? 'text-white/90 hover:text-white border-white/20 hover:shadow-white/10' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border-gray-300 dark:border-gray-600'}`} onClick={handleAuth}>
                         {user ? t.nav.start : t.landing.hero.getStarted}
                     </button>
+
+                    {/* Hamburger Menu Button */}
+                    <button
+                        className="xl:hidden flex flex-col justify-center items-center w-10 h-10 space-y-1.5 cursor-pointer"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        aria-label="Toggle menu"
+                    >
+                        <span className={`block w-6 h-0.5 bg-current transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 translate-y-2' : ''} ${isScrolled ? 'bg-white' : 'bg-gray-900 dark:bg-white'}`}></span>
+                        <span className={`block w-6 h-0.5 bg-current transition-all duration-300 ${mobileMenuOpen ? 'opacity-0' : ''} ${isScrolled ? 'bg-white' : 'bg-gray-900 dark:bg-white'}`}></span>
+                        <span className={`block w-6 h-0.5 bg-current transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 -translate-y-2' : ''} ${isScrolled ? 'bg-white' : 'bg-gray-900 dark:bg-white'}`}></span>
+                    </button>
                 </div>
             </nav>
+
+            {/* Mobile Menu Overlay */}
+            {mobileMenuOpen && (
+                <div className="fixed inset-0 z-40 xl:hidden">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
+                    <div className="absolute top-[72px] left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 animate-slide-down max-h-[calc(100vh-72px)] overflow-y-auto">
+                        <div className="px-4 py-6 space-y-4">
+                            {/* Mobile Language Button */}
+                            <button
+                                className="flex items-center gap-2 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 px-4 py-3 rounded-lg transition-colors text-base font-medium w-full"
+                                onClick={() => changeLanguage(language === 'en' ? 'vi' : 'en')}
+                            >
+                                <span className="material-symbols-outlined text-[20px]">language</span>
+                                <span>{language === 'en' ? 'English' : 'Tiếng Việt'}</span>
+                            </button>
+
+                            {/* Mobile Home Link */}
+                            <button
+                                className="block w-full text-left px-4 py-3 text-base font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                onClick={() => { navigate('/'); setMobileMenuOpen(false); }}
+                            >
+                                {t.nav.home}
+                            </button>
+
+                            {/* Mobile Solutions Link */}
+                            <div className="border-b border-gray-200 dark:border-gray-700">
+                                <button
+                                    className="flex items-center justify-between w-full px-4 py-3 text-base font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                    onClick={() => setMobileSolutionsOpen(!mobileSolutionsOpen)}
+                                >
+                                    <span>{t.nav.solutions}</span>
+                                    <span className={`material-symbols-outlined text-[20px] transition-transform duration-300 ${mobileSolutionsOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                                </button>
+                                {mobileSolutionsOpen && (
+                                    <div className="pb-4 pl-4 space-y-2 animate-slide-down">
+                                        <button
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                            onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                        >
+                                            {t.footer.videoSolution}
+                                        </button>
+                                        <button
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                            onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                        >
+                                            {t.footer.productImages}
+                                        </button>
+                                        <button
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                            onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                        >
+                                            {t.footer.avatarsAndVoices}
+                                        </button>
+                                        <button
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                            onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                        >
+                                            {t.footer.publishingAndAnalytics}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Mobile Resources Link */}
+                            <div className="border-b border-gray-200 dark:border-gray-700">
+                                <button
+                                    className="flex items-center justify-between w-full px-4 py-3 text-base font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                    onClick={() => setMobileResourcesOpen(!mobileResourcesOpen)}
+                                >
+                                    <span>{t.nav.res}</span>
+                                    <span className={`material-symbols-outlined text-[20px] transition-transform duration-300 ${mobileResourcesOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                                </button>
+                                {mobileResourcesOpen && (
+                                    <div className="pb-4 pl-4 space-y-2 animate-slide-down">
+                                        <button
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                            onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                        >
+                                            {t.nav.affiliate}
+                                        </button>
+                                        <button
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                            onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                        >
+                                            {t.nav.powerLab}
+                                        </button>
+                                        <button
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                            onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                        >
+                                            {t.nav.helpCenter}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Mobile Pricing Link */}
+                            <button
+                                className="block w-full text-left px-4 py-3 text-base font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                onClick={() => { setMobileMenuOpen(false); }}
+                            >
+                                {t.nav.pricing}
+                            </button>
+
+                            <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                                <button className="w-full text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 px-4 py-3 rounded-lg transition-all duration-300 text-base font-medium border border-gray-300 dark:border-gray-600" onClick={() => { handleAuth(); setMobileMenuOpen(false); }}>
+                                    {user ? t.nav.dashboard : t.auth.logIn}
+                                </button>
+                                <button className="w-full bg-black dark:bg-white text-white dark:text-black hover:opacity-80 px-4 py-3 rounded-lg transition-all duration-300 text-base font-medium" onClick={() => { handleAuth(); setMobileMenuOpen(false); }}>
+                                    {user ? t.nav.start : t.landing.hero.getStarted}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Hero Section */}
             <section className="hero-bg pb-20 pt-16 px-4">
@@ -281,7 +458,7 @@ const PricingPage = () => {
 
                     {/* Agency Elite Plan */}
                     <div className="relative flex flex-col h-full rounded-2xl group">
-                        <div className="absolute -inset-[2px] bg-gradient-to-br from-indigo-900 via-purple-700 to-indigo-900 dark:from-indigo-600 dark:via-purple-500 dark:to-indigo-600 rounded-2xl opacity-100"></div>
+                        <div className="absolute -inset-[2px] bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded-2xl opacity-100"></div>
                         <div className="relative bg-pricing-surface-light dark:bg-pricing-surface-dark rounded-2xl p-8 flex flex-col h-full w-full hover:shadow-2xl transition-shadow">
                             <div className="mb-6">
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">{t.pricing.plans.agency.name}</h3>
@@ -371,7 +548,7 @@ const PricingPage = () => {
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         <div className="space-y-12">
                             <div className="flex items-start">
-                                <div className="flex-shrink-0 bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg mr-4">
+                                <div className="flex-shrink-0 bg-gray-100 dark:bg-gray-800 p-2 rounded-lg mr-4">
                                     <span className="material-symbols-outlined text-pricing-primary">storefront</span>
                                 </div>
                                 <div>
@@ -380,7 +557,7 @@ const PricingPage = () => {
                                 </div>
                             </div>
                             <div className="flex items-start">
-                                <div className="flex-shrink-0 bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg mr-4">
+                                <div className="flex-shrink-0 bg-gray-100 dark:bg-gray-800 p-2 rounded-lg mr-4">
                                     <span className="material-symbols-outlined text-pricing-primary">movie_creation</span>
                                 </div>
                                 <div>
@@ -389,7 +566,7 @@ const PricingPage = () => {
                                 </div>
                             </div>
                             <div className="flex items-start">
-                                <div className="flex-shrink-0 bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg mr-4">
+                                <div className="flex-shrink-0 bg-gray-100 dark:bg-gray-800 p-2 rounded-lg mr-4">
                                     <span className="material-symbols-outlined text-pricing-primary">collections</span>
                                 </div>
                                 <div>
@@ -398,7 +575,7 @@ const PricingPage = () => {
                                 </div>
                             </div>
                             <div className="flex items-start">
-                                <div className="flex-shrink-0 bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg mr-4">
+                                <div className="flex-shrink-0 bg-gray-100 dark:bg-gray-800 p-2 rounded-lg mr-4">
                                     <span className="material-symbols-outlined text-pricing-primary">calendar_month</span>
                                 </div>
                                 <div>
@@ -501,7 +678,7 @@ const PricingPage = () => {
                         <div>
                             <h4 className="font-bold text-gray-200 mb-6">{t.footer.resources}</h4>
                             <ul className="space-y-3 text-gray-400">
-                                <li><a className="hover:text-white" href="#">{t.nav.helpCenter}</a></li>
+                                <li><a className="hover:text-white" href="mailto:tuangb2004@gmail.com?subject=Hỗ trợ Creator AI">{t.nav.helpCenter}</a></li>
                                 <li><a className="hover:text-white" href="#">{t.nav.customerStories}</a></li>
                             </ul>
                         </div>
