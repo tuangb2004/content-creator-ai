@@ -193,9 +193,9 @@ const PostCard = memo(({ post, index, isLiked, isSaved, onLike, onSave, onCopyPr
                     </div>
                 </div>
 
-                {/* Hover Actions Overlay - Also visible on touch devices */}
-                <div className="lg:opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2 sm:p-3 z-20 touch-manipulation">
-                    <div className="flex flex-col gap-2 sm:gap-3 items-end justify-end mt-auto translate-y-2 lg:group-hover:translate-y-0 transition-transform duration-300">
+                {/* Hover Actions Overlay - Only show on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2 sm:p-3 z-20">
+                    <div className="flex flex-col gap-2 sm:gap-3 items-end justify-end mt-auto translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                         {/* Avatar & Follow Button Stack */}
                         {post.authorId && (
                             <div className="relative mb-1 sm:mb-2 w-8 h-8 sm:w-10 sm:h-10 flex cursor-pointer z-30" onClick={(e) => { e.stopPropagation(); if (onAvatarClick) onAvatarClick(post.authorId); }}>

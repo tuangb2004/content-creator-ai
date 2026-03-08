@@ -23,6 +23,7 @@ const LandingPage = () => {
     const { t, language, changeLanguage } = useLanguage();
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const handleAuth = (e) => {
         e?.preventDefault();
@@ -47,6 +48,30 @@ const LandingPage = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    // Close mobile menu on resize to desktop
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth >= 1280) {
+                setMobileMenuOpen(false);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Prevent body scroll when mobile menu is open
+    useEffect(() => {
+        if (mobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [mobileMenuOpen]);
 
     // Handle scroll reveal
     useEffect(() => {
@@ -87,7 +112,7 @@ const LandingPage = () => {
                 </div>
 
                 {/* Navigation */}
-                <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 w-full h-[72px] transition-all duration-300 ${isScrolled
+                <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-6 py-4 w-full h-[72px] transition-all duration-300 ${isScrolled
                     ? 'bg-black/40 backdrop-blur-md border-b border-white/10'
                     : 'bg-transparent backdrop-blur-none border-b border-transparent'
                     }`}>
@@ -96,6 +121,7 @@ const LandingPage = () => {
                         <span className="font-brand font-bold text-lg tracking-tight text-white drop-shadow-md">Creator AI</span>
                     </div>
 
+                    {/* Desktop Navigation */}
                     <div className="hidden xl:flex items-center space-x-1 h-full">
                         <button onClick={() => user ? navigate('/dashboard') : handleAuth()} className="px-4 py-2 text-sm font-medium text-white/90 hover:text-white transition-colors">{t.nav.home}</button>
 
@@ -197,7 +223,7 @@ const LandingPage = () => {
 
                     <div className="flex items-center space-x-3">
                         <button
-                            className="hidden md:flex items-center gap-1.5 text-white/90 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium border border-white/20"
+                            className="hidden lg:flex items-center gap-1.5 text-white/90 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium border border-white/20"
                             onClick={() => changeLanguage(language === 'en' ? 'vi' : 'en')}
                         >
                             <span className="material-symbols-outlined text-[18px]">language</span>
@@ -209,8 +235,79 @@ const LandingPage = () => {
                         <button className="hidden md:block text-white/90 hover:text-white px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 text-sm font-medium whitespace-nowrap cursor-pointer border border-white/20 hover:shadow-lg hover:shadow-white/10 transform " onClick={handleAuth}>
                             {user ? t.nav.start : t.landing.hero.getStarted}
                         </button>
+
+                        {/* Hamburger Menu Button */}
+                        <button
+                            className="xl:hidden flex flex-col justify-center items-center w-10 h-10 space-y-1.5 cursor-pointer"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            aria-label="Toggle menu"
+                        >
+                            <span className={`block w-6 h-0.5 bg-white transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+                            <span className={`block w-6 h-0.5 bg-white transition-all duration-300 ${mobileMenuOpen ? 'opacity-0' : ''}`}></span>
+                            <span className={`block w-6 h-0.5 bg-white transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+                        </button>
                     </div>
                 </nav>
+
+                {/* Mobile Menu Overlay */}
+                {mobileMenuOpen && (
+                    <div className="fixed inset-0 z-40 xl:hidden">
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
+                        <div className="absolute top-[72px] left-0 right-0 bg-black/95 backdrop-blur-md border-t border-white/10 animate-slide-down">
+                            <div className="px-4 py-6 space-y-4">
+                                {/* Mobile Language Button */}
+                                <button
+                                    className="flex items-center gap-2 text-white/90 hover:text-white px-4 py-3 rounded-lg hover:bg-white/10 transition-colors text-base font-medium w-full"
+                                    onClick={() => changeLanguage(language === 'en' ? 'vi' : 'en')}
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">language</span>
+                                    <span>{language === 'en' ? 'English' : 'Tiếng Việt'}</span>
+                                </button>
+
+                                {/* Mobile Nav Links */}
+                                <button
+                                    className="block w-full text-left px-4 py-3 text-base font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                    onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                >
+                                    {t.nav.home}
+                                </button>
+
+                                {/* Mobile Solutions Link */}
+                                <button
+                                    className="block w-full text-left px-4 py-3 text-base font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                    onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                >
+                                    {t.nav.solutions}
+                                </button>
+
+                                {/* Mobile Resources Link */}
+                                <button
+                                    className="block w-full text-left px-4 py-3 text-base font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                    onClick={() => { handleAuth(); setMobileMenuOpen(false); }}
+                                >
+                                    {t.nav.res}
+                                </button>
+
+                                {/* Mobile Pricing Link */}
+                                <button
+                                    className="block w-full text-left px-4 py-3 text-base font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                    onClick={() => { navigate('/pricing'); setMobileMenuOpen(false); }}
+                                >
+                                    {t.nav.pricing}
+                                </button>
+
+                                <div className="pt-4 border-t border-white/10 space-y-3">
+                                    <button className="w-full text-white/90 hover:text-white px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 text-base font-medium border border-white/20" onClick={() => { handleAuth(); setMobileMenuOpen(false); }}>
+                                        {user ? t.nav.dashboard : t.auth.logIn}
+                                    </button>
+                                    <button className="w-full bg-white text-black hover:bg-gray-200 px-4 py-3 rounded-lg transition-all duration-300 text-base font-medium" onClick={() => { handleAuth(); setMobileMenuOpen(false); }}>
+                                        {user ? t.nav.start : t.landing.hero.getStarted}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Hero Content */}
                 <header className="flex-grow flex flex-col justify-center items-center text-center px-6 relative z-20">

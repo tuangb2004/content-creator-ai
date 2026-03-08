@@ -538,7 +538,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
   ];
 
   return (
-    <div className="p-6 md:p-8 max-w-[1200px] mx-auto min-h-screen pb-32 font-sans overflow-hidden">
+    <div className="p-4 sm:p-6 md:p-8 max-w-[1200px] mx-auto min-h-screen pb-32 font-sans overflow-hidden">
 
       {/* Banner */}
       {/* Banner */}
@@ -561,8 +561,8 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
       </div>
 
       {/* Main Heading */}
-      <div className={`text-center mb-14 transition-opacity duration-300 ${isTransitioning || isReturning ? 'opacity-0' : 'opacity-100'}`}>
-        <h1 className="font-serif text-3xl md:text-4xl text-gray-900 dark:text-white mb-2 tracking-tight">
+      <div className={`text-center mb-10 sm:mb-14 transition-opacity duration-300 ${isTransitioning || isReturning ? 'opacity-0' : 'opacity-100'}`}>
+        <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl text-gray-900 dark:text-white mb-2 tracking-tight px-4">
           {t.dashboard.home.mainHeading}
         </h1>
       </div>
@@ -579,7 +579,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
       >
 
         {/* Toggle Tabs - Minimalist Style */}
-        <div className={`absolute -top-12 left-1/2 -translate-x-1/2 z-10 flex gap-8 transition-opacity duration-300 ${isTransitioning || isReturning ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className={`absolute -top-12 left-1/2 -translate-x-1/2 z-10 flex gap-4 sm:gap-6 md:gap-8 transition-opacity duration-300 ${isTransitioning || isReturning ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           {[
             { id: 'video', label: t.dashboard.nav.video || 'Video', icon: Icons.ClapperboardPlay },
             { id: 'image', label: t.dashboard.nav.images || 'Image', icon: Icons.Gallery },
@@ -592,14 +592,14 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
               <button
                 key={item.id}
                 onClick={() => setInputType(item.id)}
-                className={`flex items-center gap-2 px-1 py-2 transition-all duration-300 whitespace-nowrap relative group
+                className={`flex items-center gap-1.5 sm:gap-2 px-1 py-2 transition-all duration-300 whitespace-nowrap relative group
                   ${isActive
                     ? 'text-gray-900 dark:text-white font-bold'
                     : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 font-medium'
                   }`}
               >
-                <Icon size={20} isActive={isActive} className={`shrink-0 transition-colors duration-300 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`} />
-                <span className="text-sm tracking-tight capitalize">
+                <Icon size={18} isActive={isActive} className={`shrink-0 transition-colors duration-300 sm:w-5 sm:h-5 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`} />
+                <span className="text-xs sm:text-sm tracking-tight capitalize">
                   {item.label}
                 </span>
 
@@ -613,9 +613,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
         </div>
 
         {/* Form: layout from HTML sample, compact height */}
-        <div className="relative w-full bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-[#27272a] rounded-3xl md:rounded-[2.5rem] p-3 md:p-4 shadow-xl transition-all duration-300 focus-within:border-gray-300 dark:focus-within:border-zinc-600 focus-within:ring-2 focus-within:ring-gray-200/80 dark:focus-within:ring-zinc-700/50 relative z-20">
+        <div className="relative w-full bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-[#27272a] rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-2.5 sm:p-3 md:p-4 shadow-xl transition-all duration-300 focus-within:border-gray-300 dark:focus-within:border-zinc-600 focus-within:ring-2 focus-within:ring-gray-200/80 dark:focus-within:ring-zinc-700/50 relative z-20">
           {/* Top row: left = mode, right = model / x2 / filter */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-0 mb-2">
+          <div className="flex flex-row justify-between items-center gap-2 mb-2">
             <div className="relative min-w-0" ref={inputType === 'video' ? modeMenuRef : typeDropdownRef}>
               {/* Video: dropdown chỉ gồm 3 chế độ video */}
               {inputType === 'video' && (
@@ -623,16 +623,16 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
                   <button
                     type="button"
                     onClick={() => setIsModeMenuOpen(!isModeMenuOpen)}
-                    className="group flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-900 dark:text-white rounded-full text-sm font-medium transition-all duration-150 border border-transparent dark:border-gray-800"
+                    className="group flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium transition-all duration-150 border border-transparent dark:border-gray-800"
                   >
                     <span className="text-gray-500 dark:text-gray-400 shrink-0">
                       {VIDEO_MODES.find(m => m.id === videoMode)?.icon && (() => {
                         const MIcon = VIDEO_MODES.find(m => m.id === videoMode)?.icon;
-                        return MIcon ? <MIcon size={20} /> : null;
+                        return MIcon ? <MIcon size={18} className="sm:w-5 sm:h-5" /> : null;
                       })()}
                     </span>
-                    <span className="max-w-[220px] truncate">{VIDEO_MODES.find(m => m.id === videoMode)?.label}</span>
-                    <Icons.ChevronDown size={20} className={`shrink-0 transition-transform ${isModeMenuOpen ? 'rotate-180' : ''}`} />
+                    <span className="max-w-[140px] sm:max-w-[220px] truncate">{VIDEO_MODES.find(m => m.id === videoMode)?.label}</span>
+                    <Icons.ChevronDown size={18} className={`shrink-0 transition-transform sm:w-5 sm:h-5 ${isModeMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {isModeMenuOpen && (
                     <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl border border-gray-200 dark:border-[#27272a] p-2 z-50">
@@ -657,9 +657,9 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
               {inputType === 'image' && (
                 <button
                   type="button"
-                  className="group flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#1A1A1A] text-gray-900 dark:text-white rounded-full text-sm font-medium transition-all duration-150 border border-transparent dark:border-gray-800 cursor-default"
+                  className="group flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 bg-gray-100 dark:bg-[#1A1A1A] text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium transition-all duration-150 border border-transparent dark:border-gray-800 cursor-default"
                 >
-                  <span className="text-gray-500 dark:text-gray-400 shrink-0"><Icons.Gallery size={20} /></span>
+                  <span className="text-gray-500 dark:text-gray-400 shrink-0"><Icons.Gallery size={18} className="sm:w-5 sm:h-5" /></span>
                   <span>{t.dashboard.nav?.images ?? 'Tạo hình ảnh'}</span>
                 </button>
               )}
@@ -667,28 +667,28 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
               {inputType === 'text' && (
                 <button
                   type="button"
-                  className="group flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#1A1A1A] text-gray-900 dark:text-white rounded-full text-sm font-medium transition-all duration-150 border border-transparent dark:border-gray-800 cursor-default"
+                  className="group flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 bg-gray-100 dark:bg-[#1A1A1A] text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium transition-all duration-150 border border-transparent dark:border-gray-800 cursor-default"
                 >
-                  <span className="text-gray-500 dark:text-gray-400 shrink-0"><Icons.Notebook size={20} /></span>
+                  <span className="text-gray-500 dark:text-gray-400 shrink-0"><Icons.Notebook size={18} className="sm:w-5 sm:h-5" /></span>
                   <span>{t.dashboard.nav?.textContent ?? 'Nội dung văn bản'}</span>
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-3 self-end md:self-auto shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 self-end md:self-auto shrink-0">
               {(inputType === 'image' || inputType === 'video' || inputType === 'text') && (
                 <>
                   {/* Model Badge */}
-                  <div className="flex items-center h-9 gap-1.5 px-3 bg-gray-100 dark:bg-[#1A1A1A] rounded-full text-sm font-medium text-gray-900 dark:text-white border border-transparent dark:border-gray-800 cursor-default select-none transition-colors">
-                    <span className="shrink-0 text-gray-900 dark:text-white"><selectedModel.icon size={20} /></span>
-                    <span className="max-w-[120px] truncate leading-none">{selectedModel.name}</span>
+                  <div className="flex items-center h-8 sm:h-9 gap-1 sm:gap-1.5 px-2 sm:px-3 bg-gray-100 dark:bg-[#1A1A1A] rounded-full text-xs sm:text-sm font-medium text-gray-900 dark:text-white border border-transparent dark:border-gray-800 cursor-default select-none transition-colors">
+                    <span className="shrink-0 text-gray-900 dark:text-white"><selectedModel.icon size={18} className="sm:w-5 sm:h-5" /></span>
+                    <span className="max-w-[80px] sm:max-w-[120px] truncate leading-none">{selectedModel.name}</span>
                   </div>
 
                   {/* Ratio/Count Badge (for Video & Image) */}
                   {(inputType === 'video' || inputType === 'image') && (
-                    <div className="flex items-center h-9 gap-1.5 px-3 text-gray-500 dark:text-gray-400 cursor-default select-none border border-transparent rounded-full transition-colors"
+                    <div className="flex items-center h-8 sm:h-9 gap-1 sm:gap-1.5 px-2 sm:px-3 text-gray-500 dark:text-gray-400 cursor-default select-none border border-transparent rounded-full transition-colors"
                       title={inputType === 'video' ? `Tỷ lệ: ${videoAspectRatio}` : `Tỷ lệ: ${imageAspectRatio}`}>
-                      <Icons.RectangleFrame size={20} className={((inputType === 'video' ? videoAspectRatio : imageAspectRatio).includes('9:16') || (inputType === 'image' && imageAspectRatio === '3:4')) ? 'rotate-90' : ''} />
-                      <span className="text-sm font-medium leading-none">x{inputType === 'video' ? (videoX2 ? '2' : '1') : imageCount}</span>
+                      <Icons.RectangleFrame size={18} className={`sm:w-5 sm:h-5 ${((inputType === 'video' ? videoAspectRatio : imageAspectRatio).includes('9:16') || (inputType === 'image' && imageAspectRatio === '3:4')) ? 'rotate-90' : ''}`} />
+                      <span className="text-xs sm:text-sm font-medium leading-none">x{inputType === 'video' ? (videoX2 ? '2' : '1') : imageCount}</span>
                     </div>
                   )}
 
@@ -697,16 +697,16 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
                     <button
                       type="button"
                       onClick={() => { setIsSettingsOpen(!isSettingsOpen); setTuningSubMenu(null); }}
-                      className={`group h-9 w-9 flex items-center justify-center transition-colors border rounded-full ${isSettingsOpen ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 border-transparent shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border-transparent hover:bg-gray-100 dark:hover:bg-[#1A1A1A]'}`}
+                      className={`group h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center transition-colors border rounded-full ${isSettingsOpen ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 border-transparent shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border-transparent hover:bg-gray-100 dark:hover:bg-[#1A1A1A]'}`}
                       title={inputType === 'video' ? "Cài đặt video" : inputType === 'image' ? "Cài đặt hình ảnh" : "Cài đặt văn bản"}
                     >
-                      <Icons.TuningSquare size={20} isActive={isSettingsOpen} />
+                      <Icons.TuningSquare size={18} className="sm:w-5 sm:h-5" isActive={isSettingsOpen} />
                     </button>
                     {isSettingsOpen && (
-                      <div className="absolute top-full right-0 mt-2 w-[32rem] bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-3 z-50 space-y-3">
+                      <div className="absolute top-full right-0 mt-2 w-[calc(100vw-2rem)] sm:w-[24rem] md:w-[32rem] max-w-[32rem] bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 sm:p-3 z-50 space-y-2 sm:space-y-3">
                         {/* Row 1: Ratio + Count (Only for Video & Image) */}
                         {(inputType === 'video' || inputType === 'image') && (
-                          <div className="flex gap-3">
+                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                             {/* Aspect Ratio */}
                             <div className="flex-1 relative">
                               <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'ratio' ? null : 'ratio')}
@@ -773,7 +773,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
 
                         {/* Row 2: Duration + Resolution (Only for Video) */}
                         {inputType === 'video' && (
-                          <div className="flex gap-3">
+                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                             <div className="flex-1 relative">
                               <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'duration' ? null : 'duration')}
                                 className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
@@ -874,14 +874,14 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
             </div>
           </div>
 
-          <div className="w-full min-h-[2.75rem] py-1 mb-1 overflow-hidden">
+          <div className="w-full min-h-[2.5rem] sm:min-h-[2.75rem] py-1 mb-1 overflow-hidden">
             <textarea
               ref={textareaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={1}
-              className="w-full min-h-[2.75rem] max-h-48 bg-transparent border-none p-0 text-base text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:ring-0 resize-none leading-relaxed overflow-x-hidden overflow-y-auto break-words"
+              className="w-full min-h-[2.5rem] sm:min-h-[2.75rem] max-h-48 bg-transparent border-none p-0 text-sm sm:text-base text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:ring-0 resize-none leading-relaxed overflow-x-hidden overflow-y-auto break-words"
               placeholder={
                 inputType === 'video'
                   ? t.dashboard.home.placeholderVideo
@@ -900,7 +900,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
             )}
             {/* Tạo video từ các khung hình: chỉ 2 nút – khung hình đầu & khung hình cuối; ảnh hiện ngay trong nút +, không chèn thêm ô khác */}
             {inputType === 'video' && videoMode === 'frame-to-video' && (
-              <div className="flex items-center gap-2" ref={menuRef}>
+              <div className="flex items-center gap-1.5 sm:gap-2" ref={menuRef}>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -912,7 +912,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
                   <button
                     type="button"
                     onClick={() => { plusMenuFrameSlotRef.current = 0; setPlusMenuFrameSlot(0); setIsPlusMenuOpen(true); }}
-                    className={`relative group/thumb w-10 h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600 transition-all ${isPlusMenuOpen && plusMenuFrameSlot === 0 ? 'bg-gray-200 dark:bg-[#252525]' : ''}`}
+                    className={`relative group/thumb w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600 transition-all ${isPlusMenuOpen && plusMenuFrameSlot === 0 ? 'bg-gray-200 dark:bg-[#252525]' : ''}`}
                     title={uploadedFiles[0] ? 'Khung hình đầu tiên' : 'Ảnh đầu (khung hình đầu video)'}
                   >
                     {uploadedFiles[0] ? (
@@ -977,16 +977,16 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
                   type="button"
                   onClick={swapFrameOrder}
                   disabled={uploadedFiles.filter(Boolean).length !== 2}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-500 dark:text-gray-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                  className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-500 dark:text-gray-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                   title="Đổi thứ tự ảnh đầu / ảnh cuối"
                 >
-                  <Icons.ArrowLeftRight size={18} />
+                  <Icons.ArrowLeftRight size={16} className="sm:w-[18px] sm:h-[18px]" />
                 </button>
                 <div className="relative shrink-0">
                   <button
                     type="button"
                     onClick={() => { plusMenuFrameSlotRef.current = 1; setPlusMenuFrameSlot(1); setIsPlusMenuOpen(true); }}
-                    className={`relative group/thumb w-10 h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600 transition-colors ${isPlusMenuOpen && plusMenuFrameSlot === 1 ? 'bg-gray-200 dark:bg-[#252525]' : ''}`}
+                    className={`relative group/thumb w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600 transition-colors ${isPlusMenuOpen && plusMenuFrameSlot === 1 ? 'bg-gray-200 dark:bg-[#252525]' : ''}`}
                     title={uploadedFiles[1] ? 'Khung hình cuối' : 'Ảnh cuối (khung hình cuối video)'}
                   >
                     {uploadedFiles[1] ? (
@@ -1051,13 +1051,13 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
             )}
             {/* Các chế độ khác: nút + cố định trái, ảnh đính kèm xếp bên phải; hover ảnh hiện preview */}
             {!(inputType === 'video' && videoMode === 'text-to-video') && !(inputType === 'video' && videoMode === 'frame-to-video') && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <div className="relative shrink-0" ref={menuRef}>
                   <button
                     onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
-                    className={`flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-500 dark:text-gray-400 transition-colors ${isPlusMenuOpen ? 'bg-gray-200 dark:bg-[#252525] text-gray-700 dark:text-white' : ''}`}
+                    className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-500 dark:text-gray-400 transition-colors ${isPlusMenuOpen ? 'bg-gray-200 dark:bg-[#252525] text-gray-700 dark:text-white' : ''}`}
                   >
-                    {isPlusMenuOpen ? <Icons.X size={20} /> : <Icons.Plus size={20} />}
+                    {isPlusMenuOpen ? <Icons.X size={18} className="sm:w-5 sm:h-5" /> : <Icons.Plus size={18} className="sm:w-5 sm:h-5" />}
                   </button>
 
                   {/* Dropdown: Upload (nhỏ) + Chọn từ Asset cạnh nhau, rồi grid file gần đây */}
@@ -1141,7 +1141,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
                     <button
                       key={index}
                       type="button"
-                      className="relative group/thumb w-10 h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1A1A1A] ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600 transition-all"
+                      className="relative group/thumb w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1A1A1A] ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600 transition-all"
                       title={file.name}
                     >
                       {file.type?.startsWith('image/') ? (
@@ -1175,88 +1175,88 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
             <button
               onClick={handleSend}
               disabled={!inputValue.trim() || (inputType === 'video' && videoMode === 'frame-to-video' && uploadedFiles.filter(Boolean).length < 2)}
-              className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#0F0F0F] active:scale-95 shadow-lg dark:shadow-none border dark:border-gray-700 ${inputValue.trim() && !(inputType === 'video' && videoMode === 'frame-to-video' && uploadedFiles.filter(Boolean).length < 2) ? 'bg-gray-900 dark:bg-[#2A2A2A] hover:bg-black dark:hover:bg-[#333333] text-white dark:text-gray-300 focus-visible:ring-gray-400 dark:focus-visible:ring-gray-500' : 'bg-gray-200 dark:bg-[#252525] text-gray-400 cursor-not-allowed'}`}
+              className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#0F0F0F] active:scale-95 shadow-lg dark:shadow-none border dark:border-gray-700 ${inputValue.trim() && !(inputType === 'video' && videoMode === 'frame-to-video' && uploadedFiles.filter(Boolean).length < 2) ? 'bg-gray-900 dark:bg-[#2A2A2A] hover:bg-black dark:hover:bg-[#333333] text-white dark:text-gray-300 focus-visible:ring-gray-400 dark:focus-visible:ring-gray-500' : 'bg-gray-200 dark:bg-[#252525] text-gray-400 cursor-not-allowed'}`}
             >
-              <Icons.ArrowRight size={20} />
+              <Icons.ArrowRight size={18} className="sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
 
         {/* History Links */}
-        <div className={`flex justify-center gap-6 mt-6 text-xs text-black/50 dark:text-gray-400 font-medium transition-opacity duration-100 ${isTransitioning || isReturning ? 'opacity-0' : ''}`}>
+        <div className={`flex flex-wrap justify-center gap-3 sm:gap-6 mt-4 sm:mt-6 text-[10px] sm:text-xs text-black/50 dark:text-gray-400 font-medium transition-opacity duration-100 ${isTransitioning || isReturning ? 'opacity-0' : ''}`}>
           <div className="flex items-center gap-2">
             <span>{t.dashboard.home.history}</span>
             <div className="h-3 w-px bg-gray-300 dark:bg-gray-700"></div>
           </div>
-          <button className="hover:text-black dark:hover:text-gray-300 flex items-center gap-1 transition-colors">Wool-felt winter village <Icons.ArrowRight size={10} className="-rotate-45" /></button>
-          <button className="hover:text-black dark:hover:text-gray-300 flex items-center gap-1 transition-colors">Multiple poster editing <Icons.ArrowRight size={10} className="-rotate-45" /></button>
+          <button className="hover:text-black dark:hover:text-gray-300 flex items-center gap-1 transition-colors truncate max-w-[120px] sm:max-w-none">Wool-felt winter village <Icons.ArrowRight size={10} className="-rotate-45" /></button>
+          <button className="hover:text-black dark:hover:text-gray-300 flex items-center gap-1 transition-colors truncate max-w-[120px] sm:max-w-none">Multiple poster editing <Icons.ArrowRight size={10} className="-rotate-45" /></button>
         </div>
       </div>
 
       <div className={`transition-opacity duration-300 delay-100 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
 
         {/* Popular Features Section */}
-        <div className="mb-10">
-          <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 mb-4 tracking-tight">{t.dashboard.home.popularFeatures}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mb-8 sm:mb-10">
+          <h2 className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-300 mb-3 sm:mb-4 tracking-tight">{t.dashboard.home.popularFeatures}</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
             {/* Feature Card 1 */}
-            <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl flex items-center gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
-              <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 relative shadow-sm">
+            <div className="bg-gray-50 dark:bg-gray-800/40 p-2 sm:p-3 rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-center gap-2 sm:gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl overflow-hidden shrink-0 relative shadow-sm">
                 <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" className="w-full h-full object-cover" alt="AI Talking Photo" />
-                <div className="absolute bottom-1 right-1 w-4 h-4 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white">
-                  <Icons.MoreHorizontal size={10} />
+                <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1 w-3 h-3 sm:w-4 sm:h-4 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white">
+                  <Icons.MoreHorizontal size={8} className="sm:w-[10px] sm:h-[10px]" />
                 </div>
               </div>
-              <div className="min-w-0">
-                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">{t.dashboard.chat.aiTalkingPhoto}</h3>
-                <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
+              <div className="min-w-0 text-center sm:text-left">
+                <h3 className="text-[11px] sm:text-[13px] font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1 truncate">{t.dashboard.chat.aiTalkingPhoto}</h3>
+                <div className="text-[9px] sm:text-[10px] text-gray-500 flex items-center justify-center sm:justify-start gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
                   {t.dashboard.chat.useNow} <Icons.ArrowUp size={8} className="rotate-45" />
                 </div>
               </div>
             </div>
 
             {/* Feature Card 2 */}
-            <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl flex items-center gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
-              <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 relative shadow-sm">
+            <div className="bg-gray-50 dark:bg-gray-800/40 p-2 sm:p-3 rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-center gap-2 sm:gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl overflow-hidden shrink-0 relative shadow-sm">
                 <img src="https://images.unsplash.com/photo-1635805737707-575885ab0820?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" className="w-full h-full object-cover" alt="Avatar Video" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-5 h-5 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
-                    <div className="w-0 h-0 border-t-[3px] border-t-transparent border-l-[5px] border-l-white border-b-[3px] border-b-transparent ml-0.5"></div>
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
+                    <div className="w-0 h-0 border-t-[2px] sm:border-t-[3px] border-t-transparent border-l-[4px] sm:border-l-[5px] border-l-white border-b-[2px] sm:border-b-[3px] border-b-transparent ml-0.5"></div>
                   </div>
                 </div>
               </div>
-              <div className="min-w-0">
-                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">{t.dashboard.chat.avatarVideo}</h3>
-                <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
+              <div className="min-w-0 text-center sm:text-left">
+                <h3 className="text-[11px] sm:text-[13px] font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1 truncate">{t.dashboard.chat.avatarVideo}</h3>
+                <div className="text-[9px] sm:text-[10px] text-gray-500 flex items-center justify-center sm:justify-start gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
                   {t.dashboard.chat.useNow} <Icons.ArrowUp size={8} className="rotate-45" />
                 </div>
               </div>
             </div>
 
             {/* Feature Card 3 */}
-            <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl flex items-center gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
-              <div className="w-16 h-16 rounded-xl bg-gray-200 overflow-hidden shrink-0 relative shadow-sm group-hover:scale-105 transition-transform duration-500">
+            <div className="bg-gray-50 dark:bg-gray-800/40 p-2 sm:p-3 rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-center gap-2 sm:gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-gray-200 overflow-hidden shrink-0 relative shadow-sm group-hover:scale-105 transition-transform duration-500">
                 <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" className="w-full h-full object-cover" alt="Product photo" />
               </div>
-              <div className="min-w-0">
-                <h3 className="text-[13px] font-bold text-gray-900 dark:text-white mb-1 truncate">{t.dashboard.chat.productPhoto}</h3>
-                <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
+              <div className="min-w-0 text-center sm:text-left">
+                <h3 className="text-[11px] sm:text-[13px] font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1 truncate">{t.dashboard.chat.productPhoto}</h3>
+                <div className="text-[9px] sm:text-[10px] text-gray-500 flex items-center justify-center sm:justify-start gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
                   {t.dashboard.chat.useNow} <Icons.ArrowUp size={8} className="rotate-45" />
                 </div>
               </div>
             </div>
 
             {/* Feature Card 4 */}
-            <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl flex items-center gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
-              <div className="w-16 h-16 rounded-xl bg-orange-100 overflow-hidden shrink-0 relative shadow-sm">
+            <div className="bg-gray-50 dark:bg-gray-800/40 p-2 sm:p-3 rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-center gap-2 sm:gap-4 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-orange-100 overflow-hidden shrink-0 relative shadow-sm">
                 <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" className="w-full h-full object-cover" alt="Vibe marketing" />
               </div>
-              <div className="min-w-0">
-                <div className="flex justify-between items-start mb-0.5">
-                  <h3 className="text-[13px] font-bold text-gray-900 dark:text-white truncate">{t.dashboard.chat.vibeMarketing}</h3>
-                  <span className="text-[8px] bg-purple-100 text-purple-700 px-1 py-0.5 rounded font-bold ml-1">Beta</span>
+              <div className="min-w-0 text-center sm:text-left">
+                <div className="flex justify-center sm:justify-between items-start mb-0.5">
+                  <h3 className="text-[11px] sm:text-[13px] font-bold text-gray-900 dark:text-white truncate">{t.dashboard.chat.vibeMarketing}</h3>
+                  <span className="text-[7px] sm:text-[8px] bg-purple-100 text-purple-700 px-1 py-0.5 rounded font-bold ml-1 hidden sm:inline">Beta</span>
                 </div>
-                <div className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
+                <div className="text-[9px] sm:text-[10px] text-gray-500 flex items-center justify-center sm:justify-start gap-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-semibold">
                   {t.dashboard.chat.useNow} <Icons.ArrowUp size={8} className="rotate-45" />
                 </div>
               </div>
@@ -1265,19 +1265,19 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
         </div>
 
         {/* Recent Chats Section */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-gray-700 dark:text-gray-300 tracking-tight">{t.dashboard.home.recentCreations}</h2>
-            <button className="text-[13px] text-purple-600 font-semibold hover:underline">{t.dashboard.home.viewAll}</button>
+        <div className="mb-8 sm:mb-12">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-300 tracking-tight">{t.dashboard.home.recentCreations}</h2>
+            <button className="text-[11px] sm:text-[13px] text-gray-900 dark:text-white font-semibold hover:underline">{t.dashboard.home.viewAll}</button>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2">
+          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2">
             {recentProjects.length > 0 ? (
               recentProjects.map((item) => (
                 <div
                   key={item.id}
-                  className="group flex-shrink-0 w-[240px] bg-white dark:bg-gray-800/40 hover:bg-white dark:hover:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 cursor-pointer p-2.5 flex items-center gap-3"
+                  className="group flex-shrink-0 w-[180px] sm:w-[240px] bg-white dark:bg-gray-800/40 hover:bg-white dark:hover:bg-gray-800 rounded-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 cursor-pointer p-2 sm:p-2.5 flex items-center gap-2 sm:gap-3"
                 >
-                  <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm ${item.type === 'image' ? 'bg-purple-50 text-purple-600' :
+                  <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm ${item.type === 'image' ? 'bg-purple-50 text-purple-600' :
                     item.type === 'video' ? 'bg-blue-50 text-blue-600' :
                       'bg-green-50 text-green-600'
                     }`}>
@@ -1285,19 +1285,19 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
                       <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <>
-                        {item.type === 'image' && <Icons.Image size={18} />}
-                        {item.type === 'video' && <Icons.Video size={18} />}
-                        {(!item.type || item.type === 'text') && <Icons.FileText size={18} />}
+                        {item.type === 'image' && <Icons.Image size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                        {item.type === 'video' && <Icons.Video size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                        {(!item.type || item.type === 'text') && <Icons.FileText size={16} className="sm:w-[18px] sm:h-[18px]" />}
                       </>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-[13px] font-bold text-gray-800 dark:text-white truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                    <h3 className="text-[11px] sm:text-[13px] font-bold text-gray-800 dark:text-white truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                       {item.title}
                     </h3>
                     <div className="flex items-center gap-1 opacity-40">
-                      <span className="text-[9px] font-bold uppercase tracking-wider">{item.type || 'text'}</span>
-                      <span className="text-[9px] whitespace-nowrap">• {item.date}</span>
+                      <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider">{item.type || 'text'}</span>
+                      <span className="text-[8px] sm:text-[9px] whitespace-nowrap">• {item.date}</span>
                     </div>
                   </div>
                 </div>
@@ -1309,54 +1309,6 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
               </div>
             )}
           </div>
-        </div>
-
-        {/* Trending Section */}
-        <div>
-          <div className="flex gap-8 border-b border-gray-200 dark:border-gray-800 mb-6">
-            <button className="pb-3 text-sm font-bold text-black dark:text-white border-b-2 border-black dark:border-white">
-              {t.dashboard.home.trendingTikTok}
-            </button>
-            <button className="pb-3 text-sm font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
-              {t.dashboard.home.visualInspiration}
-            </button>
-            <div className="ml-auto">
-              <button className="text-xs text-purple-600 font-medium hover:underline flex items-center gap-1">
-                {t.dashboard.home.viewAll} <Icons.ChevronRight size={12} />
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { color: 'bg-orange-50', image: 'https://images.unsplash.com/photo-1549488344-cbb6c34cf08b?auto=format&fit=crop&w=400&q=80', title: 'Trưng bày sản phẩm' },
-              { color: 'bg-gray-50', image: 'https://images.unsplash.com/photo-1512413914633-b5043f4041ea?auto=format&fit=crop&w=400&q=80', title: 'Tối giản' },
-              { color: 'bg-yellow-50', image: 'https://images.unsplash.com/photo-1534067783865-9594047a240d?auto=format&fit=crop&w=400&q=80', title: 'Thiên nhiên' },
-              { color: 'bg-blue-50', image: 'https://images.unsplash.com/photo-1512341689857-198e7e2f3ca8?auto=format&fit=crop&w=400&q=80', title: 'Đô thị' }
-            ].map((item, i) => (
-              <div key={i} className={`aspect-[3/4] rounded-2xl overflow-hidden relative group cursor-pointer ${item.color}`}>
-                {item.image && <img src={item.image} alt="Trending" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />}
-                <div className="absolute top-3 left-3">
-                  <span className="bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 border border-white/10">
-                    <Icons.Wand2 size={10} />
-                    {item.title}
-                  </span>
-                </div>
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/40">
-                    <Icons.Play size={24} fill="currentColor" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Help Bubble */}
-        <div className="fixed bottom-8 right-8">
-          <button className="w-12 h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-full flex items-center justify-center shadow-lg transition-colors hover:scale-105 active:scale-95">
-            <Icons.HelpCircle size={24} />
-          </button>
         </div>
 
         {/* Select File Modal */}

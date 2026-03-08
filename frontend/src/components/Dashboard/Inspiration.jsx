@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Icons } from '../Icons';
+import rankingSvg from '../../assets/svg/ranking-svgrepo-com.svg';
 import { getPosts, incrementPostUsage } from '../../services/firebaseFunctions';
 import { useLanguage } from '../../contexts/LanguageContext';
 import toast from '../../utils/toast';
@@ -227,6 +228,7 @@ const Inspiration = ({ onTabChange }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { t } = useLanguage();
+    const [isCreateHovered, setIsCreateHovered] = useState(false);
 
     // Helper to handle navigation to dashboard tab
     const navigateToDashboard = useCallback(() => {
@@ -485,9 +487,11 @@ const Inspiration = ({ onTabChange }) => {
                 </div>
                 <button
                     onClick={navigateToDashboard}
-                    className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl text-sm font-bold transition-all shadow-md"
+                    onMouseEnter={() => setIsCreateHovered(true)}
+                    onMouseLeave={() => setIsCreateHovered(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 text-black dark:text-white rounded-xl text-sm font-bold transition-all border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
                 >
-                    <Icons.Wand2 size={16} />
+                    <Icons.Wand2 size={16} isActive={isCreateHovered} />
                     Tạo nội dung
                 </button>
             </div>
@@ -495,7 +499,7 @@ const Inspiration = ({ onTabChange }) => {
             {/* ── Weekly Trending Posts ── */}
             <div className="mb-10">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-5">
-                    <span className="text-yellow-500">🏆</span> {t.dashboard.inspiration.weeklyTopCreators}
+                    <img src={rankingSvg} alt="ranking" className="w-5 h-5" /> {t.dashboard.inspiration.weeklyTopCreators}
                 </h2>
                 <div className="flex gap-5 overflow-x-auto pb-4 no-scrollbar">
                     {isTrendingLoading ? (
@@ -577,7 +581,7 @@ const Inspiration = ({ onTabChange }) => {
                         placeholder={t.dashboard.inspiration.searchPlaceholder}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 pr-4 py-2 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-white w-full md:w-64 focus:ring-2 focus:ring-purple-500 outline-none transition-all hover:border-purple-300 dark:hover:border-purple-600"
+                        className="pl-9 pr-4 py-2 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-white w-full md:w-64 focus:ring-2 focus:ring-gray-500 outline-none transition-all hover:border-gray-400 dark:hover:border-gray-500"
                     />
                     {searchQuery && (
                         <button

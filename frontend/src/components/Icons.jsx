@@ -57,6 +57,10 @@ import upgradeSvg from '../assets/svg/upgrade-svgrepo-com.svg';
 import helpSvg from '../assets/svg/help-svgrepo-com.svg';
 import settingSvg from '../assets/svg/setting-svgrepo-com.svg';
 import notificationSvg from '../assets/svg/notification-svgrepo-com.svg';
+import saveOutlineSvg from '../assets/svg/save-svgrepo-com.svg';
+import saveFilledSvg from '../assets/svg/save-svgrepo-com (1).svg';
+import cameraOutlineSvg from '../assets/svg/camera-svgrepo-com.svg';
+import cameraFilledSvg from '../assets/svg/camera-svgrepo-com (1).svg';
 
 // Filled variants (1) – shown on hover and when active
 import homeFilledSvg from '../assets/svg/home-svgrepo-com (1).svg';
@@ -188,6 +192,8 @@ export const Icons = {
     TuningSquare: (props) => <DualSvgIcon outlineSrc={tuningSvg} filledSrc={tuningFilledSvg} isActive={props.isActive} {...props} />,
     Gemini: (props) => <DualSvgIcon outlineSrc={geminiOutlineSvg} filledSrc={geminiFilledSvg} isActive={props.isActive} {...props} />,
     Shop: (props) => <DualSvgIcon outlineSrc={shopSvg} filledSrc={shopFilledSvg} isActive={props.isActive} {...props} />,
+    Save: (props) => <DualSvgIcon outlineSrc={saveOutlineSvg} filledSrc={saveFilledSvg} isActive={props.isActive} {...props} />,
+    Camera: (props) => <DualSvgIcon outlineSrc={cameraOutlineSvg} filledSrc={cameraFilledSvg} isActive={props.isActive} {...props} />,
     Banana: (props) => <SvgIcon src={bananaSvg} {...props} />,
     Groq: (props) => <DualSvgIcon outlineSrc={groqOutlineSvg} filledSrc={groqFilledSvg} isActive={props.isActive} {...props} />,
     Facebook: (props) => <SvgIcon src={facebookSvg} {...props} />,
@@ -261,7 +267,6 @@ export const Icons = {
     UserCheck: (props) => <LucideIcon icon="UserCheck" {...props} />,
     UserPlus: (props) => <LucideIcon icon="UserPlus" {...props} />,
     UserX: (props) => <LucideIcon icon="UserX" {...props} />,
-    Camera: (props) => <LucideIcon icon="Camera" {...props} />,
     Edit: (props) => <LucideIcon icon="Edit" {...props} />,
     Grid: (props) => <LucideIcon icon="Grid" {...props} />,
     MessageCircle: (props) => <LucideIcon icon="MessageCircle" {...props} />,

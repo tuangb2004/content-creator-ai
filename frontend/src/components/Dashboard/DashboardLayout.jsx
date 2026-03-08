@@ -253,13 +253,6 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                   {t.settings.language}: {language === 'en' ? 'EN' : 'VI'}
                 </button>
                 <button
-                  onClick={() => onTabChange('profile')}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group"
-                >
-                  <Icons.User size={16} className="text-black dark:text-gray-400" />
-                  {t.dashboard.profile?.myProfile || 'My profile'}
-                </button>
-                <button
                   onClick={toggleTheme}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group"
                 >
@@ -275,7 +268,13 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                     </>
                   )}
                 </button>
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onTabChange) onTabChange('billing');
+                    setIsSidebarProfileOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-normal hover:font-semibold text-black dark:text-gray-400 dark:hover:text-white transition-all text-left group">
                   <Icons.Sparkles size={16} className="text-black dark:text-gray-400" />
                   {t.dashboard.profile?.upgrade || 'Upgrade plan'}
                 </button>
@@ -337,7 +336,12 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                   {userData?.plan === 'pro' ? (t.dashboard.profile?.proPlan || 'Pro Plan') : (t.dashboard.profile?.freePlan || 'Free Plan')}
                 </div>
               </div>
-              <button className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-black dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onTabChange) onTabChange('billing');
+                }}
+                className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-black dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
                 {t.common?.upgrade || 'Upgrade'}
               </button>
             </div>
@@ -417,7 +421,10 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
 
               {/* Earn credits button - full text on mobile */}
               <button
-                onClick={() => onTabChange('billing')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onTabChange) onTabChange('billing');
+                }}
                 className="flex items-center h-8 md:h-9 gap-1.5 md:gap-2 bg-white dark:bg-gray-800 text-black dark:text-white px-2 md:px-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm group"
               >
                 <Icons.Shop size={14} className="md:w-4 md:h-4" />

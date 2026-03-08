@@ -1,547 +1,605 @@
+// Video Generator - Copy 100% từ DashboardHome tab Video
 import { useState, useRef, useEffect } from 'react';
 import { Icons } from '../Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { VIDEO_MODELS, createVideoRequest, subscribeVideoRequest } from '../../services/videoGeneration';
-import { uploadFile, saveProject } from '../../services/firebaseFunctions';
+import { AgentChat } from './AgentChat';
+import { uploadFile } from '../../services/firebaseFunctions';
 import toast from '../../utils/toast';
 
-const RATIOS = [
-    { id: '16:9', label: '16:9', width: 'w-8', height: 'h-4' },
-    { id: '9:16', label: '9:16', width: 'w-3', height: 'h-5' },
-    { id: '1:1', label: '1:1', width: 'w-5', height: 'h-5' },
+const VIDEO_RATIOS = [
+  { id: '16:9', label: '16:9', width: 'w-8', height: 'h-4', desc: 'Landscape' },
+  { id: '9:16', label: '9:16', width: 'w-4', height: 'h-7', desc: 'Portrait' },
 ];
 
-const LANGUAGES = [
-    { id: 'EN', label: 'English' },
-    { id: 'VI', label: 'Tiếng Việt' },
+const VIDEO_MODES = [
+  { id: 'text-to-video', label: 'Từ văn bản sang video', icon: Icons.Notebook, desc: 'Tạo video từ prompt text' },
+  { id: 'frame-to-video', label: 'Tạo video từ các khung hình', icon: Icons.Gallery, desc: '2 ảnh đầu/cuối' },
+  { id: 'ingredients-to-video', label: 'Tạo video từ các thành phần', icon: Icons.Layers, desc: 'Tối đa 3 ảnh tham chiếu' },
 ];
+
+const VIDEO_LANGUAGES = [
+  { id: 'EN', label: 'English' },
+  { id: 'VI', label: 'Tiếng Việt' },
+];
+
+const MODELS = {
+  video: [
+    { id: 'veo-3.1-fast', name: 'Veo 3.1 Fast', desc: 'Nhanh, tiết kiệm', icon: Icons.Veo, credits: 300 },
+    { id: 'veo-3.1-standard', name: 'Veo 3.1 Standard', desc: 'Chất lượng cao', icon: Icons.Veo, credits: 500 },
+  ]
+};
+
+const VIDEO_DURATIONS = [4, 6, 8];
 
 const VideoGenerator = () => {
-    const { t } = useLanguage();
-    const { user, userData, refreshUserData } = useAuth();
-    const [inputValue, setInputValue] = useState('');
-    const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
-    const [isRatioLangMenuOpen, setIsRatioLangMenuOpen] = useState(false);
-    const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
-    const [selectedRatio, setSelectedRatio] = useState('16:9');
-    const [selectedLanguage, setSelectedLanguage] = useState('EN');
-    const [selectedModel, setSelectedModel] = useState(VIDEO_MODELS[0]); // Default: Veo 3.1 Fast
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [generationStatus, setGenerationStatus] = useState(null);
-    const [generatedVideo, setGeneratedVideo] = useState(null);
-    const [uploadedFiles, setUploadedFiles] = useState([]);
+  const { t } = useLanguage();
+  const [inputValue, setInputValue] = useState('');
+  const [videoMode, setVideoMode] = useState('text-to-video');
+  const [videoAspectRatio, setVideoAspectRatio] = useState('9:16');
+  const [videoDuration, setVideoDuration] = useState(8);
+  const [videoX2, setVideoX2] = useState(false);
+  const [videoResolution, setVideoResolution] = useState('720p');
+  const [selectedModel, setSelectedModel] = useState(MODELS.video[0]);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
-    const menuRef = useRef(null);
-    const ratioLangMenuRef = useRef(null);
-    const modelMenuRef = useRef(null);
-    const fileInputRef = useRef(null);
+  // Menu states
+  const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [tuningSubMenu, setTuningSubMenu] = useState(null);
+  const [plusMenuFrameSlot, setPlusMenuFrameSlot] = useState(null);
 
-    const userCredits = userData?.credits || 0;
-    const userPlan = userData?.plan || 'free';
-    const canGenerateVideo = userPlan !== 'free' && userCredits >= selectedModel.credits;
+  // Chat mode
+  const [isChatMode, setIsChatMode] = useState(false);
+  const [promptForChat, setPromptForChat] = useState('');
+  const [initialFileUrls, setInitialFileUrls] = useState([]);
 
-    // Close menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
-                setIsPlusMenuOpen(false);
-            }
-            if (ratioLangMenuRef.current && !ratioLangMenuRef.current.contains(event.target)) {
-                setIsRatioLangMenuOpen(false);
-            }
-            if (modelMenuRef.current && !modelMenuRef.current.contains(event.target)) {
-                setIsModelMenuOpen(false);
-            }
-        };
+  // Refs
+  const menuRef = useRef(null);
+  const modeMenuRef = useRef(null);
+  const tuningMenuRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
+  const plusMenuFrameSlotRef = useRef(null);
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-    const handleFileUpload = async (e) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length === 0) return;
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modeMenuRef.current && !modeMenuRef.current.contains(event.target)) {
+        setIsModeMenuOpen(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsPlusMenuOpen(false);
-
-        for (const file of files) {
-            if (file.size > 20 * 1024 * 1024) {
-                toast.error((t.dashboard.uploadModal?.fileTooLarge || 'File {name} exceeds 20MB').replace('{name}', file.name));
-                continue;
-            }
-
-            toast.loading(t.dashboard.chat?.uploadingImage || 'Uploading...', { id: `uploading-${file.name}` });
-
-            try {
-                const base64Data = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = (err) => reject(err);
-                    reader.readAsDataURL(file);
-                });
-
-                if (!base64Data || typeof base64Data !== 'string' || !base64Data.includes(',')) {
-                    throw new Error('Invalid file data format');
-                }
-
-                const base64 = base64Data.split(',')[1];
-                const result = await uploadFile({
-                    fileName: file.name,
-                    fileType: file.type || 'application/octet-stream',
-                    fileSize: file.size,
-                    fileData: base64
-                });
-
-                if (result.success) {
-                    setUploadedFiles(prev => [...prev, { url: result.fileUrl, name: file.name, type: file.type }]);
-                    toast.dismiss(`uploading-${file.name}`);
-                    toast.success(t.dashboard.chat?.fileUploaded || 'File uploaded');
-                } else {
-                    throw new Error(result.message || 'Upload failed');
-                }
-            } catch (error) {
-                console.error('File upload error:', error);
-                toast.dismiss(`uploading-${file.name}`);
-                const errorMessage = error.message === 'Invalid file data format'
-                    ? (t.dashboard.chat?.fileReadError || 'Error reading file')
-                    : (t.dashboard.chat?.uploadError || 'Upload failed');
-                toast.error(`${errorMessage}: ${file.name}`);
-            }
-        }
-        e.target.value = '';
+        setPlusMenuFrameSlot(null);
+        plusMenuFrameSlotRef.current = null;
+      }
+      if (tuningMenuRef.current && !tuningMenuRef.current.contains(event.target)) {
+        setIsSettingsOpen(false);
+        setTuningSubMenu(null);
+      }
     };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-    const removeFile = (index) => {
-        setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-    };
+  // Auto-resize textarea
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    const maxH = 12 * 16;
+    const h = Math.min(ta.scrollHeight, maxH);
+    ta.style.height = `${h}px`;
+  }, [inputValue]);
 
-    const handleSend = async () => {
-        if (!inputValue.trim()) return;
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setIsPlusMenuOpen(false);
+    setPlusMenuFrameSlot(null);
+    plusMenuFrameSlotRef.current = null;
 
-        // Check if free plan
-        if (userPlan === 'free') {
-            toast.error('Video generation is only available for Pro and higher plans. Please upgrade.');
-            return;
-        }
+    for (const file of files) {
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error((t.dashboard.uploadModal?.fileTooLarge || 'File {name} exceeds 20MB').replace('{name}', file.name));
+        continue;
+      }
+      toast.loading(t.dashboard.chat?.uploadingImage || 'Uploading...', { id: `uploading-${file.name}` });
+      try {
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(file);
+        });
+        if (!base64Data || typeof base64Data !== 'string' || !base64Data.includes(',')) throw new Error('Invalid file data format');
+        const base64 = base64Data.split(',')[1];
+        const result = await uploadFile({ fileName: file.name, fileType: file.type || 'application/octet-stream', fileSize: file.size, fileData: base64 });
+        if (result.success) {
+          setUploadedFiles(prev => [...prev, { url: result.fileUrl, name: file.name, type: file.type }]);
+          toast.dismiss(`uploading-${file.name}`);
+          toast.success(t.dashboard.chat?.fileUploaded || 'File uploaded');
+        } else throw new Error(result.message || 'Upload failed');
+      } catch (err) {
+        console.error('File upload error:', err);
+        toast.dismiss(`uploading-${file.name}`);
+        toast.error((t.dashboard.chat?.uploadError || 'Upload failed') + ': ' + file.name);
+      }
+    }
+    e.target.value = '';
+  };
 
-        // Check credits
-        if (userCredits < selectedModel.credits) {
-            toast.error(`Insufficient credits. Need ${selectedModel.credits} credits, you have ${userCredits}.`);
-            return;
-        }
+  const removeFile = (index) => {
+    if (videoMode === 'frame-to-video') {
+      setUploadedFiles(prev => {
+        const a = [prev[0] ?? null, prev[1] ?? null];
+        a[index] = null;
+        return a;
+      });
+    } else {
+      setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    }
+  };
 
-        if (!user?.uid) {
-            toast.error('Bạn cần đăng nhập để tạo video.');
-            return;
-        }
+  const swapFrameOrder = () => {
+    if (uploadedFiles.length < 2) return;
+    setUploadedFiles(prev => [prev[1], prev[0]]);
+    toast.success('Đã đổi thứ tự ảnh đầu / ảnh cuối');
+  };
 
-        setIsGenerating(true);
-        setGenerationStatus({ status: 'queued', message: 'Đã gửi yêu cầu tạo video. Đang chờ xử lý...' });
-        toast.loading('Đang gửi yêu cầu tạo video...', { id: 'video-gen' });
+  const handleSend = () => {
+    const effectiveFiles = (videoMode === 'frame-to-video') ? uploadedFiles.filter(Boolean) : uploadedFiles;
+    if (!inputValue.trim() && effectiveFiles.length === 0) return;
 
-        try {
-            // Tạo document yêu cầu video trong Firestore
-            const requestId = await createVideoRequest({
-                userId: user.uid,
-                prompt: inputValue.trim(),
-                model: selectedModel.id,
-                aspectRatio: selectedRatio,
-                duration: 6,
-                language: selectedLanguage,
-                videoMode: 'text-to-video',
-                ...(uploadedFiles.length > 0 && { fileUrls: uploadedFiles.map(f => f.url) }),
-            });
+    // Chuyển sang AgentChat giống như DashboardHome
+    setPromptForChat(inputValue);
+    setInitialFileUrls(effectiveFiles.map(f => f.url));
+    setIsChatMode(true);
+  };
 
-            // Lắng nghe realtime trạng thái của request
-            const unsubscribe = subscribeVideoRequest(requestId, (request) => {
-                if (request.status === 'processing') {
-                    toast.loading('Đang tạo video...', { id: 'video-gen' });
-                    setGenerationStatus({
-                        status: 'processing',
-                        message: request.statusDetail || 'Đang tạo video...',
-                    });
-                }
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
-                if (request.status === 'error') {
-                    setIsGenerating(false);
-                    toast.dismiss('video-gen');
-                    setGenerationStatus({
-                        status: 'error',
-                        message: request.error || 'Video generation failed',
-                    });
-                    toast.error(request.error || 'Video generation failed');
-                    unsubscribe();
-                }
+  const handleBackToDashboard = () => {
+    setIsChatMode(false);
+    setPromptForChat('');
+    setInitialFileUrls([]);
+    setInputValue('');
+  };
 
-                if (request.status === 'completed' && request.videoUrl) {
-                    setIsGenerating(false);
-                    toast.dismiss('video-gen');
-                    setGeneratedVideo({
-                        url: request.videoUrl,
-                        thumbnail: request.thumbnailUrl || null,
-                    });
-                    setGenerationStatus({
-                        status: 'completed',
-                        message: 'Video đã tạo xong!',
-                    });
-                    toast.success('Video đã tạo xong! Kiểm tra Assets của bạn.');
-                    refreshUserData();
-
-                    const promptText = inputValue.trim();
-                    const title = promptText.length > 30 ? promptText.substring(0, 30) + '...' : promptText;
-
-                    saveProject({
-                        title: title,
-                        type: 'video',
-                        content: {
-                            videoUrl: request.videoUrl,
-                            imageUrl: request.thumbnailUrl || null
-                        },
-                        metadata: { prompt: promptText, model: selectedModel.id, aspectRatio: selectedRatio },
-                        messages: [
-                            { role: 'user', content: promptText, timestamp: new Date() },
-                            { role: 'model', content: '✅ Video đã tạo thành công!', mediaUrl: request.videoUrl, timestamp: new Date(), type: 'video' }
-                        ]
-                    }).catch(e => console.error('Failed to auto-save video to Assets:', e));
-
-                    unsubscribe();
-                }
-            });
-        } catch (error) {
-            console.error('Video generation error:', error);
-            toast.error(error.message || 'Failed to generate video');
-            setGenerationStatus({ status: 'error', message: error.message });
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    };
-
-    const resetGeneration = () => {
-        setGeneratedVideo(null);
-        setGenerationStatus(null);
-        setInputValue('');
-    };
-
+  // Nếu đang ở chế độ chat, hiển thị AgentChat
+  if (isChatMode) {
     return (
-        <div className="flex-1 flex flex-col h-full overflow-y-auto relative bg-white dark:bg-[#0f172a]">
-            {/* Main Content Container */}
-            <div className="flex-1 flex flex-col items-center pt-12 md:pt-16 px-6 max-w-5xl mx-auto w-full">
+      <AgentChat
+        initialPrompt={promptForChat}
+        initialInputType="video"
+        initialModel={selectedModel}
+        initialFileUrls={initialFileUrls}
+        initialVideoMode={videoMode}
+        initialVideoAspectRatio={videoAspectRatio}
+        initialVideoDuration={videoDuration}
+        initialVideoX2={videoX2}
+        initialVideoResolution={videoResolution}
+        initialVideoLanguage="EN"
+        onBack={handleBackToDashboard}
+      />
+    );
+  }
 
-                {/* Title */}
-                <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 text-black dark:text-white tracking-tight">
-                    {t?.dashboard?.videoGen?.title || 'Create Video'}
-                </h1>
+  return (
+    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-white dark:bg-[#0f172a]">
+      <div className="p-4 sm:p-6 md:p-8 max-w-[1200px] mx-auto min-h-screen pb-32 font-sans overflow-hidden w-full">
 
-                {/* Credit Info */}
-                <div className="flex items-center gap-3 mb-8">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Credits: <span className="font-bold text-black dark:text-white">{userCredits.toLocaleString()}</span>
-                    </span>
-                    {userPlan === 'free' && (
-                        <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-medium rounded-full">
-                            Upgrade to Pro for video generation
+        {/* Main Heading */}
+        <div className="text-center mb-10 sm:mb-14">
+          <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl text-gray-900 dark:text-white mb-2 tracking-tight px-4">
+            Biến mọi thứ thành video
+          </h1>
+        </div>
+
+        {/* Input Area - Giữ nguyên như DashboardHome */}
+        <div className="w-full max-w-3xl mx-auto mb-8 relative z-20">
+          {/* Form: layout y hệt như DashboardHome */}
+          <div className="relative w-full bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-[#27272a] rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-2.5 sm:p-3 md:p-4 shadow-xl transition-all duration-300 focus-within:border-gray-300 dark:focus-within:border-zinc-600 focus-within:ring-2 focus-within:ring-gray-200/80 dark:focus-within:ring-zinc-700/50 relative z-20">
+            
+            {/* Top row: left = mode, right = model / x2 / filter */}
+            <div className="flex flex-row justify-between items-center gap-2 mb-2">
+              <div className="relative min-w-0" ref={modeMenuRef}>
+                {/* Video Mode Dropdown */}
+                <button
+                  type="button"
+                  onClick={() => setIsModeMenuOpen(!isModeMenuOpen)}
+                  className="group flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-900 dark:text-white rounded-full text-xs sm:text-sm font-medium transition-all duration-150 border border-transparent dark:border-gray-800"
+                >
+                  <span className="text-gray-500 dark:text-gray-400 shrink-0">
+                    {VIDEO_MODES.find(m => m.id === videoMode)?.icon && (() => {
+                      const MIcon = VIDEO_MODES.find(m => m.id === videoMode)?.icon;
+                      return MIcon ? <MIcon size={18} className="sm:w-5 sm:h-5" /> : null;
+                    })()}
+                  </span>
+                  <span className="max-w-[140px] sm:max-w-[220px] truncate">{VIDEO_MODES.find(m => m.id === videoMode)?.label}</span>
+                  <Icons.ChevronDown size={18} className={`shrink-0 transition-transform sm:w-5 sm:h-5 ${isModeMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isModeMenuOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl border border-gray-200 dark:border-[#27272a] p-2 z-50">
+                    {VIDEO_MODES.map((mode) => (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => { setVideoMode(mode.id); setIsModeMenuOpen(false); }}
+                        className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${videoMode === mode.id ? 'bg-gray-100 dark:bg-[#252525] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#252525] text-gray-700 dark:text-gray-300'}`}
+                      >
+                        <span className={`shrink-0 ${videoMode === mode.id ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                          <mode.icon size={20} isActive={videoMode === mode.id} />
                         </span>
-                    )}
+                        <span className="font-medium text-sm">{mode.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5 sm:gap-3 self-end md:self-auto shrink-0">
+                {/* Model Badge */}
+                <div className="flex items-center h-8 sm:h-9 gap-1 sm:gap-1.5 px-2 sm:px-3 bg-gray-100 dark:bg-[#1A1A1A] rounded-full text-xs sm:text-sm font-medium text-gray-900 dark:text-white border border-transparent dark:border-gray-800 cursor-default select-none transition-colors">
+                  <span className="shrink-0 text-gray-900 dark:text-white"><selectedModel.icon size={18} className="sm:w-5 sm:h-5" /></span>
+                  <span className="max-w-[80px] sm:max-w-[120px] truncate leading-none">{selectedModel.name}</span>
                 </div>
 
-                {/* Generated Video Preview */}
-                {generatedVideo && (
-                    <div className="w-full max-w-2xl mb-8 rounded-2xl overflow-hidden bg-black">
-                        <video
-                            src={generatedVideo.url}
-                            controls
-                            className="w-full aspect-video"
-                            poster={generatedVideo.thumbnail}
-                        />
-                        <div className="p-4 bg-gray-900 flex items-center justify-between">
-                            <a
-                                href={generatedVideo.url}
-                                download
-                                className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-200 transition-colors"
-                            >
-                                <Icons.Download size={16} />
-                                Download
-                            </a>
-                            <button
-                                onClick={resetGeneration}
-                                className="px-4 py-2 text-white text-sm font-medium hover:bg-gray-800 rounded-full transition-colors"
-                            >
-                                Create New
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Generation Status */}
-                {isGenerating && generationStatus && (
-                    <div className="w-full max-w-2xl mb-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                                <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                            </div>
-                            <div>
-                                <p className="font-medium text-black dark:text-white">
-                                    {generationStatus.status === 'queued' ? 'In Queue' : 'Generating...'}
-                                </p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    {generationStatus.message}
-                                    {generationStatus.position > 1 && ` (Position: ${generationStatus.position})`}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Input Area */}
-                {!generatedVideo && (
-                    <div className="w-full max-w-3xl mx-auto mb-8 relative z-20">
-                        <div className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-[2.5rem] p-6 shadow-lg hover:shadow-xl transition-shadow relative">
-                            <textarea
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                disabled={isGenerating}
-                                className="w-full h-16 bg-transparent border-0 focus:border-0 focus:ring-0 ring-0 focus:outline-none outline-none appearance-none text-lg text-gray-600 dark:text-gray-300 placeholder-gray-400 resize-none leading-relaxed shadow-none disabled:opacity-50"
-                                placeholder={t?.dashboard?.videoGen?.placeholder || 'Describe the video you want to create...'}
-                            ></textarea>
-
-                            {/* Uploaded Files Preview */}
-                            {uploadedFiles.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-2 px-1">
-                                    {uploadedFiles.map((file, idx) => (
-                                        <div key={idx} className="relative flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 text-sm">
-                                            {file.type?.startsWith('image/') ? (
-                                                <img src={file.url} alt={file.name} className="w-8 h-8 rounded object-cover" />
-                                            ) : (
-                                                <Icons.Video size={16} className="text-purple-500" />
-                                            )}
-                                            <span className="text-gray-700 dark:text-gray-300 max-w-[120px] truncate">{file.name}</span>
-                                            <button onClick={() => removeFile(idx)} className="ml-1 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                                                <Icons.X size={14} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            <div className="flex items-center justify-between mt-4 px-1">
-                                <div className="flex items-center gap-2 relative">
-                                    {/* Plus Menu */}
-                                    <div className="relative" ref={menuRef}>
-                                        <button
-                                            onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
-                                            disabled={isGenerating}
-                                            className={`w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-gray-400 flex items-center justify-center transition-all disabled:opacity-50 ${isPlusMenuOpen ? 'bg-gray-100 dark:bg-gray-700 rotate-45' : ''}`}
-                                        >
-                                            <Icons.Plus size={16} />
-                                        </button>
-
-                                        {isPlusMenuOpen && (
-                                            <div className="absolute top-14 left-0 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                                                <button
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left"
-                                                >
-                                                    <Icons.Monitor size={18} className="text-black/60" />
-                                                    {t?.dashboard?.home?.uploadFromComputer || 'Upload from computer'}
-                                                </button>
-                                                <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm font-medium text-black dark:text-gray-200 transition-colors text-left">
-                                                    <Icons.Folder size={18} className="text-black/60" />
-                                                    {t?.dashboard?.home?.chooseFromAssets || 'Choose from assets'}
-                                                </button>
-                                            </div>
-                                        )}
-
-                                        {/* Hidden file input */}
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            accept="image/*,video/mp4,video/webm,video/quicktime"
-                                            multiple
-                                            onChange={handleFileUpload}
-                                            className="hidden"
-                                        />
-                                    </div>
-
-                                    {/* Model Selector */}
-                                    <div className="relative" ref={modelMenuRef}>
-                                        <button
-                                            onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
-                                            disabled={isGenerating}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 ${isModelMenuOpen ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 text-purple-700 dark:text-purple-300' : 'border-gray-300 dark:border-gray-600 text-black dark:text-gray-300'}`}
-                                        >
-                                            <Icons.Video size={14} />
-                                            <span>{selectedModel.name}</span>
-                                            <span className="text-purple-500 dark:text-purple-400 ml-1">
-                                                {selectedModel.credits} cr
-                                            </span>
-                                        </button>
-
-                                        {isModelMenuOpen && (
-                                            <div className="absolute bottom-full left-0 mb-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-3 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                                <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-3">Video Model</h3>
-                                                <div className="space-y-1">
-                                                    {VIDEO_MODELS.map((model) => (
-                                                        <button
-                                                            key={model.id}
-                                                            onClick={() => {
-                                                                setSelectedModel(model);
-                                                                setIsModelMenuOpen(false);
-                                                            }}
-                                                            className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-left transition-colors ${selectedModel.id === model.id ? 'bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-500' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-2 border-transparent'}`}
-                                                        >
-                                                            <div>
-                                                                <p className="font-medium text-black dark:text-white">{model.name}</p>
-                                                                <p className="text-xs text-gray-500 dark:text-gray-400">{model.description}</p>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <p className="font-bold text-purple-600 dark:text-purple-400">{model.credits}</p>
-                                                                <p className="text-xs text-gray-400">credits</p>
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Ratio & Language Selector */}
-                                    <div className="relative" ref={ratioLangMenuRef}>
-                                        <button
-                                            onClick={() => setIsRatioLangMenuOpen(!isRatioLangMenuOpen)}
-                                            disabled={isGenerating}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-black dark:text-gray-300 text-xs font-bold transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 ${isRatioLangMenuOpen ? 'bg-gray-100 dark:bg-gray-700 border-gray-400' : 'border-gray-300 dark:border-gray-600'}`}
-                                        >
-                                            <Icons.TuningSquare size={14} isActive={isRatioLangMenuOpen} />
-                                            <span>{selectedRatio}</span>
-                                        </button>
-
-                                        {isRatioLangMenuOpen && (
-                                            <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                                <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-3 tracking-tight">{t?.dashboard?.home?.aspectRatio || 'Aspect Ratio'}</h3>
-                                                <div className="flex flex-wrap gap-2 mb-5">
-                                                    {RATIOS.map((r) => (
-                                                        <button
-                                                            key={r.id}
-                                                            onClick={() => setSelectedRatio(r.id)}
-                                                            className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${selectedRatio === r.id ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 dark:border-purple-400 text-purple-700 dark:text-purple-300' : 'bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'}`}
-                                                        >
-                                                            <span className={`block border-2 border-current rounded-sm ${r.width} ${r.height}`} />
-                                                            <span className="text-xs font-semibold">{r.label}</span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-
-                                                <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-2 tracking-tight">{t?.settings?.language || 'Language'}</h3>
-                                                <div className="space-y-0.5">
-                                                    {LANGUAGES.map((lang) => (
-                                                        <button
-                                                            key={lang.id}
-                                                            onClick={() => setSelectedLanguage(lang.id)}
-                                                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${selectedLanguage === lang.id ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300'}`}
-                                                        >
-                                                            {lang.label}
-                                                            {selectedLanguage === lang.id && <Icons.CheckCircle size={16} className="text-purple-500 shrink-0" />}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Send Button with Credit Cost */}
-                                <div className="flex items-center gap-3">
-                                    {inputValue.trim() && (
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                                            Cost: <span className="font-bold text-purple-600 dark:text-purple-400">{selectedModel.credits}</span> credits
-                                        </span>
-                                    )}
-                                    <button
-                                        onClick={handleSend}
-                                        disabled={!inputValue.trim() || isGenerating || !canGenerateVideo}
-                                        className={`w-8 h-8 rounded-full transition-colors flex items-center justify-center ${inputValue.trim() && canGenerateVideo && !isGenerating ? 'bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'}`}
-                                        title={!canGenerateVideo ? (userPlan === 'free' ? 'Upgrade to Pro' : 'Insufficient credits') : 'Generate video'}
-                                    >
-                                        {isGenerating ? (
-                                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                        ) : (
-                                            <Icons.ArrowUp size={16} />
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Popular Tools */}
-                <div className="w-full max-w-4xl">
-                    <h2 className="text-center text-black dark:text-gray-400 font-medium mb-6">{t?.dashboard?.videoGen?.popularTools || 'Popular Tools'}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <button className="flex items-center p-3 bg-gray-50 dark:bg-[#1e293b] border border-transparent dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md rounded-2xl transition-all text-left group">
-                            <div className="w-12 h-12 rounded-xl bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
-                                <Icons.Bot size={24} className="text-teal-600 dark:text-teal-300" />
-                            </div>
-                            <span className="font-medium text-black dark:text-gray-200">{t?.dashboard?.videoGen?.avatarVideo || 'Avatar Video'}</span>
-                        </button>
-
-                        <button className="flex items-center p-3 bg-gray-50 dark:bg-[#1e293b] border border-transparent dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md rounded-2xl transition-all text-left group">
-                            <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
-                                <Icons.Mic size={24} className="text-indigo-600 dark:text-indigo-300" />
-                            </div>
-                            <span className="font-medium text-black dark:text-gray-200">{t?.dashboard?.videoGen?.talkingPhoto || 'AI Talking Photo'}</span>
-                        </button>
-
-                        <button className="flex items-center p-3 bg-gray-50 dark:bg-[#1e293b] border border-transparent dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md rounded-2xl transition-all text-left group">
-                            <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
-                                <Icons.Store size={24} className="text-amber-600 dark:text-amber-300" />
-                            </div>
-                            <span className="font-medium text-black dark:text-gray-200">{t?.dashboard?.videoGen?.productShowcase || 'Product Showcase'}</span>
-                        </button>
-
-                        <button className="flex items-center p-3 bg-gray-50 dark:bg-[#1e293b] border border-transparent dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md rounded-2xl transition-all text-left group">
-                            <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
-                                <Icons.Image size={24} className="text-slate-600 dark:text-slate-300" />
-                            </div>
-                            <span className="font-medium text-black dark:text-gray-200">{t?.dashboard?.videoGen?.removeBackground || 'Remove Background'}</span>
-                        </button>
-
-                        <button className="flex items-center p-3 bg-gray-50 dark:bg-[#1e293b] border border-transparent dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md rounded-2xl transition-all text-left group">
-                            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
-                                <Icons.Scissors size={24} className="text-blue-600 dark:text-blue-300" />
-                            </div>
-                            <span className="font-medium text-black dark:text-gray-200">{t?.dashboard?.videoGen?.quickCut || 'Quick Cut'}</span>
-                        </button>
-
-                        <button className="flex items-center p-3 bg-gray-50 dark:bg-[#1e293b] border border-transparent dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md rounded-2xl transition-all text-left group">
-                            <div className="w-12 h-12 rounded-xl bg-pink-100 dark:bg-pink-900/40 flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
-                                <Icons.Clapperboard size={24} className="text-pink-600 dark:text-pink-300" />
-                            </div>
-                            <span className="font-medium text-black dark:text-gray-200">{t?.dashboard?.videoGen?.videoEditor || 'Video Editor'}</span>
-                        </button>
-                    </div>
+                {/* Ratio/Count Badge */}
+                <div className="flex items-center h-8 sm:h-9 gap-1 sm:gap-1.5 px-2 sm:px-3 text-gray-500 dark:text-gray-400 cursor-default select-none border border-transparent rounded-full transition-colors"
+                  title={`Tỷ lệ: ${videoAspectRatio}`}>
+                  <Icons.RectangleFrame size={18} className={`sm:w-5 sm:h-5 ${videoAspectRatio.includes('9:16') ? 'rotate-90' : ''}`} />
+                  <span className="text-xs sm:text-sm font-medium leading-none">x{videoX2 ? '2' : '1'}</span>
                 </div>
 
-                {/* Spacer */}
-                <div className="h-20 w-full"></div>
+                {/* Unified Tuning Icon + Dropdown */}
+                <div className="relative" ref={tuningMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => { setIsSettingsOpen(!isSettingsOpen); setTuningSubMenu(null); }}
+                    className={`group h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center transition-colors border rounded-full ${isSettingsOpen ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 border-transparent shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border-transparent hover:bg-gray-100 dark:hover:bg-[#1A1A1A]'}`}
+                    title="Cài đặt video"
+                  >
+                    <Icons.TuningSquare size={18} className="sm:w-5 sm:h-5" isActive={isSettingsOpen} />
+                  </button>
+                  {isSettingsOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-2rem)] sm:w-[24rem] md:w-[32rem] max-w-[32rem] bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 sm:p-3 z-50 space-y-2 sm:space-y-3">
+                      {/* Row 1: Ratio + Count */}
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        {/* Aspect Ratio */}
+                        <div className="flex-1 relative">
+                          <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'ratio' ? null : 'ratio')}
+                            className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-tight">Tỷ lệ khung hình</span>
+                              <span className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white truncate mt-0.5">
+                                <Icons.Rectangle size={16} className={videoAspectRatio.includes('9:16') ? 'rotate-90' : ''} />
+                                {VIDEO_RATIOS.find(r => r.id === videoAspectRatio)?.desc || videoAspectRatio}
+                              </span>
+                            </div>
+                            <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${tuningSubMenu === 'ratio' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
+                          </button>
+                          {tuningSubMenu === 'ratio' && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[calc(100%-12px)] bg-white dark:bg-[#252525] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-[60]">
+                              {VIDEO_RATIOS.map((r) => (
+                                <button key={r.id} type="button"
+                                  onClick={() => { setVideoAspectRatio(r.id); setTuningSubMenu(null); }}
+                                  className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors rounded-lg ${videoAspectRatio === r.id ? 'bg-gray-100 dark:bg-[#303030] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#303030] text-gray-700 dark:text-gray-300'}`}>
+                                  <Icons.Rectangle size={18} className={(r.id === '9:16' || r.id === '3:4') ? 'rotate-90' : ''} />
+                                  <span className="font-medium text-sm">{r.desc} ({r.label})</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {/* Number of videos */}
+                        <div className="flex-1 relative">
+                          <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'count' ? null : 'count')}
+                            className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-tight">Số lượng</span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white truncate mt-0.5">{videoX2 ? '2' : '1'}</span>
+                            </div>
+                            <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${tuningSubMenu === 'count' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
+                          </button>
+                          {tuningSubMenu === 'count' && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[calc(100%-12px)] bg-white dark:bg-[#252525] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-[60]">
+                              {[{ v: false, l: '1' }, { v: true, l: '2' }].map((opt) => (
+                                <button key={String(opt.v)} type="button"
+                                  onClick={() => { setVideoX2(opt.v); setTuningSubMenu(null); }}
+                                  className={`w-full px-3 py-2 text-left text-sm font-medium transition-colors rounded-lg ${videoX2 === opt.v ? 'bg-gray-100 dark:bg-[#303030] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#303030] text-gray-700 dark:text-gray-300'}`}>
+                                  {opt.l}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Row 2: Duration + Resolution */}
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <div className="flex-1 relative">
+                          <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'duration' ? null : 'duration')}
+                            className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-tight">Thời lượng</span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white truncate mt-0.5">{videoDuration}s</span>
+                            </div>
+                            <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${tuningSubMenu === 'duration' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
+                          </button>
+                          {tuningSubMenu === 'duration' && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[calc(100%-12px)] bg-white dark:bg-[#252525] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-[60]">
+                              {VIDEO_DURATIONS.map((d) => (
+                                <button key={d} type="button"
+                                  onClick={() => { setVideoDuration(d); setTuningSubMenu(null); }}
+                                  className={`w-full px-3 py-2 text-left text-sm font-medium transition-colors rounded-lg ${videoDuration === d ? 'bg-gray-100 dark:bg-[#303030] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#303030] text-gray-700 dark:text-gray-300'}`}>
+                                  {d}s
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 relative">
+                          <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'resolution' ? null : 'resolution')}
+                            className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-tight">Độ phân giải</span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white truncate mt-0.5">{videoResolution === '4k' ? '4K' : videoResolution}</span>
+                            </div>
+                            <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${tuningSubMenu === 'resolution' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
+                          </button>
+                          {tuningSubMenu === 'resolution' && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[calc(100%-12px)] bg-white dark:bg-[#252525] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-[60]">
+                              {[{ v: '720p', l: '720p' }, { v: '1080p', l: '1080p' }, { v: '4k', l: '4K' }].map((r) => (
+                                <button key={r.v} type="button"
+                                  onClick={() => { setVideoResolution(r.v); setTuningSubMenu(null); }}
+                                  className={`w-full px-3 py-2 text-left text-sm font-medium transition-colors rounded-lg ${videoResolution === r.v ? 'bg-gray-100 dark:bg-[#303030] text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#303030] text-gray-700 dark:text-gray-300'}`}>
+                                  {r.l}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Row 3: Model selection */}
+                      <div className="relative">
+                        <button type="button" onClick={() => setTuningSubMenu(tuningSubMenu === 'model' ? null : 'model')}
+                          className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#252525] rounded-xl text-left hover:bg-gray-100 dark:hover:bg-[#303030] transition-colors border border-gray-100 dark:border-gray-800">
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-tight">Mô hình</span>
+                            <span className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white truncate mt-0.5">
+                              <selectedModel.icon size={16} />
+                              {selectedModel.name}
+                            </span>
+                          </div>
+                          <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${tuningSubMenu === 'model' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                        {tuningSubMenu === 'model' && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[calc(100%-12px)] bg-white dark:bg-[#252525] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-[60]">
+                            {MODELS.video.map((model) => (
+                              <button key={model.id} type="button"
+                                onClick={() => { setSelectedModel(model); setTuningSubMenu(null); }}
+                                className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors rounded-lg ${selectedModel.id === model.id ? 'bg-gray-100 dark:bg-[#303030]' : 'hover:bg-gray-50 dark:hover:bg-[#303030]'}`}>
+                                <span className={selectedModel.id === model.id ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
+                                  <model.icon size={18} />
+                                </span>
+                                <span className={`text-sm font-medium ${selectedModel.id === model.id ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>{model.name}</span>
+                                {model.credits != null && (<span className={`text-xs font-semibold ml-auto ${selectedModel.id === model.id ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{model.credits}cr</span>)}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Credit info */}
+                      <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-1">
+                        Dựa trên chế độ cài đặt hiện tại, bạn cần dùng <span className="text-gray-900 dark:text-white font-bold underline cursor-pointer">
+                          {selectedModel.credits * (videoX2 ? 2 : 1)} tín dụng
+                        </span> cho mỗi lần tạo.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Help Bubble */}
-            <button className="fixed bottom-6 right-6 w-12 h-12 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-50">
-                <Icons.HelpCircle size={24} />
-            </button>
+            {/* Textarea */}
+            <div className="w-full min-h-[2.5rem] sm:min-h-[2.75rem] py-1 mb-1 overflow-hidden">
+              <textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                rows={1}
+                className="w-full min-h-[2.5rem] sm:min-h-[2.75rem] max-h-48 bg-transparent border-none p-0 text-sm sm:text-base text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:ring-0 resize-none leading-relaxed overflow-x-hidden overflow-y-auto break-words"
+                placeholder={t.dashboard.home.placeholderVideo}
+              />
+            </div>
+
+            {/* Uploaded Files Preview */}
+            <div className="flex justify-between items-end mt-2">
+              {/* Từ văn bản sang video: không có nút + */}
+              {videoMode === 'text-to-video' && (
+                <div />
+              )}
+              {/* Tạo video từ các khung hình: 2 nút đầu & cuối */}
+              {videoMode === 'frame-to-video' && (
+                <div className="flex items-center gap-1.5 sm:gap-2" ref={menuRef}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { plusMenuFrameSlotRef.current = 0; setPlusMenuFrameSlot(0); setIsPlusMenuOpen(true); }}
+                      className={`relative group/thumb w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600 transition-all ${isPlusMenuOpen && plusMenuFrameSlot === 0 ? 'bg-gray-200 dark:bg-[#252525]' : ''}`}
+                      title={uploadedFiles[0] ? 'Khung hình đầu tiên' : 'Ảnh đầu (khung hình đầu video)'}
+                    >
+                      {uploadedFiles[0] ? (
+                        uploadedFiles[0].type?.startsWith('image/') ? (
+                          <img src={uploadedFiles[0].url} alt={uploadedFiles[0].name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400"><Icons.FileText size={18} /></div>
+                        )
+                      ) : (
+                        <span className="flex items-center justify-center w-full h-full text-gray-500 dark:text-gray-400">{isPlusMenuOpen && plusMenuFrameSlot === 0 ? <Icons.X size={20} /> : <Icons.Plus size={20} />}</span>
+                      )}
+                      {uploadedFiles[0]?.type?.startsWith('image/') && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeFile(0); }}
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+                        >
+                          <Icons.X size={10} />
+                        </button>
+                      )}
+                    </button>
+                  </div>
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { plusMenuFrameSlotRef.current = 1; setPlusMenuFrameSlot(1); setIsPlusMenuOpen(true); }}
+                      className={`relative group/thumb w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600 transition-all ${isPlusMenuOpen && plusMenuFrameSlot === 1 ? 'bg-gray-200 dark:bg-[#252525]' : ''}`}
+                      title={uploadedFiles[1] ? 'Khung hình cuối' : 'Ảnh cuối (khung hình cuối video)'}
+                    >
+                      {uploadedFiles[1] ? (
+                        uploadedFiles[1].type?.startsWith('image/') ? (
+                          <img src={uploadedFiles[1].url} alt={uploadedFiles[1].name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400"><Icons.FileText size={18} /></div>
+                        )
+                      ) : (
+                        <span className="flex items-center justify-center w-full h-full text-gray-500 dark:text-gray-400">{isPlusMenuOpen && plusMenuFrameSlot === 1 ? <Icons.X size={20} /> : <Icons.Plus size={20} />}</span>
+                      )}
+                      {uploadedFiles[1]?.type?.startsWith('image/') && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeFile(1); }}
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+                        >
+                          <Icons.X size={10} />
+                        </button>
+                      )}
+                    </button>
+                  </div>
+                  {uploadedFiles.filter(Boolean).length === 2 && (
+                    <button
+                      type="button"
+                      onClick={swapFrameOrder}
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-500 dark:text-gray-400 transition-all"
+                      title="Đổi thứ tự ảnh đầu/cuối"
+                    >
+                      <Icons.ArrowLeftRight size={18} />
+                    </button>
+                  )}
+                </div>
+              )}
+              {/* Tạo video từ các thành phần: tối đa 3 ảnh */}
+              {videoMode === 'ingredients-to-video' && (
+                <div className="flex items-center gap-1.5 sm:gap-2" ref={menuRef}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  {uploadedFiles.map((file, idx) => (
+                    <div key={idx} className="relative shrink-0 group">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-gray-100 dark:bg-[#1A1A1A] ring-2 ring-transparent">
+                        {file?.type?.startsWith('image/') ? (
+                          <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400"><Icons.FileText size={18} /></div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Icons.X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                  {uploadedFiles.length < 3 && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-[#1A1A1A] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-500 dark:text-gray-400 transition-all"
+                    >
+                      <Icons.Plus size={20} />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Send Button */}
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={!inputValue.trim() && (videoMode === 'text-to-video' || uploadedFiles.filter(Boolean).length === 0)}
+                className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#0F0F0F] active:scale-95 shadow-lg dark:shadow-none border dark:border-gray-700 ${
+                  (inputValue.trim() || uploadedFiles.filter(Boolean).length > 0)
+                    ? 'bg-gray-900 dark:bg-[#2A2A2A] hover:bg-black dark:hover:bg-[#333333] text-white dark:text-gray-300 focus-visible:ring-gray-400 dark:focus-visible:ring-gray-500'
+                    : 'bg-gray-200 dark:bg-[#252525] text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Icons.ArrowUp size={18} />
+              </button>
+            </div>
+          </div>
         </div>
-    );
+
+        {/* Spacer */}
+        <div className="h-20 w-full"></div>
+
+        {/* Tools Grid - 6 công cụ */}
+        <div className="w-full max-w-3xl mx-auto">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            {[
+              { id: 'avatar-video', name: 'Avatar video', icon: Icons.User },
+              { id: 'talking-photo', name: 'AI talking photo', icon: Icons.MessageCircle },
+              { id: 'product-showcase', name: 'Product showcase', icon: Icons.Shop },
+              { id: 'remove-bg', name: 'Remove background', icon: Icons.Scissors },
+              { id: 'quick-cut', name: 'Quick cut', icon: Icons.Scissors },
+              { id: 'video-editor', name: 'Video editor', icon: Icons.Edit },
+            ].map((tool) => {
+              const Icon = tool.icon;
+              return (
+                <button
+                  key={tool.id}
+                  type="button"
+                  className="flex flex-col items-center justify-center gap-2 p-4 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[#27272a] rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 group"
+                >
+                  <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-[#252525] group-hover:bg-gray-200 dark:group-hover:bg-[#303030] transition-colors">
+                    <Icon size={20} className="text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 text-center leading-tight">
+                    {tool.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Spacer */}
+        <div className="h-20 w-full"></div>
+      </div>
+    </div>
+  );
 };
 
 export default VideoGenerator;

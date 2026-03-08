@@ -2,19 +2,21 @@ import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { Icons } from '../Icons';
 import { updateProfile } from 'firebase/auth';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { auth, db, storage } from '../../config/firebase';
 import toast from '../../utils/toast';
 
-const ProfileSettings = () => {
+const ProfileSettings = ({ onBack }) => {
   const { t } = useLanguage();
   const { user, userData, refreshUserData } = useAuth();
   const { theme } = useTheme();
   const fileInputRef = useRef(null);
 
-  // Parse displayName to firstName and lastName
+  const [activeSection, setActiveSection] = useState('profile');
+
   const parseDisplayName = (displayName) => {
     if (!displayName) return { firstName: '', lastName: '' };
     const parts = displayName.trim().split(' ');
@@ -25,7 +27,6 @@ const ProfileSettings = () => {
     };
   };
 
-  // Initialize form state from user data
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -44,7 +45,6 @@ const ProfileSettings = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
 
-  // Load email immediately when user is available
   useEffect(() => {
     if (user?.email && !formData.email) {
       setFormData(prev => ({
@@ -54,7 +54,6 @@ const ProfileSettings = () => {
     }
   }, [user, formData.email]);
 
-  // Load user data on mount
   useEffect(() => {
     if (user) {
       const { firstName, lastName } = parseDisplayName(user.displayName || '');
@@ -78,18 +77,15 @@ const ProfileSettings = () => {
     }
   }, [user, userData]);
 
-  // Handle avatar upload
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error(t?.profileSettings?.invalidFileType || 'Please select an image file.');
       return;
     }
 
-    // Validate file size (2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error(t?.profileSettings?.fileTooLarge || 'File size must be less than 2MB.');
       return;
@@ -97,24 +93,20 @@ const ProfileSettings = () => {
 
     setUploadingAvatar(true);
     try {
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result);
       };
       reader.readAsDataURL(file);
 
-      // Upload to Firebase Storage
       const avatarRef = ref(storage, `avatars/${user.uid}/${Date.now()}_${file.name}`);
       await uploadBytes(avatarRef, file);
       const downloadURL = await getDownloadURL(avatarRef);
 
-      // Update Firebase Auth profile
       await updateProfile(auth.currentUser, {
         photoURL: downloadURL
       });
 
-      // Update Firestore
       const userDocRef = doc(db, 'users', user.uid);
       await updateDoc(userDocRef, {
         photoURL: downloadURL,
@@ -124,56 +116,49 @@ const ProfileSettings = () => {
       setFormData(prev => ({ ...prev, photoURL: downloadURL }));
       toast.success(t?.profileSettings?.avatarUploaded || 'Avatar uploaded successfully!');
 
-      // Refresh user data
       if (refreshUserData) {
         await refreshUserData();
       }
     } catch (error) {
       console.error('Avatar upload error:', error);
       toast.error(error.message || t?.profileSettings?.avatarUploadFailed || 'Failed to upload avatar.');
-      setAvatarPreview(formData.avatarUrl);
+      setAvatarPreview(formData.photoURL);
     } finally {
       setUploadingAvatar(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   };
 
-  // Handle remove avatar
   const handleRemoveAvatar = async () => {
     if (!formData.photoURL) return;
 
     setUploadingAvatar(true);
     try {
-      // Delete from Storage if it's a Firebase Storage URL
-      if (formData.avatarUrl.includes('firebasestorage.googleapis.com')) {
+      if (formData.photoURL.includes('firebasestorage.googleapis.com')) {
         try {
-          const avatarRef = ref(storage, formData.avatarUrl);
+          const avatarRef = ref(storage, formData.photoURL);
           await deleteObject(avatarRef);
         } catch (deleteError) {
           console.warn('Could not delete old avatar from storage:', deleteError);
         }
       }
 
-      // Update Firebase Auth profile
       await updateProfile(auth.currentUser, {
         photoURL: null
       });
 
-      // Update Firestore
       const userDocRef = doc(db, 'users', user.uid);
       await updateDoc(userDocRef, {
-        avatarUrl: null,
+        photoURL: null,
         updatedAt: new Date()
       });
 
-      setFormData(prev => ({ ...prev, avatarUrl: null }));
+      setFormData(prev => ({ ...prev, photoURL: null }));
       setAvatarPreview(null);
       toast.success(t?.profileSettings?.avatarRemoved || 'Avatar removed successfully!');
 
-      // Refresh user data
       if (refreshUserData) {
         await refreshUserData();
       }
@@ -185,13 +170,11 @@ const ProfileSettings = () => {
     }
   };
 
-  // Handle form input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle notification toggle
   const handleNotificationToggle = (key) => {
     setNotifications(prev => ({
       ...prev,
@@ -199,7 +182,6 @@ const ProfileSettings = () => {
     }));
   };
 
-  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -208,7 +190,6 @@ const ProfileSettings = () => {
       return;
     }
 
-    // Prevent double submission
     if (loading) {
       return;
     }
@@ -220,15 +201,12 @@ const ProfileSettings = () => {
       const userDocRef = doc(db, 'users', user.uid);
       const displayName = `${formData.firstName} ${formData.lastName}`.trim() || formData.firstName || formData.lastName || user.email?.split('@')[0] || 'User';
 
-      // Update Firebase Auth displayName (non-blocking)
       updateProfile(auth.currentUser, {
         displayName: displayName
       }).catch(authError => {
         console.warn('Failed to update auth profile:', authError);
-        // Continue even if auth update fails
       });
 
-      // Update Firestore - use setDoc with merge to handle case where document doesn't exist
       const updateData = {
         firstName: formData.firstName || '',
         lastName: formData.lastName || '',
@@ -241,7 +219,6 @@ const ProfileSettings = () => {
         updatedAt: new Date()
       };
 
-      // Add timeout to prevent hanging (30 seconds max)
       const setDocPromise = setDoc(userDocRef, updateData, { merge: true });
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Request timeout')), 30000)
@@ -257,12 +234,9 @@ const ProfileSettings = () => {
       const errorMessage = error.message || error.code || t?.profileSettings?.profileUpdateFailed || 'Failed to update profile.';
       toast.error(errorMessage);
     } finally {
-      // Always reset loading state immediately after Firestore update
       setLoading(false);
 
-      // Refresh user data in background (non-blocking)
       if (updateSuccess && refreshUserData) {
-        // Use setTimeout to ensure loading state is reset first
         setTimeout(() => {
           refreshUserData().catch(err => {
             console.warn('Failed to refresh user data:', err);
@@ -272,13 +246,14 @@ const ProfileSettings = () => {
     }
   };
 
-  // Get avatar display
-  const getAvatarDisplay = () => {
+  const getAvatarDisplay = (size = 'md') => {
     const initials = (formData.firstName?.[0] || user?.displayName?.[0] || user?.email?.[0] || 'U').toUpperCase();
+    const sizeClasses = size === 'lg' ? 'w-24 h-24' : size === 'sm' ? 'w-10 h-10' : 'w-16 h-16';
+    const textSize = size === 'lg' ? 'text-3xl' : size === 'sm' ? 'text-sm' : 'text-xl';
 
     if (avatarPreview) {
       return (
-        <div className="relative group/avatar w-24 h-24 rounded-full flex items-center justify-center shrink-0 border-2 border-white dark:border-gray-700 overflow-hidden shadow-md bg-gradient-to-br from-purple-500 to-blue-500">
+        <div className={`relative ${sizeClasses} rounded-full overflow-hidden flex items-center justify-center shrink-0 border-2 border-white dark:border-gray-700 shadow-md bg-gradient-to-br from-purple-500 to-blue-500`}>
           <img
             src={avatarPreview}
             alt="Avatar"
@@ -287,309 +262,366 @@ const ProfileSettings = () => {
               e.target.onerror = null;
               e.target.style.display = 'none';
               e.target.parentElement.classList.add('bg-gradient-to-br', 'from-purple-500', 'to-blue-500');
-              e.target.parentElement.innerHTML = `<span class="text-3xl font-bold text-white uppercase tracking-tighter">${initials}</span>`;
+              e.target.parentElement.innerHTML = `<span class="${textSize} font-bold text-white uppercase tracking-tighter">${initials}</span>`;
             }}
           />
         </div>
       );
     }
     return (
-      <div className="w-24 h-24 rounded-full flex items-center justify-center shrink-0 border-2 border-white dark:border-gray-700 overflow-hidden shadow-md bg-gradient-to-br from-purple-500 to-blue-500">
-        <span className="text-3xl font-bold text-white uppercase tracking-tighter">
+      <div className={`${sizeClasses} rounded-full flex items-center justify-center shrink-0 border-2 border-white dark:border-gray-700 shadow-md bg-gradient-to-br from-purple-500 to-blue-500`}>
+        <span className={`${textSize} font-bold text-white uppercase tracking-tighter`}>
           {initials}
         </span>
       </div>
     );
   };
 
+  const isDark = theme === 'dark';
+
+  const menuItems = [
+    { id: 'profile', label: t?.profileSettings?.personalInformation || 'Thông tin cá nhân', icon: 'User' },
+    { id: 'notifications', label: t?.profileSettings?.notifications || 'Thông báo', icon: 'Bell' },
+    { id: 'danger', label: t?.settings?.dangerZone || 'Vùng nguy hiểm', icon: 'AlertTriangle' },
+  ];
+
+  const getIcon = (iconName) => {
+    const iconMap = {
+      User: Icons.User,
+      Bell: Icons.Bell,
+      AlertTriangle: Icons.AlertTriangle,
+    };
+    const IconComponent = iconMap[iconName] || Icons.User;
+    return <IconComponent size={18} />;
+  };
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'profile':
+        return (
+          <form onSubmit={handleSubmit}>
+            <div className={`p-6 rounded-xl border transition-colors duration-300 ${isDark ? 'bg-[#1e293b] border-gray-700' : 'bg-white border-gray-200'}`}>
+              <h3 className={`text-lg font-semibold mb-6 transition-colors duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {t?.profileSettings?.personalInformation || 'Thông tin cá nhân'}
+              </h3>
+              
+              {/* Avatar */}
+              <div className="flex items-center gap-5 mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                {getAvatarDisplay('lg')}
+                <div>
+                  <h4 className={`font-medium mb-1 transition-colors ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {t?.profileSettings?.profilePhoto || 'Ảnh đại diện'}
+                  </h4>
+                  <p className={`text-xs mb-3 transition-colors ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    PNG, JPG. Tối đa 2MB
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      disabled={uploadingAvatar}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingAvatar}
+                      className="group flex items-center h-9 gap-2 bg-white dark:bg-gray-800 text-black dark:text-white px-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white hover:font-semibold transition-all duration-200 shadow-sm text-sm font-medium disabled:opacity-50"
+                    >
+                      {uploadingAvatar ? <Icons.Loader size={16} className="animate-spin" /> : <Icons.Camera size={16} />}
+                      Tải lên
+                    </button>
+                    {avatarPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        disabled={uploadingAvatar}
+                        className="group flex items-center h-9 gap-2 px-3 rounded-lg border border-gray-200 dark:border-gray-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 hover:font-semibold transition-all duration-200 text-sm font-medium disabled:opacity-50"
+                      >
+                        <Icons.Trash2 size={16} />
+                        Xóa
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {t?.profileSettings?.firstName || 'Họ'}
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2.5 rounded-lg border outline-none transition-colors ${isDark
+                      ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-[#FE2C55]'
+                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[#FE2C55]'
+                      }`}
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {t?.profileSettings?.lastName || 'Tên'}
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2.5 rounded-lg border outline-none transition-colors ${isDark
+                      ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-[#FE2C55]'
+                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[#FE2C55]'
+                      }`}
+                  />
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className={`block text-sm font-medium mb-2 transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {t?.profileSettings?.emailAddress || 'Email'}
+                </label>
+                <input
+                  type="email"
+                  value={formData.email || user?.email || ''}
+                  disabled
+                  className={`w-full px-3 py-2.5 rounded-lg border outline-none opacity-60 cursor-not-allowed ${isDark
+                    ? 'bg-gray-800 border-gray-600 text-gray-400'
+                    : 'bg-gray-50 border-gray-200 text-gray-500'
+                    }`}
+                />
+              </div>
+              <div className="mb-5">
+                <label className={`block text-sm font-medium mb-2 transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {t?.profileSettings?.bioRole || 'Giới thiệu'}
+                </label>
+                <textarea
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleInputChange}
+                  placeholder="Giới thiệu về bản thân..."
+                  rows={3}
+                  className={`w-full px-3 py-2.5 rounded-lg border outline-none transition-colors resize-none ${isDark
+                    ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-[#FE2C55]'
+                    : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[#FE2C55]'
+                    }`}
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="group flex items-center h-9 gap-2 bg-white dark:bg-gray-800 text-black dark:text-white px-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white hover:font-semibold transition-all duration-200 shadow-sm text-sm font-medium disabled:opacity-50"
+                >
+                  {loading ? (
+                    <Icons.Loader size={16} className="animate-spin" />
+                  ) : (
+                    <Icons.Save size={16} />
+                  )}
+                  {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
+              </div>
+            </div>
+          </form>
+        );
+
+      case 'notifications':
+        return (
+          <div className={`p-6 rounded-xl border transition-colors duration-300 ${isDark ? 'bg-[#1e293b] border-gray-700' : 'bg-white border-gray-200'}`}>
+            <h3 className={`text-lg font-semibold mb-6 transition-colors duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {t?.profileSettings?.notifications || 'Thông báo'}
+            </h3>
+            <div className="space-y-5">
+              <div className="flex items-center justify-between pb-5 border-b border-gray-200 dark:border-gray-700">
+                <div>
+                  <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Cập nhật sản phẩm
+                  </p>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Nhận tin tức về công cụ và tính năng mới
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={notifications.productUpdates}
+                    onChange={() => handleNotificationToggle('productUpdates')}
+                    className="sr-only peer"
+                  />
+                  <div className={`w-11 h-6 rounded-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 dark:peer-focus:ring-gray-600 transition-colors ${isDark
+                    ? 'bg-gray-600 peer-checked:bg-green-500'
+                    : 'bg-gray-200 peer-checked:bg-green-500'
+                    }`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform absolute top-0.5 left-0.5 ${notifications.productUpdates ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                  </div>
+                </label>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Hoàn thành dự án
+                  </p>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Gửi email khi quá trình tạo hoàn tất
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={notifications.projectCompleted}
+                    onChange={() => handleNotificationToggle('projectCompleted')}
+                    className="sr-only peer"
+                  />
+                  <div className={`w-11 h-6 rounded-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 dark:peer-focus:ring-gray-600 transition-colors ${isDark
+                    ? 'bg-gray-600 peer-checked:bg-green-500'
+                    : 'bg-gray-200 peer-checked:bg-green-500'
+                    }`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform absolute top-0.5 left-0.5 ${notifications.projectCompleted ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={async () => {
+                  if (!user) {
+                    toast.error('Vui lòng đăng nhập');
+                    return;
+                  }
+                  if (savingNotifications) return;
+
+                  setSavingNotifications(true);
+                  try {
+                    const userDocRef = doc(db, 'users', user.uid);
+                    await setDoc(userDocRef, {
+                      notifications: {
+                        productUpdates: notifications.productUpdates !== false,
+                        projectCompleted: notifications.projectCompleted === true,
+                      },
+                      updatedAt: new Date()
+                    }, { merge: true });
+                    toast.success('Đã lưu cài đặt thông báo');
+                  } catch (error) {
+                    toast.error('Lỗi lưu cài đặt');
+                  } finally {
+                    setSavingNotifications(false);
+                  }
+                }}
+                disabled={savingNotifications}
+                className="group flex items-center h-9 gap-2 bg-white dark:bg-gray-800 text-black dark:text-white px-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white hover:font-semibold transition-all duration-200 shadow-sm text-sm font-medium disabled:opacity-50"
+              >
+                {savingNotifications ? (
+                  <Icons.Loader size={16} className="animate-spin" />
+                ) : (
+                  <Icons.Save size={16} />
+                )}
+                Lưu thông báo
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'danger':
+        return (
+          <div className={`p-6 rounded-xl border transition-colors duration-300 ${isDark ? 'bg-[#1e293b] border-red-900/30' : 'bg-white border-red-200'}`}>
+            <h3 className="text-lg font-semibold mb-2 text-red-500">
+              Vùng nguy hiểm
+            </h3>
+            <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              Khi bạn xóa tài khoản, sẽ không thể khôi phục. Vui lòng chắc chắn.
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={async () => {
+                  if (!window.confirm('Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.')) return;
+                  setLoading(true);
+                  try {
+                    const currentUser = auth.currentUser;
+                    if (!currentUser) throw new Error('No user logged in');
+                    await currentUser.delete();
+                    toast.success('Tài khoản đã được xóa');
+                  } catch (error) {
+                    console.error('Delete error:', error);
+                    if (error.code === 'auth/requires-recent-login') {
+                      toast.error('Vui lòng đăng nhập lại trước khi xóa');
+                    } else {
+                      toast.error('Không thể xóa tài khoản');
+                    }
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="group flex items-center h-9 gap-2 bg-red-500 hover:bg-red-600 hover:font-semibold text-white px-4 rounded-lg transition-all duration-200 shadow-sm text-sm font-medium disabled:opacity-50"
+              >
+                <Icons.Trash2 size={16} />
+                {loading ? 'Đang xóa...' : 'Xóa tài khoản'}
+              </button>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
-      <div>
-        <h2 className={`text-3xl font-serif mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-100' : 'text-[#2C2A26]'
-          }`}>{t?.profileSettings?.title || 'Profile Settings'}</h2>
-        <p className={`font-light transition-colors duration-300 ${theme === 'dark' ? 'text-gray-400' : 'text-[#5D5A53]'
-          }`}>{t?.profileSettings?.subtitle || 'Manage your personal information and preferences.'}</p>
-      </div>
+    <div className="w-full max-w-[1100px] px-4 md:px-8 pt-2 md:pt-4 pb-8">
+      {/* Back Button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 mb-6 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group"
+        >
+          <Icons.ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+          <span className="text-sm font-medium">Quay lại</span>
+        </button>
+      )}
 
-      {/* Avatar Section */}
-      <div className={`p-8 border rounded-sm flex items-center gap-8 transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#D6D1C7]'
-        }`}>
-        {getAvatarDisplay()}
-        <div>
-          <h3 className={`font-medium mb-1 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-100' : 'text-[#2C2A26]'
-            }`}>{t?.profileSettings?.profilePhoto || 'Profile Photo'}</h3>
-          <p className={`text-xs mb-4 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-400' : 'text-[#A8A29E]'
-            }`}>{t?.profileSettings?.acceptedFileTypes || 'Accepted file types: png, jpg. Max size: 2MB'}</p>
-          <div className="flex gap-4">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/jpg"
-              onChange={handleAvatarUpload}
-              className="hidden"
-              disabled={uploadingAvatar}
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingAvatar}
-              className="px-4 py-2 bg-[#2C2A26] text-[#F5F2EB] text-xs uppercase tracking-widest font-medium hover:bg-[#433E38] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {uploadingAvatar ? (t?.profileSettings?.uploading || 'Uploading...') : (t?.profileSettings?.uploadNew || 'Upload New')}
-            </button>
-            <button
-              onClick={handleRemoveAvatar}
-              disabled={uploadingAvatar || !formData.avatarUrl}
-              className="px-4 py-2 border border-[#D6D1C7] text-[#5D5A53] text-xs uppercase tracking-widest font-medium hover:bg-[#F5F2EB] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t?.profileSettings?.remove || 'Remove'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Personal Info Form */}
-      <form onSubmit={handleSubmit}>
-        <div className={`p-8 border rounded-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#D6D1C7]'
-          }`}>
-          <h3 className={`text-lg font-serif mb-6 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-100' : 'text-[#2C2A26]'
-            }`}>{t?.profileSettings?.personalInformation || 'Personal Information'}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className={`block text-xs font-bold uppercase tracking-widest mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-400' : 'text-[#5D5A53]'
-                }`}>{t?.profileSettings?.firstName || 'First Name'}</label>
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                className={`w-full border px-4 py-3 outline-none transition-colors ${theme === 'dark'
-                  ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-gray-400'
-                  : 'bg-[#F9F8F6] border-[#D6D1C7] text-[#2C2A26] focus:border-[#2C2A26]'
-                  }`}
-              />
-            </div>
-            <div>
-              <label className={`block text-xs font-bold uppercase tracking-widest mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-400' : 'text-[#5D5A53]'
-                }`}>{t?.profileSettings?.lastName || 'Last Name'}</label>
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                className={`w-full border px-4 py-3 outline-none transition-colors ${theme === 'dark'
-                  ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-gray-400'
-                  : 'bg-[#F9F8F6] border-[#D6D1C7] text-[#2C2A26] focus:border-[#2C2A26]'
-                  }`}
-              />
-            </div>
-          </div>
-          <div className="mb-6">
-            <label className={`block text-xs font-bold uppercase tracking-widest mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-400' : 'text-[#5D5A53]'
-              }`}>{t?.profileSettings?.emailAddress || 'Email Address'}</label>
-            <input
-              type="email"
-              value={formData.email || user?.email || ''}
-              disabled
-              className={`w-full border px-4 py-3 outline-none opacity-60 cursor-not-allowed transition-colors ${theme === 'dark'
-                ? 'bg-gray-700 border-gray-600 text-gray-100'
-                : 'bg-[#F9F8F6] border-[#D6D1C7] text-[#2C2A26]'
-                }`}
-            />
-            <p className={`text-xs mt-1 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-400' : 'text-[#A8A29E]'
-              }`}>{t?.profileSettings?.emailCannotChange || 'Email cannot be changed.'}</p>
-          </div>
-          <div className="mb-6">
-            <label className={`block text-xs font-bold uppercase tracking-widest mb-2 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-400' : 'text-[#5D5A53]'
-              }`}>{t?.profileSettings?.bioRole || 'Bio / Role'}</label>
-            <textarea
-              name="bio"
-              value={formData.bio}
-              onChange={handleInputChange}
-              placeholder={t?.profileSettings?.bioPlaceholder || 'Tell us about yourself...'}
-              className={`w-full border px-4 py-3 outline-none transition-colors h-24 resize-none ${theme === 'dark'
-                ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-gray-400'
-                : 'bg-[#F9F8F6] border-[#D6D1C7] text-[#2C2A26] focus:border-[#2C2A26]'
-                }`}
-            />
-          </div>
-
-          <div className={`flex justify-end pt-4 border-t transition-colors duration-300 ${theme === 'dark' ? 'border-gray-700' : 'border-[#F5F2EB]'
-            }`}>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`px-6 py-3 text-xs uppercase tracking-widest font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark'
-                ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                : 'bg-[#2C2A26] text-[#F5F2EB] hover:bg-[#433E38]'
-                }`}
-            >
-              {loading ? (t?.profileSettings?.saving || 'Saving...') : (t?.profileSettings?.saveChanges || 'Save Changes')}
-            </button>
-          </div>
-        </div>
-      </form>
-
-      {/* Notifications */}
-      <div className={`p-8 border rounded-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#D6D1C7]'
-        }`}>
-        <h3 className={`text-lg font-serif mb-6 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-100' : 'text-[#2C2A26]'
-          }`}>{t?.profileSettings?.notifications || 'Notifications'}</h3>
-        <div className="space-y-4">
-          <div className={`flex items-center justify-between pb-4 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-700' : 'border-[#F5F2EB]'
-            }`}>
-            <div>
-              <p className={`text-sm font-medium transition-colors duration-300 ${theme === 'dark' ? 'text-gray-100' : 'text-[#2C2A26]'
-                }`}>{t?.profileSettings?.productUpdates || 'Product Updates'}</p>
-              <p className={`text-xs transition-colors duration-300 ${theme === 'dark' ? 'text-gray-400' : 'text-[#A8A29E]'
-                }`}>{t?.profileSettings?.productUpdatesDesc || 'Receive news about new tools and features.'}</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifications.productUpdates}
-                onChange={() => handleNotificationToggle('productUpdates')}
-                className="sr-only peer"
-              />
-              <div className={`w-11 h-6 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${theme === 'dark'
-                ? 'bg-gray-600 peer-checked:bg-gray-100'
-                : 'bg-gray-200 peer-checked:bg-[#2C2A26]'
-                }`}></div>
-            </label>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-sm font-medium transition-colors duration-300 ${theme === 'dark' ? 'text-gray-100' : 'text-[#2C2A26]'
-                }`}>{t?.profileSettings?.projectCompleted || 'Project Completed'}</p>
-              <p className={`text-xs transition-colors duration-300 ${theme === 'dark' ? 'text-gray-400' : 'text-[#A8A29E]'
-                }`}>{t?.profileSettings?.projectCompletedDesc || 'Email me when a long-running generation is finished.'}</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifications.projectCompleted}
-                onChange={() => handleNotificationToggle('projectCompleted')}
-                className="sr-only peer"
-              />
-              <div className={`w-11 h-6 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${theme === 'dark'
-                ? 'bg-gray-600 peer-checked:bg-gray-100'
-                : 'bg-gray-200 peer-checked:bg-[#2C2A26]'
-                }`}></div>
-            </label>
-          </div>
-        </div>
-        <div className={`flex justify-end pt-4 border-t mt-6 transition-colors duration-300 ${theme === 'dark' ? 'border-gray-700' : 'border-[#F5F2EB]'
-          }`}>
-          <button
-            onClick={async () => {
-              if (!user) {
-                toast.error(t?.profileSettings?.notLoggedIn || 'Please log in to update your profile.');
-                return;
-              }
-
-              // Prevent double submission
-              if (savingNotifications) {
-                return;
-              }
-
-              setSavingNotifications(true);
-              let updateSuccess = false;
-
-              try {
-                const userDocRef = doc(db, 'users', user.uid);
-                const updateData = {
-                  notifications: {
-                    productUpdates: notifications.productUpdates !== false,
-                    projectCompleted: notifications.projectCompleted === true,
-                  },
-                  updatedAt: new Date()
-                };
-
-                console.log('[ProfileSettings] Starting Firestore update...');
-                const startTime = Date.now();
-
-                await setDoc(userDocRef, updateData, { merge: true });
-
-                const duration = Date.now() - startTime;
-                console.log(`[ProfileSettings] Firestore update completed in ${duration}ms`);
-
-                updateSuccess = true;
-
-                toast.success(t?.profileSettings?.notificationsUpdated || 'Notification preferences updated!');
-
-              } catch (error) {
-                console.error('Notification update error:', error);
-                const errorMessage = error.message || error.code || t?.profileSettings?.notificationsUpdateFailed || 'Failed to update notifications.';
-                toast.error(errorMessage);
-              } finally {
-                // Always reset loading state immediately after Firestore update
-                setSavingNotifications(false);
-
-                // Refresh user data in background (non-blocking)
-                if (updateSuccess && refreshUserData) {
-                  setTimeout(() => {
-                    refreshUserData().catch(err => {
-                      console.warn('Failed to refresh user data:', err);
-                    });
-                  }, 100);
-                }
-              }
-            }}
-            disabled={savingNotifications || loading}
-            className={`px-6 py-3 text-xs uppercase tracking-widest font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark'
-              ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-              : 'bg-[#2C2A26] text-[#F5F2EB] hover:bg-[#433E38]'
-              }`}
-          >
-            {savingNotifications ? (t?.profileSettings?.saving || 'Saving...') : (t?.profileSettings?.saveNotifications || 'Save Notifications')}
-          </button>
-        </div>
-      </div>
-
-      {/* Danger Zone */}
-      <div className={`p-8 border rounded-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-800 border-red-900/30' : 'bg-white border-red-100'
-        }`}>
-        <h3 className="text-lg font-serif mb-2 text-red-600 dark:text-red-400">
-          {t?.settings?.dangerZone || 'Danger Zone'}
-        </h3>
-        <p className={`text-xs mb-6 transition-colors duration-300 ${theme === 'dark' ? 'text-gray-400' : 'text-[#5D5A53]'
-          }`}>
-          {t?.settings?.deleteWarning || 'Once you delete your account, there is no going back. Please be certain.'}
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-[32px] font-bold text-gray-900 dark:text-white mb-2 md:mb-3 tracking-tight leading-none">
+          Cài đặt
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">
+          Quản lý tài khoản và tùy chọn của bạn
         </p>
-        <div className="flex justify-end">
-          <button
-            onClick={async () => {
-              const confirmMessage = t?.settings?.deleteWarning || 'Khi bạn xóa tài khoản, sẽ không thể khôi phục. Bạn có chắc chắn không?';
-              if (!window.confirm(confirmMessage)) return;
-
-              setLoading(true);
-              try {
-                const currentUser = auth.currentUser;
-                if (!currentUser) throw new Error('No user logged in');
-
-                // The onUserDelete trigger in Cloud Functions will handle 
-                // cleaning up Firestore data (user doc, profile, posts).
-                await currentUser.delete();
-                toast.success(t?.settings?.deleteSuccess || 'Tài khoản đã được xóa thành công.');
-                // Firebase Auth will automatically sign out and trigger redirect
-              } catch (error) {
-                console.error('Delete account error:', error);
-                if (error.code === 'auth/requires-recent-login') {
-                  toast.error(t?.auth?.requiresRecentLogin || 'Vui lòng đăng nhập lại trước khi xóa tài khoản.');
-                } else {
-                  toast.error(error.message || 'Không thể xóa tài khoản. Vui lòng thử lại sau.');
-                }
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading}
-            className="px-6 py-3 bg-red-600 text-white text-xs uppercase tracking-widest font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? (t?.profileSettings?.saving || 'Processing...') : (t?.settings?.deleteAccount || 'Delete Account')}
-          </button>
-        </div>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Sidebar Menu */}
+        <div className={`w-full md:w-64 shrink-0 ${isDark ? 'bg-[#1e293b]' : 'bg-white'} rounded-xl border ${isDark ? 'border-gray-700' : 'border-gray-200'} p-2 h-fit`}>
+          <div className="flex md:flex-col gap-2">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-left w-full ${activeSection === item.id
+                  ? isDark
+                    ? 'bg-gray-700 text-white font-semibold'
+                    : 'bg-gray-100 text-gray-900 font-semibold'
+                  : isDark
+                    ? 'text-gray-400 hover:bg-gray-800 hover:text-white hover:font-semibold'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-black hover:font-semibold'
+                  }`}
+              >
+                <span className={item.id === 'danger' ? 'text-red-500' : ''}>{getIcon(item.icon)}</span>
+                <span className="text-sm font-medium">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1">
+          {renderContent()}
+        </div>
+      </div>
     </div>
   );
 };

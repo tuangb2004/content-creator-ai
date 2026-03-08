@@ -5,19 +5,21 @@ import { db } from '../../config/firebase';
 import { Icons } from '../Icons';
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../services/firebaseFunctions';
 import { useAuth } from '../../contexts/AuthContext';
-
-const FILTERS = [
-    { id: 'all', label: 'All activity' },
-    { id: 'like', label: 'Likes' },
-    { id: 'comment', label: 'Comments' },
-    { id: 'follow', label: 'Followers' },
-    { id: 'video_queue', label: 'Video Queue' },
-];
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const NotificationDropdown = () => {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
+
+    const FILTERS = [
+        { id: 'all', label: t?.dashboard?.notificationDropdown?.filters?.all || 'All activity' },
+        { id: 'like', label: t?.dashboard?.notificationDropdown?.filters?.like || 'Likes' },
+        { id: 'comment', label: t?.dashboard?.notificationDropdown?.filters?.comment || 'Comments' },
+        { id: 'follow', label: t?.dashboard?.notificationDropdown?.filters?.follow || 'Followers' },
+        { id: 'video_queue', label: t?.dashboard?.notificationDropdown?.filters?.videoQueue || 'Video Queue' },
+    ];
 
     const [isOpen, setIsOpen] = useState(false);
     const [filter, setFilter] = useState('all');
@@ -193,7 +195,7 @@ const NotificationDropdown = () => {
         const date = ts.seconds ? new Date(ts.seconds * 1000) : ts._seconds ? new Date(ts._seconds * 1000) : new Date(ts);
         const now = new Date();
         const diff = Math.floor((now - date) / 1000);
-        if (diff < 60) return 'now';
+        if (diff < 60) return t?.dashboard?.notificationDropdown?.time?.now || 'now';
         if (diff < 3600) return `${Math.floor(diff / 60)}m`;
         if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
         if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
@@ -228,7 +230,7 @@ const NotificationDropdown = () => {
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 py-3.5">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Notifications</h2>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t?.dashboard?.notificationDropdown?.title || 'Notifications'}</h2>
                         <button
                             onClick={() => setIsOpen(false)}
                             className="w-8 h-8 flex items-center justify-center bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-400"
@@ -276,21 +278,25 @@ const NotificationDropdown = () => {
                         {isLoading ? (
                             <div className="flex flex-col items-center justify-center py-16 grayscale opacity-50">
                                 <Icons.Loader size={24} className="animate-spin text-gray-400 mb-2" />
-                                <p className="text-gray-400 text-xs font-medium tracking-tight">Loading...</p>
+                                <p className="text-gray-400 text-xs font-medium tracking-tight">{t?.dashboard?.notificationDropdown?.loading || 'Loading...'}</p>
                             </div>
                         ) : filteredItems.length === 0 ? (
                             <div className="py-20 text-center px-10">
                                 <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <Icons.Bell size={28} className="text-gray-200 dark:text-gray-700" />
                                 </div>
-                                <h3 className="text-gray-900 dark:text-white font-bold text-base mb-1">No activity yet</h3>
-                                <p className="text-gray-400 text-xs">Notifications will appear here.</p>
+                                <h3 className="text-gray-900 dark:text-white font-bold text-base mb-1">{t?.dashboard?.notificationDropdown?.noActivity || 'No activity yet'}</h3>
+                                <p className="text-gray-400 text-xs">{t?.dashboard?.notificationDropdown?.noNotifications || 'Notifications will appear here.'}</p>
                             </div>
                         ) : (
                             Object.entries(groupedContent).map(([groupName, items]) => (
                                 items.length > 0 && (
                                     <div key={groupName} className="mb-4">
-                                        <h4 className="px-5 py-1.5 text-xs font-bold text-gray-400 dark:text-gray-500">{groupName}</h4>
+                                        <h4 className="px-5 py-1.5 text-xs font-bold text-gray-400 dark:text-gray-500">
+                                            {groupName === 'Today' ? (t?.dashboard?.notificationDropdown?.groups?.today || 'Today') :
+                                             groupName === 'This week' ? (t?.dashboard?.notificationDropdown?.groups?.thisWeek || 'This week') :
+                                             (t?.dashboard?.notificationDropdown?.groups?.previous || 'Previous')}
+                                        </h4>
                                         <div className="space-y-0.5">
                                             {items.map((item) => (
                                                 <div
@@ -332,9 +338,10 @@ const NotificationDropdown = () => {
                                                                 {item.type === 'video_job' ? (
                                                                     <div className="flex flex-col">
                                                                         <span className="font-semibold">
-                                                                            {item.status === 'processing' ? 'Processing video...' :
-                                                                                item.status === 'pending' ? 'Queued video...' :
-                                                                                    item.status === 'failed' ? 'Failed to create video' : 'Video created'}
+                                                                            {item.status === 'processing' ? (t?.dashboard?.notificationDropdown?.videoStatus?.processing || 'Processing video...') :
+                                                                                item.status === 'pending' ? (t?.dashboard?.notificationDropdown?.videoStatus?.pending || 'Queued video...') :
+                                                                                    item.status === 'failed' ? (t?.dashboard?.notificationDropdown?.videoStatus?.failed || 'Failed to create video') :
+                                                                                        (t?.dashboard?.notificationDropdown?.videoStatus?.completed || 'Video created')}
                                                                         </span>
                                                                         <span className="opacity-80 italic text-xs">
                                                                             {item.statusDetail || (item.request?.prompt?.slice(0, 30) + (item.request?.prompt?.length > 30 ? '...' : ''))}
@@ -346,12 +353,12 @@ const NotificationDropdown = () => {
                                                                         )}
                                                                     </div>
                                                                 ) : item.type === 'like' ? (
-                                                                    'liked your post.'
+                                                                    t?.dashboard?.notificationDropdown?.actions?.likedPost || 'liked your post.'
                                                                 ) : item.type === 'follow' ? (
-                                                                    'started following you.'
+                                                                    t?.dashboard?.notificationDropdown?.actions?.startedFollowing || 'started following you.'
                                                                 ) : item.type === 'comment' ? (
-                                                                    `commented: "${item.commentPreview?.slice(0, 20)}..."`
-                                                                ) : item.message || 'notified you.'}
+                                                                    (t?.dashboard?.notificationDropdown?.actions?.commented || 'commented: "{comment}"').replace('{comment}', item.commentPreview?.slice(0, 20) + '...')
+                                                                ) : item.message || (t?.dashboard?.notificationDropdown?.actions?.notifiedYou || 'notified you.')}
                                                             </span>
                                                             <span className="text-[12px] text-gray-400 dark:text-gray-500 font-medium whitespace-nowrap ml-auto">
                                                                 {formatTime(item.createdAt)}
@@ -361,7 +368,7 @@ const NotificationDropdown = () => {
                                                         {item.type === 'follow' && (
                                                             <button className="mt-2 px-3 py-1 bg-gray-100/80 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 border border-transparent hover:border-gray-200 dark:hover:border-gray-600">
                                                                 <Icons.ArrowLeftRight size={12} />
-                                                                Friends
+                                                                {t?.dashboard?.notificationDropdown?.actions?.friends || 'Friends'}
                                                             </button>
                                                         )}
                                                     </div>
@@ -393,7 +400,7 @@ const NotificationDropdown = () => {
                                 onClick={handleMarkAllAsRead}
                                 className="w-full py-2.5 text-xs font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
                             >
-                                Mark all as read
+                                {t?.dashboard?.notificationDropdown?.actions?.markAllAsRead || 'Mark all as read'}
                             </button>
                         </div>
                     )}
