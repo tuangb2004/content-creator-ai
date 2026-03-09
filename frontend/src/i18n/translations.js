@@ -1608,6 +1608,7 @@ export const translations = {
       }
     },
     dashboard: {
+      earnCredits: 'Earn Credits',
       videoGen: {
         title: 'Turn everything into video',
         placeholder: 'Describe the video you want to create. Add links, images, or documents for more accurate results.',
@@ -3174,6 +3175,7 @@ export const translations = {
 
     // Dashboard Home
     dashboard: {
+      earnCredits: 'Kiếm Credits',
       videoGen: {
         title: 'Biến mọi thứ thành video',
         placeholder: 'Hãy mô tả video bạn muốn tạo. Thêm liên kết, hình ảnh hoặc tài liệu để có kết quả chính xác hơn.',

@@ -428,7 +428,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange, onLogout, userEmail
                 className="flex items-center h-8 md:h-9 gap-1.5 md:gap-2 bg-white dark:bg-gray-800 text-black dark:text-white px-2 md:px-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm group"
               >
                 <Icons.Shop size={14} className="md:w-4 md:h-4" />
-                <span className="text-xs md:text-sm font-bold whitespace-nowrap">{t.dashboard.earnCredits || 'Earn'}</span>
+                <span className="text-xs md:text-sm font-bold whitespace-nowrap">{t.dashboard?.earnCredits || 'Earn Credits'}</span>
               </button>
 
               {/* Notifications */}
