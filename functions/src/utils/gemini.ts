@@ -41,7 +41,7 @@ const systemPrompts: Record<string, (tone: string, length: string) => string> = 
       medium: 'approximately 500-700 words',
       long: 'approximately 1000-1500 words'
     };
-    return `You are a professional blog writer. Write a ${length} blog post (${lengthGuidance[length] || 'appropriate length'}) in a ${tone} tone. Include an engaging introduction, well-structured main points with examples, and a strong conclusion. Make it SEO-friendly and easy to read.`;
+    return `Write a ${length} blog post (${lengthGuidance[length] || 'appropriate length'}) in a ${tone} tone. Include an engaging introduction, well-structured main points with examples, and a strong conclusion. Make it SEO-friendly and easy to read.`;
   },
 
   caption: (tone, length) => {
@@ -50,7 +50,7 @@ const systemPrompts: Record<string, (tone: string, length: string) => string> = 
       medium: '150-250 words, moderate detail',
       long: '300-500 words, detailed and engaging'
     };
-    return `You are a social media expert. Write an engaging ${tone} caption for Instagram/Facebook. The caption must be ${length} length (${lengthGuidance[length] || 'appropriate length'}). Include relevant emojis, a clear message, and a strong call-to-action. Add 3-5 relevant hashtags at the end.`;
+    return `Write an engaging ${tone} caption for Instagram/Facebook. The caption must be ${length} length (${lengthGuidance[length] || 'appropriate length'}). Include relevant emojis, a clear message, and a strong call-to-action. Add 3-5 relevant hashtags at the end.`;
   },
 
   email: (tone, length) => {
@@ -59,7 +59,7 @@ const systemPrompts: Record<string, (tone: string, length: string) => string> = 
       medium: '300-500 words, moderate detail',
       long: '600-1000 words, comprehensive and detailed'
     };
-    return `You are a professional email marketing copywriter. Write a ${tone} marketing email that is ${length} length (${lengthGuidance[length] || 'appropriate length'}). Include: 1) Compelling subject line, 2) Friendly greeting, 3) Clear value proposition, 4) Main message with benefits, 5) Strong call-to-action, 6) Professional closing.`;
+    return `Write a ${tone} marketing email that is ${length} length (${lengthGuidance[length] || 'appropriate length'}). Include: 1) Compelling subject line, 2) Friendly greeting, 3) Clear value proposition, 4) Main message with benefits, 5) Strong call-to-action, 6) Professional closing.`;
   },
 
   product: (tone, length) => {
@@ -68,7 +68,7 @@ const systemPrompts: Record<string, (tone: string, length: string) => string> = 
       medium: '300-500 words, detailed features',
       long: '600-1000 words, comprehensive description'
     };
-    return `You are an e-commerce product description expert. Write a ${tone} product description that is ${length} length (${lengthGuidance[length] || 'appropriate length'}). Include: 1) Highlights key features, 2) Explains benefits clearly, 3) Creates desire to buy, 4) Uses persuasive language, 5) Includes a call-to-action.`;
+    return `Write a ${tone} product description that is ${length} length (${lengthGuidance[length] || 'appropriate length'}). Include: 1) Highlights key features, 2) Explains benefits clearly, 3) Creates desire to buy, 4) Uses persuasive language, 5) Includes a call-to-action.`;
   }
 };
 
@@ -97,7 +97,7 @@ export async function callGeminiAPI(
     retries = 3,
     timeout = 60000, // Increased timeout for file processing
     systemInstruction,
-    model: modelId = 'gemini-2.0-flash',
+    model: modelId = 'gemini-2.5-flash',
     useGoogleSearchGrounding = true,
     fileUrls = []
   } = options;

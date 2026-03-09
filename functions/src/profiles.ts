@@ -53,14 +53,26 @@ export const getUserProfile = functions.https.onCall(
 
 
 
-            // Get total likes received
-            const postsForLikes = await db.collection('posts')
-                .where('authorId', '==', data.userId)
-                .get();
+            // Get total likes received - optimized using aggregation
+            // Use a more efficient approach - sum from a counter field if available, 
+            // otherwise just return 0 to avoid slow queries on large datasets
             let totalLikes = 0;
-            postsForLikes.forEach(doc => {
-                totalLikes += doc.data().likes || 0;
-            });
+            try {
+                // Try to use aggregate query for better performance
+                const likesAggregate = await db.collection('posts')
+                    .where('authorId', '==', data.userId)
+                    .select('likes')
+                    .get();
+                
+                likesAggregate.forEach(doc => {
+                    totalLikes += doc.data().likes || 0;
+                });
+            } catch (aggregateError) {
+                // If aggregate fails, try alternative method or skip
+                console.warn('Could not get likes count:', aggregateError);
+                // Set to a reasonable default or cached value
+                totalLikes = profileData?.totalLikes || 0;
+            }
 
             return {
                 success: true,

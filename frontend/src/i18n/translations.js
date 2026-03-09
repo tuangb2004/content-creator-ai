@@ -441,6 +441,16 @@ export const translations = {
       talkingPhoto: 'AI talking photo',
       marketingVideo: 'Marketing video',
       productShowcase: 'Product showcase',
+      // Password requirements
+      passwordMinLength: 'At least 8 characters',
+      passwordLowercase: 'One lowercase letter',
+      passwordUppercase: 'One uppercase letter',
+      passwordNumber: 'One number',
+      passwordSpecial: 'One special character (!@#$%^&*)',
+      passwordWeak: 'Weak',
+      passwordFair: 'Fair',
+      passwordGood: 'Good',
+      passwordStrong: 'Strong',
     },
 
     // Landing Page
@@ -2236,6 +2246,16 @@ export const translations = {
       talkingPhoto: 'Ảnh biết nói AI',
       marketingVideo: 'Video marketing',
       productShowcase: 'Giới thiệu sản phẩm',
+      // Password requirements
+      passwordMinLength: 'Ít nhất 8 ký tự',
+      passwordLowercase: 'Một chữ cái viết thường',
+      passwordUppercase: 'Một chữ cái viết hoa',
+      passwordNumber: 'Một số',
+      passwordSpecial: 'Một ký tự đặc biệt (!@#$%^&*)',
+      passwordWeak: 'Yếu',
+      passwordFair: 'Trung bình',
+      passwordGood: 'Khá',
+      passwordStrong: 'Mạnh',
     },
 
     // Landing Page

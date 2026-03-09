@@ -78,12 +78,11 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
       { id: 'sdxl', name: 'SDXL 1.0', desc: t?.dashboard?.models?.sdxl, icon: Icons.Stability },
       { id: 'pollinations', name: 'Pollinations Flux', desc: 'Free • Không tốn tín dụng', icon: Icons.Pollinations, credits: 0, free: true },
     ],
-    text: [
-      { id: 'groq', name: 'Groq Llama 3', desc: t?.dashboard?.models?.groq, icon: Icons.Groq },
-      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: t?.dashboard?.models?.geminiFlash, icon: Icons.Gemini },
-      { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: t?.dashboard?.models?.geminiNextGen, icon: Icons.Gemini },
-      { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: t?.dashboard?.models?.geminiPro, icon: Icons.Gemini },
-    ],
+  text: [
+    { id: 'groq', name: 'Groq Llama 3', desc: t?.dashboard?.models?.groq, icon: Icons.Groq },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: t?.dashboard?.models?.geminiNextGen, icon: Icons.Gemini },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: t?.dashboard?.models?.geminiPro, icon: Icons.Gemini },
+  ],
     video: [
       { id: 'veo-3.1-fast', name: 'Veo 3.1 Fast', desc: t?.dashboard?.models?.veoFast || 'Nhanh, tiết kiệm', icon: Icons.Veo, credits: 300 },
       { id: 'veo-3.1-standard', name: 'Veo 3.1 Standard', desc: t?.dashboard?.models?.veoStandard || 'Chất lượng cao', icon: Icons.Veo, credits: 500 },
@@ -942,7 +941,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
                     <div className="absolute bottom-full left-0 mb-2 w-[min(90vw,380px)] max-h-[65vh] bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-200">
                       <div className="p-2 border-b border-gray-100 dark:border-gray-700 flex gap-2">
                         <button type="button" onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl bg-gray-900 dark:bg-gray-800 hover:bg-black dark:hover:bg-gray-700 text-white transition-colors text-sm font-medium">
-                          <Icons.ArrowUp size={18} className="shrink-0" />
+                          <Icons.Upload size={18} className="shrink-0" />
                           <span>{t.dashboard.uploadModal?.upload ?? 'Tải lên'}</span>
                           <span className="text-[10px] text-gray-400 dark:text-gray-500 hidden sm:inline">.png, .jpg, .webp</span>
                         </button>
@@ -1016,7 +1015,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
                     <div className="absolute bottom-full left-0 mb-2 w-[min(90vw,380px)] max-h-[65vh] bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-200">
                       <div className="p-2 border-b border-gray-100 dark:border-gray-700 flex gap-2">
                         <button type="button" onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl bg-gray-900 dark:bg-gray-800 hover:bg-black dark:hover:bg-gray-700 text-white transition-colors text-sm font-medium">
-                          <Icons.ArrowUp size={18} className="shrink-0" />
+                          <Icons.Upload size={18} className="shrink-0" />
                           <span>{t.dashboard.uploadModal?.upload ?? 'Tải lên'}</span>
                           <span className="text-[10px] text-gray-400 dark:text-gray-500 hidden sm:inline">.png, .jpg, .webp</span>
                         </button>
@@ -1069,7 +1068,7 @@ const DashboardHome = ({ onGenerate, onCollapseSidebar, initialPrompt, prefillPr
                           onClick={() => fileInputRef.current?.click()}
                           className="flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl bg-gray-900 dark:bg-gray-800 hover:bg-black dark:hover:bg-gray-700 text-white transition-colors text-sm font-medium"
                         >
-                          <Icons.ArrowUp size={18} className="shrink-0" />
+                          <Icons.Upload size={18} className="shrink-0" />
                           <span>{t.dashboard.uploadModal?.upload ?? 'Tải lên'}</span>
                           <span className="text-[10px] text-gray-400 dark:text-gray-500 hidden sm:inline">{getAcceptFormatsLabel(inputType)}</span>
                         </button>

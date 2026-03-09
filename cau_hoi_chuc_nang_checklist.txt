@@ -1,0 +1,361 @@
+# 100 CÂU HỎI KIỂM TRA CHỨC NĂNG - BẢO VỆ KHÓA LUẬN
+## Dự án: CONTENT CREATOR AI
+
+---
+
+# PHẦN 1: Đăng nhập và xác thực (10 câu)
+
+## Câu 1: Hệ thống đăng nhập (login) hoạt động ra sao?
+**Trả lời:** Hệ thống sử dụng Firebase Authentication. Người dùng nhập email và mật khẩu, Firebase kiểm tra credentials. Nếu đúng, tạo JWT token và lưu vào localStorage, đồng thời tải dữ liệu người dùng từ Firestore.
+
+## Câu 2: Mật khẩu tối thiểu được quy định như thế nào?
+**Trả lời:** Firebase yêu cầu mật khẩu ít nhất 6 ký tự. Đây là giới hạn mặc định của Firebase Authentication.
+
+## Câu 3: Nếu người dùng nhập mật khẩu quá dài (ví dụ 100 ký tự), hệ thống xử lý thế nào?
+**Trả lời:** Firebase chấp nhận mật khẩu dài. Tuy nhiên, về mặt bảo mật và trải nghiệm người dùng, nên giới hạn ở mức hợp lý (ví dụ 64 ký tự).
+
+## Câu 4: Email sử dụng đăng nhập cần đúng định dạng không?
+**Trả lời:** Có. Hệ thống kiểm tra định dạng email (phải có @ và domain hợp lệ). Nếu định dạng sai, Firebase trả lỗi "Invalid email".
+
+## Câu 5: Nhập sai mật khẩu liên tiếp nhiều lần có ảnh hưởng gì?
+**Trả lời:** Hiện hệ thống chưa giới hạn số lần thử. Firebase có cơ chế rate-limit nội bộ. Nếu nhập sai, hiển thị thông báo lỗi từ Firebase.
+
+## Câu 6: Quên mật khẩu (Forgot Password) đã được tích hợp chưa?
+**Trả lời:** Có. Hệ thống có tính năng Quên mật khẩu. Người dùng nhập email, hệ thống gửi link đặt lại mật khẩu qua Firebase.
+
+## Câu 7: Người dùng mới đăng ký được xử lý như thế nào?
+**Trả lời:** Người dùng điền email và mật khẩu, hệ thống tạo account trên Firebase. Sau đăng ký thành công, Firebase gửi email xác minh. User mới được tặng 10 credits miễn phí.
+
+## Câu 8: Nếu email đã tồn tại khi đăng ký mới thì sao?
+**Trả lời:** Firebase trả lỗi "Email already in use". UI bắt lỗi này và hiển thị thông báo "Email đã được sử dụng".
+
+## Câu 9: Xác thực email (email verification) được yêu cầu không?
+**Trả lời:** Có. Sau khi đăng ký, hệ thống gửi link xác minh đến email. Người dùng cần bấm link để xác thực. Nếu chưa xác minh, một số tính năng bị hạn chế.
+
+## Câu 10: Đăng nhập bằng Google/Facebook có được hỗ trợ không?
+**Trả lời:** Có. Hệ thống hỗ trợ đăng nhập bằng Google và Facebook qua Firebase OAuth. TikTok OAuth đã được thêm code nhưng đang chờ phê duyệt từ TikTok Developer.
+
+---
+
+# PHẦN 2: Tạo nội dung văn bản (10 câu)
+
+## Câu 1: Hệ thống xử lý khi người dùng nhấn nút tạo mà không nhập gì (prompt rỗng) thế nào?
+**Trả lời:** Validation ở client không cho gửi khi prompt rỗng. Nếu bypass validation, backend sẽ trả lỗi yêu cầu nhập prompt.
+
+## Câu 2: Độ dài tối đa của prompt nhập vào là bao nhiêu?
+**Trả lời:** UI giới hạn khoảng 2000 ký tự để an toàn. Model AI có context window ~32K token cho Llama 3.3.
+
+## Câu 3: Các biểu tượng (+, 💡) trong toolbar hoạt động thế nào?
+**Trả lời:**
+- **+ (Upload):** Mở dialog cho phép đính kèm file (hình ảnh, video, PDF, text) vào prompt. Giới hạn 5MB, chỉ chấp nhận file types được hỗ trợ.
+- **💡 (Idea):** Hiển thị các prompt mẫu (templates) để người dùng chọn nhanh.
+
+## Câu 4: Chọn ngôn ngữ (VI/EN) có ảnh hưởng gì đến đầu ra?
+**Trả lời:** Ngôn ngữ quyết định ngôn ngữ của giao diện và cũng là ngôn ngữ đầu ra mong muốn từ AI. Hệ thống chưa có dịch tự động.
+
+## Câu 5: Các model AI văn bản nào được hỗ trợ?
+**Trả lời:** 
+- Gemini 2.0 Flash, 2.5 Flash, 2.5 Pro
+- Pollinations Flux (miễn phí, 0 credits)
+- Groq/Llama (nếu được tích hợp)
+
+## Câu 6: Kiểm tra injection khi người dùng nhập prompt không?
+**Trả lời:** React tự động escape HTML. Với Markdown, sử dụng react-markdown với cấu hình ngăn chặn script. Input được sanitize trước khi gửi đến AI.
+
+## Câu 7: Các liên kết gợi ý (History, Templates, etc.) hoạt động thế nào?
+**Trả lời:** Đây là các prompt mẫu có sẵn. Khi nhấn, prompt được điền tự động vào ô nhập. Người dùng có thể chỉnh sửa trước khi gửi.
+
+## Câu 8: Sau khi nhập prompt và nhấn nút gửi, kết quả trả về thế nào?
+**Trả lời:** Gọi Cloud Function generateContent với prompt, nhận kết quả từ AI API (Gemini/Groq). Kết quả được lưu vào Firestore và hiển thị trên UI. Nếu lỗi, hiển thị thông báo.
+
+## Câu 9: Nếu prompt quá dài hoặc chứa ký tự đặc biệt, hệ thống xử lý ra sao?
+**Trả lời:** Prompt quá dài bị giới hạn ở UI. Ký tự đặc biệt (HTML) được escape. Unicode được AI xử lý bình thường.
+
+## Câu 10: Đã test tính năng tạo văn bản chưa?
+**Trả lời:** Đã test thủ công nhiều lần: tạo nội dung ngắn/dài, tiếng Việt/Anh, kiểm tra loading state, thông báo lỗi, lưu lịch sử.
+
+---
+
+# PHẦN 3: Tạo nội dung hình ảnh (10 câu)
+
+## Câu 1: Người dùng có thể chọn mô hình tạo ảnh nào?
+**Trả lời:** Hệ thống hỗ trợ:
+- Nano Banana Pro (Pollinations)
+- Nano Banana (Pollinations) - miễn phí
+- SDXL 1.0 (Stability AI) - 4 credits
+- Pollinations Flux (miễn phí)
+
+## Câu 2: Người dùng có thể nhập prompt ảnh tiếng Việt không?
+**Trả lời:** Có. Các model AI đều hỗ trợ đa ngôn ngữ, bao gồm tiếng Việt.
+
+## Câu 3: Aspect ratio (tỷ lệ) của ảnh được xử lý thế nào?
+**Trả lời:** Có các tùy chọn: 1:1, 16:9, 9:16, 3:4, 4:3. Người dùng chọn từ dropdown, hệ thống truyền tham số cho API.
+
+## Câu 4: Negative prompt (phần loại trừ) ảnh hưởng thế nào?
+**Trả lời:** SDXL và các model hỗ trợ negative prompt. Người dùng nhập những gì KHÔNG muốn thấy, hệ thống truyền cho API.
+
+## Câu 5: Kích thước ảnh trả về là bao nhiêu?
+**Trả lời:** SDXL tạo ảnh 1024x1024 hoặc HD tùy aspect ratio. Pollinations nhỏ hơn (512x512).
+
+## Câu 6: Có giới hạn kích thước file upload không?
+**Trả lời:** Có. Giới hạn 5MB cho file upload. File lớn hơn bị từ chối và hiển thị thông báo lỗi.
+
+## Câu 7: Nếu prompt ảnh chứa nội dung không phù hợp, hệ thống xử lý thế nào?
+**Trả lời:** API AI có content filter nội bộ. Nếu bị từ chối, hệ thống hiển thị thông báo lỗi từ API.
+
+## Câu 8: Đã thử tạo nhiều ảnh cùng lúc chưa?
+**Trả lời:** UI cho phép chọn số lượng ảnh (1-4). Mỗi lần gọi API tương ứng với số lượng. Credits được trừ theo số ảnh.
+
+## Câu 9: Ảnh tạo ra được lưu ở đâu?
+**Trả lời:** URL ảnh từ API được lưu vào Firebase Storage, tham chiếu được lưu trong Firestore document của project.
+
+## Câu 10: Xử lý khi tạo ảnh thất bại?
+**Trả lời:** Cloud Function có try-catch. Nếu API lỗi hoặc timeout, credit được hoàn trả tự động. UI hiển thị thông báo lỗi.
+
+---
+
+# PHẦN 4: Tạo nội dung video (10 câu)
+
+## Câu 1: Phương thức tạo video nào được hỗ trợ?
+**Trả lời:** Hệ thống hỗ trợ:
+- Text-to-Video: Tạo video từ prompt text
+- Frame-to-Video: Tạo video từ 2 khung hình (ảnh đầu + ảnh cuối)
+
+## Câu 2: Thời lượng video tối đa có thể tạo là bao lâu?
+**Trả lời:** Veo 3.1 cho phép 4-8 giây. Người dùng chọn từ dropdown trong UI.
+
+## Câu 3: Tính năng queue video hoạt động như thế nào?
+**Trả lời:** Video generation tốn thời gian. Hệ thống sử dụng Firebase Pub/Sub cho hàng đợi. Document video được tạo trong Firestore với status: pending → processing → completed/failed.
+
+## Câu 4: Người dùng biết khi nào video hoàn thành không?
+**Trả lời:** Có. Hệ thống có NotificationDropdown hiển thị trạng thái video queue real-time. Khi hoàn thành, có thông báo trong dropdown.
+
+## Câu 5: Giới hạn số video mỗi ngày có không?
+**Trả lời:** Có. Veo API giới hạn 10 videos/ngày. Hệ thống kiểm tra và chặn nếu vượt quá giới hạn.
+
+## Câu 6: Chi phí credit cho video là bao nhiêu?
+**Trả lời:** 
+- Veo 3.1 Fast: 300 credits/video
+- Veo 3.1 Standard: 500 credits/video
+
+## Câu 7: Tỷ lệ video (aspect ratio) được hỗ trợ?
+**Trả lời:** 9:16 (TikTok/Reels), 16:9 (YouTube). Người dùng chọn từ dropdown.
+
+## Câu 8: Resolution video có thể chọn?
+**Trả lời:** 720p, 1080p, 4K. Tùy chọn trong settings của video mode.
+
+## Câu 9: Xử lý khi video generation thất bại?
+**Trả lời:** Status chuyển thành "failed". Credit được hoàn trả tự động. UI thông báo lỗi cho người dùng.
+
+## Câu 10: Đã test video generation chưa?
+**Trả lời:** Đã test với các prompt khác nhau, độ dài khác nhau, và các trường hợp lỗi (không đủ credit, timeout).
+
+---
+
+# PHẦN 5: Quản lý dự án & Inspiration (10 câu)
+
+## Câu 1: Trang Projects hiển thị thông tin gì?
+**Trả lời:** Liệt kê tất cả nội dung (text, image, video) user đã tạo. Mỗi project hiển thị: tên, loại, thumbnail, thời gian tạo.
+
+## Câu 2: Tạo dự án mới như thế nào?
+**Trả lời:** Mỗi lần tạo nội dung tự động sinh project mới. Trong trang Projects, có thể tạo project trống với tiêu đề và loại.
+
+## Câu 3: Người dùng có thể sửa hoặc xóa dự án không?
+**Trả lời:** Có thể xem chi tiết, chỉnh sửa tên. Xóa có confirm dialog, sau đó xóa cả file trong Storage.
+
+## Câu 4: Kết hợp giữa dự án và Inspiration ra sao?
+**Trả lời:** Người dùng có thể chia sẻ nội dung từ project lên Inspiration qua nút "Share" hoặc "Chia sẻ".
+
+## Câu 5: Trang Inspiration hoạt động thế nào?
+**Trả lời:** Hiển thị feed các bài đăng từ cộng đồng. Có các tab: Trending, Following, Categories (Image templates, Video templates, Writing templates).
+
+## Câu 6: Người dùng có thể like hoặc save bài đăng không?
+**Trả lời:** Có. User đăng nhập có thể like và save (lưu vào favorites). UI cập nhật optimistic ngay lập tức.
+
+## Câu 7: Bình luận (comments) đã được hỗ trợ?
+**Trả lời:** Có. PostModal có tab Comments. User có thể thêm bình luận, like bình luận, xóa bình luận của mình.
+
+## Câu 8: Follow người dùng khác có được hỗ trợ?
+**Trả lời:** Có. User có thể follow/ unfollow người khác qua profile hoặc post. Following feed hiển thị bài từ người đã follow.
+
+## Câu 9: Report bài viết có được hỗ trợ?
+**Trả lời:** Có. Trong PostCard, có tùy chọn report bài viết vi phạm.
+
+## Câu 10: Giao diện Projects/Inspiration trên mobile?
+**Trả lời:** Sử dụng layout responsive. Danh sách 1 cột trên mobile, thumbnail phù hợp kích thước màn hình.
+
+---
+
+# PHẦN 6: Thanh toán và credit (10 câu)
+
+## Câu 1: Người dùng mới có được tặng credit không?
+**Trả lời:** Có. Sau khi đăng ký thành công, tự động cộng 10 credits miễn phí vào tài khoản.
+
+## Câu 2: Credit được lưu ở đâu?
+**Trả lời:** Lưu trong document users collection trong Firestore, field "credits". Mỗi user có số dư riêng.
+
+## Câu 3: Credit được trừ khi nào?
+**Trả lời:** Hệ thống kiểm tra đủ credit trước khi gọi AI API. Nếu đủ, thực hiện generation và trừ credit sau khi hoàn thành.
+
+## Câu 4: Các gói nạp credit (payment) được hỗ trợ?
+**Trả lời:** Sử dụng PayOS (QR Code, MoMo, ZaloPay, chuyển khoản). Các gói: Starter (25cr/60K), Popular (55cr/130K), Pro (120cr/275K), Business (250cr/540K).
+
+## Câu 5: Xử lý khi thanh toán thành công?
+**Trả lời:** PayOS gọi webhook về. Cloud Function verify signature HMAC SHA256. Nếu thành công, cộng credit và update transaction status.
+
+## Câu 6: Xử lý khi thanh toán thất bại/hủy?
+**Trả lời:** Webhook nhận callback với status failed. Transaction được ghi nhận failed, không cộng credit. User được thông báo kết quả.
+
+## Câu 7: Double payment (đặt 2 đơn giống nhau) xử lý ra sao?
+**Trả lời:** Mỗi đơn có orderCode duy nhất (timestamp). Webhook kiểm tra nếu orderCode đã xử lý thì bỏ qua, tránh double-credit.
+
+## Câu 8: Nếu generation thất bại, credit có được hoàn lại?
+**Trả lời:** Có. Cloud Function detect lỗi API, tự động cộng ngược credit đã trừ để đảm bảo công bằng.
+
+## Câu 9: Hệ thống có hỗ trợ subscription không?
+**Trả lời:** Có. Các gói subscription: Starter (5cr/tháng), Pro (100cr/tháng), Agency (300cr/tháng), Business (600cr/tháng).
+
+## Câu 10: Kiểm tra số dư credit ở đâu?
+**Trả lời:** Hiển thị trên thanh điều hướng (navbar) bên cạnh avatar user. Profile dropdown cũng hiển thị số credit còn lại.
+
+---
+
+# PHẦN 7: UI/UX và Responsive (10 câu)
+
+## Câu 1: Giao diện web có tối ưu trên thiết bị di động không?
+**Trả lời:** Có. Sử dụng Tailwind CSS với mobile-first approach. Layout tự động co dãn theo kích thước màn hình.
+
+## Câu 2: Dark mode có được hỗ trợ?
+**Trả lời:** Có. ThemeContext quản lý dark/light mode. User có thể chuyển đổi trong settings hoặc theo system preference.
+
+## Câu 3: Các thông báo lỗi hiển thị ra sao?
+**Trả lời:** Sử dụng Toast notifications. Mỗi loại action (success, error, warning) có style riêng biệt.
+
+## Câu 4: Khả năng truy cập (accessibility) có được quan tâm?
+**Trả lời:** Sử dụng semantic HTML, aria-labels cho icons, color contrast đạt chuẩn. Còn cần cải thiện thêm.
+
+## Câu 5: UI có nhất quán không?
+**Trả lời:** Có. Sử dụng Tailwind CSS cho style đồng nhất. Icons từ Lucide React. Component library nhất quán.
+
+## Câu 6: Loading states được xử lý thế nào?
+**Trả lời:** Hiển thị spinner/loading skeleton khi đang xử lý. Nút Generate bị disabled khi đang chờ.
+
+## Câu 7: Chuyển đổi ngôn ngữ (VI/EN) hoạt động?
+**Trả lời:** Sử dụng react-i18next. LanguageDropdown cho phép chuyển đổi. Toàn bộ UI được dịch tự động.
+
+## Câu 8: Optimistic updates có được sử dụng?
+**Trả lời:** Có. Like, save, comment cập nhật UI ngay lập tức (optimistic), sau đó sync với backend.
+
+## Câu 9: Redirect sau login?
+**Trả lời:** Sau khi đăng nhập thành công, redirect về trang Dashboard (/dashboard).
+
+## Câu 10: Logout xử lý thế nào?
+**Trả lời:** Xóa token khỏi localStorage, chuyển về trang Landing. Session được clear hoàn toàn.
+
+---
+
+# PHẦN 8: Bảo mật (10 câu)
+
+## Câu 1: API keys của AI được bảo mật?
+**Trả lời:** Tất cả API keys lưu trong Firebase Cloud Functions environment variables, không exposed ra frontend.
+
+## Câu 2: Password và session được bảo mật?
+**Trả lời:** Password được Firebase mã hóa. Session dùng JWT, lưu trong localStorage. Kết nối luôn qua HTTPS.
+
+## Câu 3: Firestore Security Rules hoạt động?
+**Trả lời:** Đã viết rules: user chỉ có thể đọc/ghi documents thuộc về mình (so sánh userId với auth.uid).
+
+## Câu 4: XSS được ngăn chặn?
+**Trả lời:** React tự động escape. Dùng react-markdown với cấu hình ngăn script. Không render HTML thô từ user input.
+
+## Câu 5: CSRF có cần quan tâm?
+**Trả lời:** Sử dụng JWT tokens cho mọi API call, không dùng cookies cross-site. Risk thấp.
+
+## Câu 6: Roles (admin/user) được xử lý?
+**Trả lời:** Có custom claim "admin" trong Firebase. Cloud Functions kiểm tra claim để cho phép thao tác admin.
+
+## Câu 7: DDoS protection?
+**Trả lời:** Serverless (Firebase/Vercel) tự động scale. Có rate-limit ở application level. Vercel/Firebase có built-in DDoS protection.
+
+## Câu 8: File upload validation?
+**Trả lời:** Kiểm tra file type và size ở cả client và server. Chỉ chấp nhận các loại file được phép.
+
+## Câu 9: Data privacy?
+**Trả lời:** Không thu thập thông tin cá nhân ngoài email và displayName. Tuân thủ cơ bản về privacy.
+
+## Câu 10: Secure coding practices?
+**Trả lời:** Không hardcode secrets, dùng environment variables. Input validation ở cả client và server.
+
+---
+
+# PHẦN 9: Kiểm thử và ngoại lệ (10 câu)
+
+## Câu 1: Chiến lược kiểm thử của dự án?
+**Trả lời:** Chủ yếu test thủ công do thời gian hạn chế. Định nghĩa các kịch bản test: auth, generation, payment.
+
+## Câu 2: Đã viết test tự động chưa?
+**Trả lời:** Chưa có unit tests tự động. Đây là hạn chế cần cải thiện trong tương lai.
+
+## Câu 3: Xử lý exception trong code?
+**Trả lời:** Cloud Functions dùng try-catch. Lỗi được log và trả về HTTP error cho client. Client hiển thị toast error.
+
+## Câu 4: Logging có được sử dụng?
+**Trả lời:** Cloud Functions log vào Google Cloud Logging. Console.log/error được sử dụng để debug.
+
+## Câu 5: Xử lý concurrent requests?
+**Trả lời:** Firebase Functions có auto-scale. Video queue dùng Pub/Sub để xử lý tuần tự.
+
+## Câu 6: Boundary testing đã làm chưa?
+**Trả lời:** Đã test: prompt rỗng, prompt quá dài, credit = 0, file quá lớn, network error.
+
+## Câu 7: Xử lý khi mất kết nối?
+**Trả lời:** Frontend hiển thị "Network error" toast. Có retry logic cho một số operations.
+
+## Câu 8: Security testing?
+**Trả lời:** Đã review Firestore rules. Dùng Firebase rules simulator để test quyền truy cập.
+
+## Câu 9: Export dữ liệu?
+**Trả lời:** User có thể tải (download) file media đã tạo. Không có tính năng export toàn bộ dữ liệu.
+
+## Câu 10: Test trên các trình duyệt?
+**Trả lời:** Đã test trên Chrome, Firefox, Safari, Edge (desktop) và Chrome/Safari (mobile).
+
+---
+
+# PHẦN 10: Triển khai và vận hành (10 câu)
+
+## Câu 1: Dự án được triển khai ở đâu?
+**Trả lời:** Frontend: Vercel (CDN global, HTTPS). Backend: Firebase (Cloud Functions, Firestore, Storage, Hosting).
+
+## Câu 2: CI/CD được cấu hình?
+**Trả lời:** Vercel tự động deploy khi push lên GitHub. Firebase deploy qua CLI. Chưa có GitHub Actions tự động.
+
+## Câu 3: Environment variables lưu ở đâu?
+**Trả lời:** Cloud Functions: firebase functions:config:set. Frontend: Vercel dashboard. Không commit vào Git.
+
+## Câu 4: Monitoring và logging?
+**Trả lời:** Firebase Console cho function logs. Stackdriver (Google Cloud) cho detailed logging.
+
+## Câu 5: Hệ thống có scale tốt?
+**Trả lời:** Serverless architecture tự động scale. Firebase có thể handle hàng nghìn concurrent users.
+
+## Câu 6: Backup dữ liệu?
+**Trả lời:** Firebase có managed export. Có thể cấu hình scheduled backups. Developers có thể backup thủ công.
+
+## Câu 7: Bảo trì và cập nhật?
+**Trả lời:** Cập nhật dependencies định kỳ (npm audit). Framework được update khi có phiên bản mới.
+
+## Câu 8: Ưu điểm của kiến trúc hiện tại?
+**Trả lời:** Serverless: không quản lý server, auto-scale, pay-per-use, deploy nhanh. React/Vercel: UX mượt.
+
+## Câu 9: Nhược điểm của kiến trúc hiện tại?
+**Trả lời:** Cold start delay (~2 giây) với Cloud Functions. Vendor lock-in vào Firebase.
+
+## Câu 10: Hướng phát triển tương lai?
+**Trả lời:** 
+- Hoàn thiện TikTok OAuth
+- Mobile app (React Native)
+- Thêm AI models (Midjourney, Sora)
+- API công khai cho developers
+- Tính năng comment nâng cao
+- Dashboard analytics

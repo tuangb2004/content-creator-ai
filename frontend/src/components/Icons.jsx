@@ -61,6 +61,13 @@ import saveOutlineSvg from '../assets/svg/save-svgrepo-com.svg';
 import saveFilledSvg from '../assets/svg/save-svgrepo-com (1).svg';
 import cameraOutlineSvg from '../assets/svg/camera-svgrepo-com.svg';
 import cameraFilledSvg from '../assets/svg/camera-svgrepo-com (1).svg';
+import uploadSvg from '../assets/svg/upload-minimalistic-svgrepo-com.svg';
+
+// Security & Danger icons
+import securityOutlineSvg from '../assets/svg/security-user-svgrepo-com.svg';
+import securityFilledSvg from '../assets/svg/security-user-svgrepo-com (1).svg';
+import dangerOutlineSvg from '../assets/svg/danger-triangle-svgrepo-com.svg';
+import dangerFilledSvg from '../assets/svg/danger-triangle-svgrepo-com (1).svg';
 
 // Filled variants (1) – shown on hover and when active
 import homeFilledSvg from '../assets/svg/home-svgrepo-com (1).svg';
@@ -148,6 +155,8 @@ export const Icons = {
     Copy: (props) => <SvgIcon src={copySvg} {...props} />,
     Download: (props) => <SvgIcon src={downloadSvg} {...props} />,
     Eye: (props) => <SvgIcon src={eyeSvg} {...props} />,
+    EyeOff: (props) => <LucideIcon icon="EyeOff" {...props} />,
+    Lock: (props) => <LucideIcon icon="Lock" {...props} />,
     Heart: ({ isActive, size = 24, className = "", noHover, ...props }) => {
         const Icon = Lucide.Heart;
         return (
@@ -215,18 +224,17 @@ export const Icons = {
     ChevronRight: (props) => <LucideIcon icon="ChevronRight" {...props} />,
     ChevronLeft: (props) => <LucideIcon icon="ChevronLeft" {...props} />,
     Search: (props) => <LucideIcon icon="Search" {...props} />,
-    Upload: (props) => <LucideIcon icon="Upload" {...props} />,
+    Upload: (props) => <SvgIcon src={uploadSvg} {...props} />,
+    Folder: (props) => <SvgIcon src={layersSvg} {...props} />,
     CreditCard: (props) => <LucideIcon icon="CreditCard" {...props} />,
     Settings: (props) => <LucideIcon icon="Settings" {...props} />,
     X: (props) => <LucideIcon icon="X" {...props} />,
     Menu: (props) => <LucideIcon icon="Menu" {...props} />,
-    Folder: (props) => <LucideIcon icon="Folder" {...props} />,
     List: (props) => <LucideIcon icon="List" {...props} />,
     ArrowUp: (props) => <LucideIcon icon="ArrowUp" {...props} />,
     Scissors: (props) => <LucideIcon icon="Scissors" {...props} />,
     Store: (props) => <LucideIcon icon="Store" {...props} />,
     HelpCircle: (props) => <DualSvgIcon outlineSrc={helpFilledSvg} filledSrc={helpSvg} isActive={props.isActive} {...props} />,
-    Settings: (props) => <DualSvgIcon outlineSrc={settingFilledSvg} filledSrc={settingSvg} isActive={props.isActive} {...props} />,
     Sparkles: (props) => <DualSvgIcon outlineSrc={upgradeSvg} filledSrc={upgradeFilledSvg} isActive={props.isActive} {...props} />,
     MoreHorizontal: (props) => <LucideIcon icon="MoreHorizontal" {...props} />,
     Monitor: (props) => <LucideIcon icon="Monitor" {...props} />,
@@ -244,6 +252,8 @@ export const Icons = {
     Tag: (props) => <LucideIcon icon="Tag" {...props} />,
     FileText: (props) => <LucideIcon icon="FileText" {...props} />,
     Shield: (props) => <LucideIcon icon="Shield" {...props} />,
+    ShieldSecurity: (props) => <DualSvgIcon outlineSrc={securityOutlineSvg} filledSrc={securityFilledSvg} isActive={props.isActive} {...props} />,
+    AlertTriangle: (props) => <DualSvgIcon outlineSrc={dangerOutlineSvg} filledSrc={dangerFilledSvg} isActive={props.isActive} {...props} />,
     Sidebar: (props) => <LucideIcon icon="Sidebar" {...props} />,
     Eraser: (props) => <LucideIcon icon="Eraser" {...props} />,
     Move: (props) => <LucideIcon icon="Move" {...props} />,
@@ -269,11 +279,7 @@ export const Icons = {
     UserX: (props) => <LucideIcon icon="UserX" {...props} />,
     Edit: (props) => <LucideIcon icon="Edit" {...props} />,
     Grid: (props) => <LucideIcon icon="Grid" {...props} />,
-    MessageCircle: (props) => <LucideIcon icon="MessageCircle" {...props} />,
-    X: (props) => <LucideIcon icon="X" {...props} />,
-    Check: (props) => <LucideIcon icon="Check" {...props} />,
     TrendingUp: (props) => <LucideIcon icon="TrendingUp" {...props} />,
-    Copy: (props) => <LucideIcon icon="Copy" {...props} />,
     Info: (props) => <LucideIcon icon="Info" {...props} />,
     Bookmark: (props) => <LucideIcon icon="Bookmark" {...props} />,
     Flag: (props) => <LucideIcon icon="Flag" {...props} />,

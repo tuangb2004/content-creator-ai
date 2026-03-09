@@ -39,6 +39,12 @@ const BillingPlans = ({ onBack }) => {
         return;
       }
 
+      // Wait for userData to be loaded
+      if (!userData) {
+        console.log('⚠️ [Billing History] userData not loaded yet, waiting...');
+        return;
+      }
+
       console.log('🔍 [Billing History] Starting fetch for userId:', user.uid);
       setHistoryLoading(true);
       try {
@@ -102,7 +108,7 @@ const BillingPlans = ({ onBack }) => {
     };
 
     fetchHistory();
-  }, [user]); // Changed to user to get uid from Firebase Auth
+  }, [user, userData]); // Changed to user to get uid from Firebase Auth
 
   // Debug: Log modal state changes
   useEffect(() => {

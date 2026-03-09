@@ -93,6 +93,13 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
     
+    // Transactions (Billing History) - users can read their own transactions
+    match /transactions/{transactionId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if false; // Only Cloud Functions create transactions
+      allow update, delete: if false;
+    }
+    
     // Templates (Inspiration)
     match /templates/{templateId} {
       allow read: if true;

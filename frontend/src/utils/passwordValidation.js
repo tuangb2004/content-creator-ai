@@ -71,10 +71,10 @@ export const validateEmail = (email) => {
  * Password requirements for display
  */
 export const passwordRequirements = [
-  { id: 'length', text: 'At least 8 characters', test: (pwd) => pwd.length >= 8 },
-  { id: 'lowercase', text: 'One lowercase letter', test: (pwd) => /[a-z]/.test(pwd) },
-  { id: 'uppercase', text: 'One uppercase letter', test: (pwd) => /[A-Z]/.test(pwd) },
-  { id: 'number', text: 'One number', test: (pwd) => /\d/.test(pwd) },
-  { id: 'special', text: 'One special character (!@#$%^&*)', test: (pwd) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd) }
+  { id: 'length', translationKey: 'passwordMinLength', test: (pwd) => pwd.length >= 8 },
+  { id: 'lowercase', translationKey: 'passwordLowercase', test: (pwd) => /[a-z]/.test(pwd) },
+  { id: 'uppercase', translationKey: 'passwordUppercase', test: (pwd) => /[A-Z]/.test(pwd) },
+  { id: 'number', translationKey: 'passwordNumber', test: (pwd) => /\d/.test(pwd) },
+  { id: 'special', translationKey: 'passwordSpecial', test: (pwd) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd) }
 ];
 

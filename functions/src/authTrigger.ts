@@ -20,11 +20,26 @@ export const onUserCreate = functions.auth.user().onCreate(async (user) => {
       return;
     }
 
-    console.log(`📝 Initializing user ${uid} with free credits...`);
-    // Initialize user with free credits and profile info
-    await initializeUser(uid, email, displayName || undefined, photoURL || undefined);
+    // Check if email was previously registered (user deleted account and re-registered)
+    const db = admin.firestore();
+    const registeredEmailDoc = await db.collection('registeredEmails').doc(email.toLowerCase()).get();
+    const isReturningUser = registeredEmailDoc.exists;
 
-    console.log(`✅ User ${uid} initialized with free credits`);
+    let credits = 10; // Default free credits for new users
+    let message = 'New user initialized with free credits';
+
+    if (isReturningUser) {
+      // Returning user - don't give free credits to prevent spam/abuse
+      credits = 0;
+      message = 'Returning user detected - no free credits given';
+      console.log(`⚠️ Returning user ${email} - no free credits awarded`);
+    }
+
+    console.log(`📝 Initializing user ${uid} with ${credits} credits...`);
+    // Initialize user with credits and profile info
+    await initializeUser(uid, email, displayName || undefined, photoURL || undefined, credits);
+
+    console.log(`✅ User ${uid} ${message}`);
 
     // Note: Login activity is logged from frontend via logUserLogin function
     // This ensures we have accurate userAgent and platform info
@@ -43,22 +58,33 @@ export const onUserCreate = functions.auth.user().onCreate(async (user) => {
 /**
  * Cleanup user data when their account is deleted from Firebase Auth
  * This includes deleting user document, userProfile, and soft-deleting posts.
+ * Also marks email as "previously registered" to prevent spam/abuse.
  */
 export const onUserDelete = functions.auth.user().onDelete(async (user) => {
-  const { uid } = user;
+  const { uid, email } = user;
   console.log(`🗑️ onUserDelete triggered for user: ${uid}`);
 
   const db = admin.firestore();
 
   try {
-    // 1. Delete user documents
+    // 1. Mark email as previously registered (prevent spam by not giving free credits on re-register)
+    if (email) {
+      console.log(`📝 Marking email ${email} as previously registered...`);
+      await db.collection('registeredEmails').doc(email.toLowerCase()).set({
+        originalEmail: email,
+        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+        deletedUserId: uid
+      });
+    }
+
+    // 2. Delete user documents
     console.log(`📝 Deleting user and profile docs for ${uid}...`);
     const batch = db.batch();
     batch.delete(db.collection('users').doc(uid));
     batch.delete(db.collection('userProfiles').doc(uid));
     await batch.commit();
 
-    // 2. Soft delete user's posts (mark as isDeleted: true)
+    // 3. Soft delete user's posts (mark as isDeleted: true)
     console.log(`📝 Soft deleting posts for ${uid}...`);
     const postsQuery = await db.collection('posts')
       .where('authorId', '==', uid)
@@ -85,7 +111,7 @@ export const onUserDelete = functions.auth.user().onDelete(async (user) => {
       }
     }
 
-    // 3. Cleanup other related data (likes, saves, etc.) if needed
+    // 4. Cleanup other related data (likes, saves, etc.) if needed
     // Note: We could also delete postLikes, postSaves from this user, 
     // but usually we keep them for historical analytics or handle them as needed.
 

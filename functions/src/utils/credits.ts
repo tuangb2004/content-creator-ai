@@ -220,7 +220,7 @@ export async function setCredits(userId: string, credits: number, metadata?: { r
 /**
  * Initialize user with free credits (on signup)
  */
-export async function initializeUser(userId: string, email: string, displayName?: string, photoURL?: string): Promise<void> {
+export async function initializeUser(userId: string, email: string, displayName?: string, photoURL?: string, credits: number = 10): Promise<void> {
   const db = getDb();
   const userRef = db.collection('users').doc(userId);
   const userDoc = await userRef.get();
@@ -232,7 +232,7 @@ export async function initializeUser(userId: string, email: string, displayName?
       ...(displayName && { displayName }),
       ...(photoURL && { photoURL }),
       plan: 'free',
-      credits: 10, // Default for new users
+      credits, // Credit amount passed from caller (0 for returning users, 10 for new users)
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     });

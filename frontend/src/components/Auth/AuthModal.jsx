@@ -3,13 +3,16 @@ import {
   X,
   Mail,
   ChevronLeft,
-  CheckCircle
+  CheckCircle,
+  Check,
+  XCircle
 } from 'lucide-react';
 import { Icons } from '../Icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import toast from '../../utils/toast';
 import Logo from '../../assets/images/Logo.png';
+import { checkPasswordStrength, passwordRequirements } from '../../utils/passwordValidation';
 
 const AuthModal = ({ isOpen, onClose, initialView = 'initial', onLoginSuccess, isBlocking = false }) => {
   const [view, setView] = useState(initialView);
@@ -17,6 +20,7 @@ const AuthModal = ({ isOpen, onClose, initialView = 'initial', onLoginSuccess, i
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, strength: 'weak', feedback: [] });
   const [loadingButton, setLoadingButton] = useState(null); // Track which button is loading: 'google', 'facebook', 'tiktok', 'email', null
 
 
@@ -42,21 +46,28 @@ const AuthModal = ({ isOpen, onClose, initialView = 'initial', onLoginSuccess, i
       setName('');
       setPasswordVisible(false);
       setLoadingButton(null);
+      setPasswordStrength({ score: 0, strength: 'weak', feedback: [] });
     }
   }, [isOpen, initialView]);
 
-  // Instant reset on window focus (handle popup close)
+  // TikTok uses redirect OAuth flow - handle result on window focus
+  // Google/Facebook use popup flow - handled via promise in try/catch
   useEffect(() => {
-    if (['google', 'facebook', 'tiktok'].includes(loadingButton)) {
+    if (loadingButton === 'tiktok') {
       const handleFocus = () => {
-        // Show immediate notification
-        toast.error(t.auth.loginCancelled || 'Login cancelled');
-        setLoadingButton(null);
+        // Wait for auth state to settle, then check if logged in
+        setTimeout(async () => {
+          const { auth } = await import('../../config/firebase');
+          if (!auth.currentUser) {
+            toast.error(t.auth.loginCancelled || 'Login cancelled');
+            setLoadingButton(null);
+          }
+        }, 1500);
       };
       window.addEventListener('focus', handleFocus);
       return () => window.removeEventListener('focus', handleFocus);
     }
-  }, [loadingButton]);
+  }, [loadingButton, t.auth.loginCancelled]);
 
 
 
@@ -164,6 +175,14 @@ const AuthModal = ({ isOpen, onClose, initialView = 'initial', onLoginSuccess, i
 
   const handleEmailSignUp = async (e) => {
     e.preventDefault();
+
+    // Validate password strength before submit (require fair or better, score >= 2)
+    const strength = checkPasswordStrength(password);
+    if (strength.score < 2) {
+      toast.error(t.auth.weakPassword || 'Please use a stronger password (at least Fair strength)');
+      return;
+    }
+
     setLoadingButton('email');
     try {
       const result = await register(name, email, password);
@@ -417,7 +436,14 @@ const AuthModal = ({ isOpen, onClose, initialView = 'initial', onLoginSuccess, i
                     placeholder={t.auth.createPassword}
                     type={passwordVisible ? "text" : "password"}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length <= 64) {
+                        setPassword(value);
+                        setPasswordStrength(checkPasswordStrength(value));
+                      }
+                    }}
+                    maxLength={64}
                     required
                   />
                   <button
@@ -428,6 +454,49 @@ const AuthModal = ({ isOpen, onClose, initialView = 'initial', onLoginSuccess, i
                     <div className="w-5 h-5 flex items-center justify-center font-bold text-xs">{passwordVisible ? t.auth.hide : t.auth.show}</div>
                   </button>
                 </div>
+                {password && (
+                  <div className="mt-2 space-y-2">
+                    {/* Password strength bar */}
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${
+                          passwordStrength.strength === 'weak' ? 'bg-red-500 w-1/4' :
+                          passwordStrength.strength === 'fair' ? 'bg-yellow-500 w-2/4' :
+                          passwordStrength.strength === 'good' ? 'bg-blue-500 w-3/4' :
+                          'bg-green-500 w-full'
+                        }`}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className={`font-medium ${
+                        passwordStrength.strength === 'weak' ? 'text-red-500' :
+                        passwordStrength.strength === 'fair' ? 'text-yellow-500' :
+                        passwordStrength.strength === 'good' ? 'text-blue-500' :
+                        'text-green-500'
+                      }`}>
+                        {passwordStrength.strength === 'weak' && t.auth.passwordWeak}
+                        {passwordStrength.strength === 'fair' && t.auth.passwordFair}
+                        {passwordStrength.strength === 'good' && t.auth.passwordGood}
+                        {passwordStrength.strength === 'strong' && t.auth.passwordStrong}
+                      </span>
+                      <span className="text-gray-400">{password.length}/64</span>
+                    </div>
+                    {/* Password requirements */}
+                    <div className="grid grid-cols-2 gap-1 mt-2">
+                      {passwordRequirements.map((req) => (
+                        <div
+                          key={req.id}
+                          className={`flex items-center text-xs ${
+                            req.test(password) ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+                          }`}
+                        >
+                          {req.test(password) ? <Check size={12} className="mr-1 flex-shrink-0" /> : <XCircle size={12} className="mr-1 flex-shrink-0" />}
+                          <span className="truncate">{t.auth[req.translationKey]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={loadingButton !== null}

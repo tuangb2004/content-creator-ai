@@ -3,11 +3,161 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Icons } from '../Icons';
-import { updateProfile } from 'firebase/auth';
+import { updateProfile, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { auth, db, storage } from '../../config/firebase';
 import toast from '../../utils/toast';
+
+// Password Change Form Component
+const PasswordChangeForm = ({ isDark, user }) => {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Mật khẩu mới phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Mật khẩu mới không khớp');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPassword);
+      toast.success('Đổi mật khẩu thành công!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Password change error:', error);
+      if (error.code === 'auth/wrong-password') {
+        toast.error('Mật khẩu hiện tại không đúng');
+      } else if (error.code === 'auth/requires-recent-login') {
+        toast.error('Vui lòng đăng nhập lại để đổi mật khẩu');
+      } else {
+        toast.error(error.message || 'Không thể đổi mật khẩu');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+          Mật khẩu hiện tại
+        </label>
+        <div className="relative">
+          <input
+            type={showCurrentPassword ? 'text' : 'password'}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            className={`w-full px-3 py-2.5 rounded-lg border outline-none transition-colors pr-10 ${isDark
+              ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-[#FE2C55]'
+              : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[#FE2C55]'
+              }`}
+            placeholder="Nhập mật khẩu hiện tại"
+          />
+          <button
+            type="button"
+            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+          >
+            {showCurrentPassword ? <Icons.EyeOff size={18} /> : <Icons.Eye size={18} />}
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+          Mật khẩu mới
+        </label>
+        <div className="relative">
+          <input
+            type={showNewPassword ? 'text' : 'password'}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className={`w-full px-3 py-2.5 rounded-lg border outline-none transition-colors pr-10 ${isDark
+              ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-[#FE2C55]'
+              : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[#FE2C55]'
+              }`}
+            placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
+          />
+          <button
+            type="button"
+            onClick={() => setShowNewPassword(!showNewPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+          >
+            {showNewPassword ? <Icons.EyeOff size={18} /> : <Icons.Eye size={18} />}
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+          Xác nhận mật khẩu mới
+        </label>
+        <div className="relative">
+          <input
+            type={showConfirmPassword ? 'text' : 'password'}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className={`w-full px-3 py-2.5 rounded-lg border outline-none transition-colors pr-10 ${isDark
+              ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-[#FE2C55]'
+              : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-[#FE2C55]'
+              }`}
+            placeholder="Nhập lại mật khẩu mới"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+          >
+            {showConfirmPassword ? <Icons.EyeOff size={18} /> : <Icons.Eye size={18} />}
+          </button>
+        </div>
+      </div>
+
+      <div className="pt-4">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="group flex items-center justify-center h-10 gap-2 bg-[#FE2C55] hover:bg-[#ef2950] text-white px-6 rounded-lg transition-all duration-200 shadow-sm text-sm font-medium disabled:opacity-50"
+        >
+          {isLoading ? (
+            <Icons.Loader size={16} className="animate-spin" />
+          ) : (
+            <Icons.Lock size={16} />
+          )}
+          {isLoading ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu'}
+        </button>
+      </div>
+
+      <p className={`text-xs mt-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+        Lưu ý: Bạn cần đăng nhập gần đây để đổi mật khẩu. Nếu đã đăng nhập quá 5 phút trước, vui lòng đăng nhập lại.
+      </p>
+    </form>
+  );
+};
 
 const ProfileSettings = ({ onBack }) => {
   const { t } = useLanguage();
@@ -281,6 +431,7 @@ const ProfileSettings = ({ onBack }) => {
 
   const menuItems = [
     { id: 'profile', label: t?.profileSettings?.personalInformation || 'Thông tin cá nhân', icon: 'User' },
+    { id: 'security', label: t?.profileSettings?.security || 'Bảo mật', icon: 'ShieldSecurity' },
     { id: 'notifications', label: t?.profileSettings?.notifications || 'Thông báo', icon: 'Bell' },
     { id: 'danger', label: t?.settings?.dangerZone || 'Vùng nguy hiểm', icon: 'AlertTriangle' },
   ];
@@ -290,6 +441,7 @@ const ProfileSettings = ({ onBack }) => {
       User: Icons.User,
       Bell: Icons.Bell,
       AlertTriangle: Icons.AlertTriangle,
+      ShieldSecurity: Icons.ShieldSecurity,
     };
     const IconComponent = iconMap[iconName] || Icons.User;
     return <IconComponent size={18} />;
@@ -427,6 +579,17 @@ const ProfileSettings = ({ onBack }) => {
               </div>
             </div>
           </form>
+        );
+
+      case 'security':
+        return (
+          <div className={`p-6 rounded-xl border transition-colors duration-300 ${isDark ? 'bg-[#1e293b] border-gray-700' : 'bg-white border-gray-200'}`}>
+            <h3 className={`text-lg font-semibold mb-6 transition-colors duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {t?.profileSettings?.security || 'Bảo mật'}
+            </h3>
+            
+            <PasswordChangeForm isDark={isDark} user={user} />
+          </div>
         );
 
       case 'notifications':
@@ -601,7 +764,7 @@ const ProfileSettings = ({ onBack }) => {
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-left w-full ${activeSection === item.id
+                className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-left w-full ${activeSection === item.id
                   ? isDark
                     ? 'bg-gray-700 text-white font-semibold'
                     : 'bg-gray-100 text-gray-900 font-semibold'
